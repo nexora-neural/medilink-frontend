@@ -1,1 +1,33 @@
-/* You can add global styles to this file, and also import other style files */
+@use "./styles/tokens";
+@use "./styles/typography";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ml-color-text);
+  background: var(--ml-color-background);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+}

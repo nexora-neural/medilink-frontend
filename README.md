@@ -1,59 +1,53 @@
-# MedilinkFrontend
+# MediLink Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.19.
+Responsive healthcare web application frontend built with Angular 21 and SCSS. The current screen is a starter welcome page; feature screens and backend integration are not implemented yet.
 
-## Development server
+## Requirements
 
-To start a local development server, run:
+- Node.js 24.16.0
+- npm 11.13.0
 
-```bash
-ng serve
-```
+Use the versions above for a consistent team setup.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Get started
 
 ```bash
-ng generate component component-name
+npm ci
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Open `http://localhost:4200/`. The development server reloads when source files change.
+
+## Build
 
 ```bash
-ng generate --help
+npm run build
 ```
 
-## Building
+The production build is written to `dist/`.
 
-To build the project run:
+## Project structure
 
-```bash
-ng build
-```
+- `src/app/core/` — app-wide authentication, guards, interceptors, and services.
+- `src/app/shared/` — reusable components, directives, and pipes.
+- `src/app/layout/` — shared responsive shell and navigation.
+- `src/app/features/` — feature areas such as patients, doctors, appointments, prescriptions, medical records, and measurements.
+- `src/assets/` — images and custom SVG icons.
+- `src/environments/` — public, non-secret environment configuration.
+- `src/styles/` — shared SCSS tokens and typography. Keep component-specific styles beside their components.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Add feature-specific pages, components, services, and models inside the relevant feature when that work begins.
 
-## Running unit tests
+## Shared libraries and conventions
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- Angular Material and CDK are the shared UI foundation.
+- Use locally bundled Material Symbols Outlined for standard icons. Use custom SVGs only for product-specific icons that are not covered. Icon-only controls need an accessible label.
+- Chart.js is available for measurement and trend charts. Keep chart setup within the relevant feature until a shared use case appears.
+- Use Angular Router, Reactive Forms, HttpClient, and RxJS for navigation, forms, and API/data flows.
+- English is the current UI language; no translation library is configured.
+- Agree on new dependencies as a team and check compatibility with Angular 21. Commit `package.json` and `package-lock.json`; do not commit `node_modules/`.
+- Never place credentials or private API keys in frontend source or environment files.
 
-```bash
-ng test
-```
+## Team workflow
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Create a feature branch for each piece of work and merge through a reviewed pull request. Avoid committing generated output, local environment files, or patient data.

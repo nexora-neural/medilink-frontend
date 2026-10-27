@@ -1,0 +1,22 @@
+:root {
+  color-scheme: light;
+  --ml-color-primary: #005cbb;
+  --ml-color-on-primary: #ffffff;
+  --ml-color-surface: #ffffff;
+  --ml-color-background: #f7f9fc;
+  --ml-color-text: #1a1c1e;
+  --ml-color-muted: #5f6368;
+  --ml-color-border: #dfe3eb;
+  --ml-color-danger: #ba1a1a;
+
+  --ml-space-1: 0.25rem;
+  --ml-space-2: 0.5rem;
+  --ml-space-3: 0.75rem;
+  --ml-space-4: 1rem;
+  --ml-space-6: 1.5rem;
+  --ml-space-8: 2rem;
+
+  --ml-content-max-width: 80rem;
+  --ml-radius-sm: 0.375rem;
+  --ml-radius-md: 0.75rem;
+}
