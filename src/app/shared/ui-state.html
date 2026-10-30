@@ -1,0 +1,5 @@
+<section class="ui-state" [class.loading]="kind === 'loading'" [class.error]="kind === 'error'" [attr.role]="kind === 'error' ? 'alert' : 'status'" aria-live="polite">
+  <span class="state-icon material-symbols-outlined" [class.spinning]="kind === 'loading'" aria-hidden="true">{{ icon }}</span>
+  <h3>{{ title }}</h3><p>{{ description }}</p>
+  <button *ngIf="actionLabel" type="button" (click)="action.emit()">{{ actionLabel }}</button>
+</section>

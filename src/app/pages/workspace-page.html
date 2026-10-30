@@ -1,0 +1,36 @@
+<section class="page-heading">
+  <div><span class="eyebrow">{{ activeRole() }} workspace</span><h1>{{ title }}</h1><p>{{ description }}</p></div>
+</section>
+<div class="preview-grid">
+  <section class="panel state-panel" aria-labelledby="states-heading">
+    <div class="panel-heading"><div><h2 id="states-heading">Loading, error and empty states</h2><p>Shared UI states for pages that need to explain what is happening.</p></div></div>
+    <div class="state-picker" aria-label="Choose a UI state">
+      <button type="button" [class.selected]="selectedState === 'loading'" (click)="selectedState = 'loading'">Loading</button>
+      <button type="button" [class.selected]="selectedState === 'error'" (click)="selectedState = 'error'">Error</button>
+      <button type="button" [class.selected]="selectedState === 'empty'" (click)="selectedState = 'empty'">Empty</button>
+    </div>
+    <app-ui-state
+      [kind]="selectedState"
+      [title]="selectedState === 'loading' ? 'Loading workspace content' : selectedState === 'error' ? 'Content could not be loaded' : 'No records to show yet'"
+      [description]="selectedState === 'loading' ? 'Please wait while this page is prepared.' : selectedState === 'error' ? 'This preview is local. Try again to return to the empty state.' : 'When this area has content, it will appear here.'"
+      [actionLabel]="selectedState === 'error' ? 'Try again' : ''"
+      (action)="selectedState = 'empty'"
+    />
+  </section>
+  <section class="panel form-panel" aria-labelledby="controls-heading">
+    <div class="panel-heading"><div><h2 id="controls-heading">Reusable form controls</h2><p>Common field, select, textarea, validation and action styles.</p></div></div>
+    <form [formGroup]="previewForm" (ngSubmit)="submitPreview()" novalidate>
+      <ml-form-field fieldId="display-name" label="Display name" hint="Required for this local preview." [required]="true" [error]="nameError">
+        <input id="display-name" type="text" formControlName="displayName" autocomplete="off" />
+      </ml-form-field>
+      <ml-form-field fieldId="category" label="Category">
+        <select id="category" formControlName="category"><option value="General">General</option><option value="Medication">Medication</option><option value="Health record">Health record</option></select>
+      </ml-form-field>
+      <ml-form-field fieldId="note" label="Note" hint="Optional sample text; it is not saved.">
+        <textarea id="note" rows="3" formControlName="note"></textarea>
+      </ml-form-field>
+      <p *ngIf="formMessage" class="form-message" role="status">{{ formMessage }}</p>
+      <button class="primary-button" type="submit">Preview form</button>
+    </form>
+  </section>
+</div>

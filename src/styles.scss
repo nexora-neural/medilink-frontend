@@ -1,33 +1,11 @@
 @use "./styles/tokens";
 @use "./styles/typography";
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  min-width: 320px;
-  min-height: 100%;
-  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: var(--ml-color-text);
-  background: var(--ml-color-background);
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-img,
-svg {
-  max-width: 100%;
-}
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; color: var(--ml-color-text); background: var(--ml-color-background); -webkit-text-size-adjust: 100%; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--ml-color-primary) 36%, white); outline-offset: 2px; }
+input, select, textarea { width: 100%; min-height: 2.75rem; padding: 0.7rem 0.8rem; color: var(--ml-color-text); background: var(--ml-color-surface); border: 1px solid var(--ml-color-border); border-radius: var(--ml-radius-sm); }
+textarea { min-height: 6rem; resize: vertical; }
+img, svg { max-width: 100%; }

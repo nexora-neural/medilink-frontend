@@ -1,0 +1,29 @@
+<div class="app-layout">
+  <aside class="sidebar" [class.open]="menuOpen" aria-label="Main navigation">
+    <a class="brand" routerLink="/workspace" (click)="closeMenu()" aria-label="MediLink workspace"><img src="/medilink-logo-horizontal.svg" alt="MediLink" /></a>
+    <p class="workspace-label">{{ activeRole() }} workspace</p>
+    <nav class="primary-navigation" aria-label="Workspace">
+      <a *ngFor="let item of navigation()" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/workspace' }" (click)="closeMenu()">
+        <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span><span>{{ item.label }}</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <label for="active-role">Active role</label>
+      <select id="active-role" [value]="activeRole()" (change)="selectRole($event)"><option *ngFor="let role of roles" [value]="role">{{ role }}</option></select>
+      <span class="demo-note">Local role context for frontend review</span>
+    </div>
+  </aside>
+  <button *ngIf="menuOpen" class="sidebar-scrim" type="button" aria-label="Close navigation" (click)="closeMenu()"></button>
+  <div class="main-shell">
+    <header class="topbar">
+      <button class="menu-button" type="button" aria-label="Open navigation" [attr.aria-expanded]="menuOpen" (click)="menuOpen = !menuOpen"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
+      <a class="mobile-brand" routerLink="/workspace" aria-label="MediLink workspace"><img src="/medilink-logo-horizontal.svg" alt="" /></a>
+      <div class="breadcrumb"><span>My care</span><span aria-hidden="true">/</span><strong>Workspace</strong></div>
+      <div class="topbar-actions">
+        <span class="role-chip">{{ activeRole() }}</span><span class="material-symbols-outlined notification-icon" aria-hidden="true">notifications</span>
+        <div class="user-summary"><span class="avatar" aria-hidden="true">{{ activeRole().slice(0, 1) }}</span><span><strong>{{ activeRole() }}</strong><small>MediLink account</small></span></div>
+      </div>
+    </header>
+    <main class="content"><router-outlet /></main>
+  </div>
+</div>

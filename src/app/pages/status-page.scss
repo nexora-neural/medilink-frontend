@@ -1,0 +1,8 @@
+:host { display: block; min-height: 100vh; }
+.status-page { display: grid; min-height: 100vh; place-items: center; padding: 1.25rem; background: radial-gradient(ellipse at 15% 15%, rgb(19 127 172 / 8%), transparent 38%), #f6f9fc; }
+.status-card { width: min(100%, 31rem); padding: clamp(1.75rem, 6vw, 3.5rem); text-align: center; background: #fff; border: 1px solid #e3edf3; border-radius: 1rem; box-shadow: 0 1.5rem 4rem rgb(20 47 75 / 8%); }
+.status-code { display: block; color: #1689ba; font-size: 0.75rem; font-weight: 750; letter-spacing: 0.12em; }
+.status-icon { display: grid; width: 3.5rem; height: 3.5rem; margin: 1.15rem auto; place-items: center; color: #137fac; background: #eaf5fc; border-radius: 1rem; font-size: 1.8rem; }
+h1 { margin: 0; color: #173750; font-size: clamp(1.6rem, 6vw, 2.1rem); }
+p { margin: 0.8rem 0 1.5rem; color: #8499a8; font-size: 0.9rem; line-height: 1.6; }
+.primary-link { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; padding: 0.65rem 1rem; color: #fff; background: #137fac; border-radius: 0.5rem; font-size: 0.82rem; font-weight: 700; text-decoration: none; }

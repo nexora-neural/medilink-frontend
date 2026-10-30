@@ -1,0 +1,9 @@
+.ui-state { display: grid; min-height: 13rem; align-content: center; justify-items: center; padding: 1.5rem; text-align: center; background: #f8fbfd; border: 1px dashed #d8e7ef; border-radius: 0.75rem; }
+.state-icon { color: #1689ba; font-size: 2rem; }
+.ui-state.error .state-icon, .ui-state.error h3 { color: #aa3537; }
+.ui-state h3 { margin: 0.8rem 0 0; color: #26465e; font-size: 0.95rem; }
+.ui-state p { max-width: 27rem; margin: 0.55rem 0 0; color: #8499a8; font-size: 0.78rem; line-height: 1.55; }
+.ui-state button { min-height: 2.4rem; margin-top: 1rem; padding: 0.5rem 0.8rem; color: #137fac; background: #fff; border: 1px solid #dceaf2; border-radius: 0.45rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+.spinning { animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }

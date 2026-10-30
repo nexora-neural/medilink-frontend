@@ -1,0 +1,11 @@
+.form-field { display: grid; gap: 0.42rem; }
+label { color: #36556b; font-size: 0.78rem; font-weight: 700; }
+.required-mark, .field-error { color: #aa3537; }
+.field-control { min-width: 0; }
+.field-control :where(input, select, textarea) { display: block; }
+.field-control :where(input, select, textarea):hover { border-color: #9bbdce; }
+.field-control :where(input, select, textarea):focus { border-color: #137fac; }
+.field-hint, .field-error { font-size: 0.72rem; line-height: 1.45; }
+.field-hint { color: #8499a8; }
+.field-error { font-weight: 600; }
+.invalid .field-control :where(input, select, textarea) { border-color: #aa3537; }

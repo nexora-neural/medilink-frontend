@@ -1,0 +1,6 @@
+<div class="form-field" [class.invalid]="!!error">
+  <label [attr.for]="fieldId">{{ label }}<span *ngIf="required" class="required-mark" aria-hidden="true"> *</span></label>
+  <div class="field-control"><ng-content></ng-content></div>
+  <small *ngIf="hint && !error" class="field-hint" [id]="fieldId + '-hint'">{{ hint }}</small>
+  <small *ngIf="error" class="field-error" [id]="fieldId + '-error'" role="alert">{{ error }}</small>
+</div>
