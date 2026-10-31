@@ -26,6 +26,16 @@ npm run build
 
 The production build is written to `dist/`.
 
+## Quality checks
+
+After installing dependencies with npm ci, run these checks from the frontend repository root:
+
+    npm run lint
+    npm test -- --watch=false
+    npm run build
+
+The lint command checks TypeScript formatting with Prettier. The unit tests use the app's configured Vitest runner and do not require a live backend.
+
 ## Project structure
 
 - `src/app/core/` — app-wide authentication, guards, interceptors, and services.

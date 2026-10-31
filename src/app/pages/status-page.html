@@ -1,0 +1,8 @@
+<main class="status-page">
+  <section class="status-card" aria-labelledby="status-title">
+    <span class="status-code">{{ code }}</span>
+    <span class="status-icon material-symbols-outlined" aria-hidden="true">{{ isForbidden ? 'lock' : 'search_off' }}</span>
+    <h1 id="status-title">{{ title }}</h1><p>{{ description }}</p>
+    <a class="primary-link" routerLink="/workspace">Back to workspace</a>
+  </section>
+</main>

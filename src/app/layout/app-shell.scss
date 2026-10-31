@@ -1,0 +1,45 @@
+:host { display: block; min-height: 100vh; color: #17334f; }
+.app-layout { min-height: 100vh; background: #f6f9fc; }
+.sidebar { position: fixed; z-index: 20; inset: 0 auto 0 0; display: flex; width: 15rem; flex-direction: column; padding: 1.25rem 0.95rem 1rem; background: #fff; border-right: 1px solid #e6edf4; }
+.brand { display: flex; height: 3rem; align-items: center; padding: 0 0.5rem; }
+.brand img { width: 9.2rem; max-height: 2.8rem; object-fit: contain; object-position: left center; }
+.workspace-label { margin: 1.8rem 0.65rem 0.75rem; color: #9aaab7; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.primary-navigation { display: grid; gap: 0.2rem; }
+.primary-navigation a { display: flex; min-height: 2.6rem; align-items: center; gap: 0.75rem; padding: 0.55rem 0.7rem; color: #6d8192; border-radius: 0.5rem; font-size: 0.84rem; font-weight: 600; text-decoration: none; }
+.primary-navigation a:hover, .primary-navigation a.active { color: #137fac; background: #eaf5fc; }
+.primary-navigation .material-symbols-outlined { font-size: 1.25rem; }
+.sidebar-footer { display: grid; gap: 0.5rem; margin-top: auto; padding: 1rem 0.35rem 0; border-top: 1px solid #edf2f6; }
+.sidebar-footer label { color: #6d8192; font-size: 0.75rem; font-weight: 700; }
+.sidebar-footer select { min-height: 2.5rem; }
+.demo-note { color: #94a5b1; font-size: 0.68rem; line-height: 1.4; }
+.main-shell { min-width: 0; min-height: 100vh; margin-left: 15rem; }
+.topbar { position: sticky; z-index: 10; top: 0; display: flex; min-height: 4.625rem; align-items: center; justify-content: space-between; gap: 1.2rem; padding: 0 2.4rem; background: #fff; border-bottom: 1px solid #e8eff5; }
+.breadcrumb { display: flex; align-items: center; gap: 0.6rem; color: #889aa8; font-size: 0.82rem; text-transform: capitalize; }
+.breadcrumb strong { color: #5c7486; font-weight: 600; }
+.topbar-actions { display: flex; align-items: center; gap: 1.1rem; }
+.role-chip { padding: 0.4rem 0.7rem; color: #287aa6; background: #eaf5fc; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+.notification-icon { color: #5e7a8c; font-size: 1.3rem; }
+.user-summary { display: flex; align-items: center; gap: 0.55rem; }
+.user-summary strong, .user-summary small { display: block; }
+.user-summary strong { color: #26465e; font-size: 0.75rem; }
+.user-summary small { margin-top: 0.15rem; color: #91a4b0; font-size: 0.65rem; }
+.avatar { display: grid; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; place-items: center; color: #287aa6; background: #dfeff8; border-radius: 50%; font-size: 0.75rem; font-weight: 750; }
+.menu-button, .mobile-brand, .sidebar-scrim { display: none; }
+.content { width: min(100%, 89.375rem); margin: 0 auto; padding: 2.25rem 2.4rem 4rem; }
+@media (max-width: 700px) {
+  .sidebar { width: min(18rem, calc(100vw - 3rem)); box-shadow: 0 1rem 3rem rgb(18 44 66 / 18%); transform: translateX(-110%); transition: transform 180ms ease; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-scrim { position: fixed; z-index: 15; inset: 0; display: block; width: 100%; min-height: 100vh; padding: 0; background: rgb(15 35 52 / 35%); border: 0; }
+  .main-shell { margin-left: 0; }
+  .topbar { display: grid; min-height: 6rem; grid-template-columns: 2.5rem minmax(0, 1fr) auto; grid-template-rows: 3.7rem 2rem; gap: 0 0.5rem; padding: 0 1rem; }
+  .menu-button { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; color: #5e7a8c; background: transparent; border: 0; }
+  .menu-button .material-symbols-outlined { font-size: 1.5rem; }
+  .mobile-brand { display: flex; width: 8rem; max-width: 100%; align-items: center; }
+  .mobile-brand img { width: 100%; max-height: 2.75rem; object-fit: contain; object-position: left center; }
+  .breadcrumb { grid-column: 1 / -1; grid-row: 2; align-self: start; overflow: hidden; padding-bottom: 0.5rem; font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; }
+  .topbar-actions { gap: 0.45rem; }
+  .topbar-actions .notification-icon, .topbar-actions .user-summary > span:not(.avatar), .topbar-actions .user-summary small { display: none; }
+  .role-chip { padding: 0.35rem 0.55rem; font-size: 0.65rem; }
+  .content { padding: 1.5rem 1rem 3rem; }
+}
+@media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
