@@ -2,9 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { ActiveRoleService } from '../core/active-role.service';
-import { FormField } from '../shared/form-field';
-import { UiState, UiStateKind } from '../shared/ui-state';
+import { ActiveRoleService } from '../../../../core/context/active-role.service';
+import { FormField } from '../../../../shared/components/form-field/form-field';
+import { UiState, UiStateKind } from '../../../../shared/components/ui-state/ui-state';
 @Component({
   selector: 'app-workspace-page',
   standalone: true,

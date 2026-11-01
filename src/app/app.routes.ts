@@ -1,8 +1,8 @@
 import { Route, Routes } from '@angular/router';
-import { roleGuard } from './core/role.guard';
-import { AppShell } from './layout/app-shell';
-import { StatusPage } from './pages/status-page';
-import { WorkspacePage } from './pages/workspace-page';
+import { roleGuard } from './core/guards/role.guard';
+import { AppShell } from './layout/workspace-shell/app-shell';
+import { StatusPage } from './pages/errors/status-page/status-page';
+import { WorkspacePage } from './features/workspace/pages/workspace-page/workspace-page';
 
 const rolePage = (
   path: string,

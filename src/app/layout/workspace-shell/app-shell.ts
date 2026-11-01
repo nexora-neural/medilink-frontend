@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { ActiveRole, ActiveRoleService } from '../core/active-role.service';
+import { ActiveRole, ActiveRoleService } from '../../core/context/active-role.service';
 
 interface NavigationItem {
   label: string;
