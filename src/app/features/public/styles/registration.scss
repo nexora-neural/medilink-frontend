@@ -1,0 +1,109 @@
+/* Registration flow */
+.register-progress {
+  margin: 25px 0;
+}
+.progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #7895a6;
+  font-weight: 700;
+}
+.progress-label strong {
+  font-size: 12px;
+  letter-spacing: 0;
+  color: #24465b;
+}
+.progress-track {
+  height: 5px;
+  border-radius: 5px;
+  background: #e2edf3;
+  margin-top: 11px;
+  overflow: hidden;
+}
+.progress-track span {
+  display: block;
+  height: 100%;
+  background: #168dc5;
+  border-radius: 5px;
+  transition: width 0.2s;
+}
+.registration-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.registration-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.registration-actions .subtle-button span {
+  font-size: 17px;
+}
+.registration-actions .btn {
+  flex: 1;
+}
+.registration-review {
+  border: 1px solid #e1edf3;
+  border-radius: 11px;
+  padding: 20px;
+  background: #fbfdfe;
+}
+.registration-review h3 {
+  font-size: 15px;
+  color: #173d56;
+  margin: 0 0 14px;
+}
+.registration-review > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 0;
+  border-top: 1px solid #edf3f6;
+  font-size: 12px;
+}
+.registration-review > div span {
+  color: #8197a3;
+}
+.registration-review > div strong {
+  color: #294b5e;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.registration-hint {
+  font-size: 12px;
+  color: #718c9b;
+  line-height: 1.6;
+  margin: 0;
+}
+.register-box .notice {
+  margin-bottom: 18px;
+}
+@media (max-width: 600px) {
+  .registration-review > div {
+    gap: 10px;
+  }
+  .registration-actions .btn {
+    gap: 5px;
+  }
+}
+
+.registration-actions .subtle-button {
+  padding: 14px 18px;
+  border: 1px solid #dceaf1;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b6e92;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.registration-actions .subtle-button:hover {
+  background: #eef7fc;
+  border-color: #91cde8;
+}
