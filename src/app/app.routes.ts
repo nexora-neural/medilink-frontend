@@ -3,6 +3,10 @@ import { roleGuard } from './core/guards/role.guard';
 import { AppShell } from './layout/workspace-shell/app-shell';
 import { StatusPage } from './pages/errors/status-page/status-page';
 import { WorkspacePage } from './features/workspace/pages/workspace-page/workspace-page';
+import { PublicAuth } from './features/public/auth/auth';
+import { PublicShell } from './features/public/public-shell';
+import { PublicHome } from './features/public/home/home';
+import { PublicInformational } from './features/public/informational/informational';
 
 const rolePage = (
   path: string,
@@ -86,7 +90,31 @@ const rolePages: Route[] = [
 ];
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'workspace' },
+  {
+    path: '',
+    component: PublicShell,
+    children: [
+      { path: '', pathMatch: 'full', component: PublicHome },
+      { path: 'header-preview', component: PublicHome },
+      ...[
+        'login',
+        'roles',
+        'professional-registration',
+        'register',
+        'verify',
+        'forgot',
+        'reset',
+        'help',
+        'session-expired',
+      ].map((page) => ({ path: page, component: PublicAuth, data: { page } })),
+      ...['about', 'contact', 'privacy', 'terms'].map((page) => ({
+        path: page,
+        component: PublicInformational,
+        data: { page },
+      })),
+    ],
+  },
+  { path: 'account-suspended', component: StatusPage, data: { code: 'suspended' } },
   { path: 'access-denied', component: StatusPage, data: { code: '403' } },
   { path: 'not-found', component: StatusPage, data: { code: '404' } },
   {
