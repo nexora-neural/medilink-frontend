@@ -1,14 +1,31 @@
-<ng-container *ngIf="page === 'privacy'"
-  ><h2>Privacy information</h2>
+<ng-container *ngIf="page === 'privacy'">
+  <h2>Privacy information</h2>
   <p>
-    This space is reserved for the approved policy explaining what information MediLink collects,
-    how it is used, who may receive it, and how users can exercise their choices.
+    MediLink is a project demonstration. This draft describes the intended handling of information
+    and will be reviewed before a live service is launched.
   </p>
-  <h3>Information and access</h3>
+  <h3>Information in MediLink</h3>
   <p>
-    The final policy should describe account information, health records, consent and access
-    management, and support contact details.
+    The project is designed to hold account and contact details, patient profile information, and
+    health records such as medications, prescriptions, reports, measurements and vaccinations.
+    Professional profiles and verification details may also be recorded.
   </p>
-  <h3>Questions about privacy</h3>
-  <p>Privacy contact details will be included in the approved policy.</p></ng-container
->
+  <h3>Use and sharing</h3>
+  <p>
+    Information is intended to support account access and healthcare workflows. Access to patient
+    records is designed to depend on the user’s role and relevant permissions, including patient
+    consent where required. Patients can review and manage grants to doctors. The project design
+    also records relevant actions in an audit history.
+  </p>
+  <h3>Retention and requests</h3>
+  <p>
+    The current project design retains data and audit history rather than physically deleting them.
+    The process for handling access, correction and deletion requests will be confirmed before
+    launch.
+  </p>
+  <h3>Contact</h3>
+  <p>
+    For privacy questions, email
+    <a href="mailto:nexora.io.dev@gmail.com">nexora.io.dev@gmail.com</a>.
+  </p>
+</ng-container>

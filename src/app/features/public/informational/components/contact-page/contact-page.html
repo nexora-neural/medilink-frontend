@@ -2,70 +2,17 @@
   <div class="contact-intro">
     <span class="material-symbols-outlined">support_agent</span>
     <h2>How can we help?</h2>
-    <p>Share your question and the right team can respond when support is available.</p>
-    <div class="mock-disclaimer">
-      <strong>Contact form unavailable</strong><br />Messages cannot currently be sent. Please do
-      not enter personal or medical information.
-    </div>
+    <p>Contact MediLink support for help with your account or questions about the project.</p>
     <a routerLink="/help"
-      >Browse help & support <span class="material-symbols-outlined">arrow_forward</span></a
+      >Browse help &amp; support <span class="material-symbols-outlined">arrow_forward</span></a
     >
   </div>
   <div class="contact-card">
-    <div *ngIf="contactSuccess" class="contact-success" role="status">
-      <span class="material-symbols-outlined">check_circle</span>
-      <h2>Message not sent</h2>
-      <p>The contact service is currently unavailable. Your message was not sent.</p>
-      <button class="subtle-button" (click)="contactSuccess = false; contactSubmitted = false">
-        Return to contact form
-      </button>
-    </div>
-    <form
-      *ngIf="!contactSuccess"
-      #contactForm="ngForm"
-      (ngSubmit)="submitContact(contactForm)"
-      novalidate
+    <h2>Contact support</h2>
+    <p>Support is available 24 hours.</p>
+    <p>Email: <a href="mailto:nexora.io.dev@gmail.com">nexora.io.dev@gmail.com</a></p>
+    <a class="btn hero-primary" href="mailto:nexora.io.dev@gmail.com"
+      >Email support <span class="material-symbols-outlined">arrow_outward</span></a
     >
-      <h2>Send a message</h2>
-      <p>Fields marked * are required.</p>
-      <label
-        >Full name *<input
-          name="contactName"
-          [(ngModel)]="contactName"
-          required
-          placeholder="Your name"
-        /><small *ngIf="contactSubmitted && !contactName">Enter your name.</small></label
-      ><label
-        >Email address *<input
-          name="contactEmail"
-          type="email"
-          [(ngModel)]="contactEmail"
-          required
-          email
-          placeholder="you@example.com"
-        /><small *ngIf="contactSubmitted && contactForm.controls['contactEmail']?.invalid"
-          >Enter a valid email address.</small
-        ></label
-      ><label
-        >Subject *<input
-          name="contactSubject"
-          [(ngModel)]="contactSubject"
-          required
-          placeholder="What can we help with?"
-        /><small *ngIf="contactSubmitted && !contactSubject">Enter a subject.</small></label
-      ><label
-        >Message *<textarea
-          name="contactMessage"
-          [(ngModel)]="contactMessage"
-          required
-          rows="5"
-          placeholder="Write your message"
-        ></textarea
-        ><small *ngIf="contactSubmitted && !contactMessage">Enter a message.</small></label
-      >
-      <button class="btn hero-primary" type="submit">
-        Send message <span class="material-symbols-outlined">arrow_outward</span>
-      </button>
-    </form>
   </div>
 </section>
