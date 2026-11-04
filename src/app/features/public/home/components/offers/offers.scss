@@ -1,1 +1,89 @@
-// Landing styles are loaded by the public feature stylesheet.
+
+.offer-section {
+  padding: 0 0 105px;
+}
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 40px;
+}
+.offer-grid article {
+  border: 1px solid #e6eef2;
+  border-radius: 15px;
+  padding: 10px 10px 19px;
+}
+.offer-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #d9eef9;
+}
+.offer-image img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: 65%;
+}
+.offer-image.alternate img {
+  object-position: 30%;
+}
+.offer-image.third img {
+  object-position: 85%;
+}
+.offer-image > .material-symbols-outlined {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  color: #117ab0;
+  background: white;
+  padding: 8px;
+  border-radius: 50%;
+  font-size: 21px;
+}
+.offer-grid h3 {
+  font-size: 17px;
+  color: #163f5d;
+  margin: 18px 7px 8px;
+}
+.offer-grid p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #78909e;
+  margin: 0 7px;
+}
+@media (max-width: 850px) {
+  .offer-image {
+    height: 170px;
+  }
+}
+@media (max-width: 600px) {
+  .offer-section {
+    padding-bottom: 70px;
+  }
+  .offer-grid {
+    grid-template-columns: 1fr;
+  }
+  .offer-image {
+    height: 215px;
+  }
+}
+
+@media (min-width: 851px) {
+  .offer-section {
+    padding: 0 3% 120px;
+  }
+  .offer-image {
+    height: clamp(220px, 19vw, 290px);
+  }
+}
+.offer-grid article {
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.offer-grid article:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px #173d5112;
+}

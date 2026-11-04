@@ -1,13 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { ActiveRole, ActiveRoleService } from '../../core/context/active-role.service';
+import { WorkspaceHeader } from './components/workspace-header/workspace-header';
+import { WorkspaceSidebar } from './components/workspace-sidebar/workspace-sidebar';
 
-interface NavigationItem {
-  label: string;
-  icon: string;
-  path: string;
-}
+import { NavigationItem } from './models/navigation-item';
 
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Patient: [
@@ -38,7 +35,7 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [WorkspaceHeader, WorkspaceSidebar, RouterOutlet],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
 })
@@ -50,10 +47,14 @@ export class AppShell {
   readonly navigation = computed(() => navigationByRole[this.activeRole()]);
   menuOpen = false;
 
-  selectRole(event: Event): void {
-    this.roleContext.setActiveRole((event.target as HTMLSelectElement).value as ActiveRole);
+  selectRole(role: ActiveRole): void {
+    this.roleContext.setActiveRole(role);
     this.menuOpen = false;
     void this.router.navigate(['/workspace']);
+  }
+
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
   }
 
   closeMenu(): void {

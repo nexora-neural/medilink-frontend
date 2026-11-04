@@ -1,18 +1,20 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PublicPageState } from '../../../public-page-state';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-professional-roles',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink],
   templateUrl: './professional-roles.html',
   styleUrl: './professional-roles.scss',
 })
-export class ProfessionalRolesComponent extends PublicPageState {
-  constructor(route: ActivatedRoute, router: Router) {
-    super(route, router);
+export class ProfessionalRolesComponent {
+  @Input() page = '';
+  @Input() roles: { name: string; icon: string; description: string }[] = [];
+
+  get professionalRoles() {
+    return this.roles.filter((role) => role.name !== 'Patient');
   }
 }

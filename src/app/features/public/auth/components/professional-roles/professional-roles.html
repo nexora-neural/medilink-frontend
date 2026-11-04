@@ -1,19 +1,19 @@
-<div class="form-box" *ngIf="page === 'roles' || page === 'professional-registration'">
-  <span class="eyebrow">LET’S GET STARTED</span>
-  <h2>Join as a healthcare professional</h2>
-  <p>Select your professional role to start your registration.</p>
-  <div class="role-list">
-    <a
-      *ngFor="let r of professionalRoles"
-      [routerLink]="['/register']"
-      [queryParams]="{ role: r.name }"
-      class="role"
-      ><span class="role-icon material-symbols-outlined">{{ r.icon }}</span
-      ><span
-        ><strong>{{ r.name }}</strong
-        ><small>{{ r.description }}</small></span
-      ><span class="material-symbols-outlined arrow">arrow_forward</span></a
-    >
+@if (page === 'roles' || page === 'professional-registration') {
+  <div class="form-box">
+    <span class="eyebrow">LET’S GET STARTED</span>
+    <h2>Join as a healthcare professional</h2>
+    <p>Select your professional role to start your registration.</p>
+    <div class="role-list">
+      @for (r of professionalRoles; track r) {
+        <a [routerLink]="['/register']" [queryParams]="{ role: r.name }" class="role"
+          ><span class="role-icon material-symbols-outlined">{{ r.icon }}</span
+          ><span
+            ><strong>{{ r.name }}</strong
+            ><small>{{ r.description }}</small></span
+          ><span class="material-symbols-outlined arrow">arrow_forward</span></a
+        >
+      }
+    </div>
+    <p class="under">Already have an account? <a routerLink="/login">Log in</a></p>
   </div>
-  <p class="under">Already have an account? <a routerLink="/login">Log in</a></p>
-</div>
+}

@@ -1,1 +1,62 @@
-// Landing styles are loaded by the public feature stylesheet.
+
+.story-banner {
+  height: 340px;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #122d50;
+}
+.story-banner > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.story-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #102b49e8, #102b4970 55%, transparent);
+}
+.story-copy {
+  position: absolute;
+  left: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+}
+.story-copy .eyebrow {
+  color: #a5e1fc;
+}
+.story-copy h2 {
+  font-size: clamp(30px, 3vw, 43px);
+  letter-spacing: -1.2px;
+  line-height: 1.15;
+  margin: 14px 0;
+}
+.story-copy p {
+  font-size: 13px;
+  color: #d7e9f3;
+}
+.story-copy .btn {
+  margin-top: 10px;
+}
+@media (max-width: 850px) {
+  .story-banner {
+    height: 300px;
+  }
+}
+@media (max-width: 600px) {
+  .story-banner {
+    height: 300px;
+  }
+  .story-banner > img {
+    object-position: 65%;
+  }
+  .story-overlay {
+    background: linear-gradient(90deg, #102b49ed, #102b4990 70%, #102b4940);
+  }
+  .story-copy {
+    left: 24px;
+    right: 24px;
+  }
+}

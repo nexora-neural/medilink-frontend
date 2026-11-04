@@ -1,0 +1,25 @@
+<header class="topbar">
+  <button
+    class="menu-button"
+    type="button"
+    aria-label="Open navigation"
+    [attr.aria-expanded]="menuOpen"
+    (click)="menuToggle.emit()"
+  >
+    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+  </button>
+  <a class="mobile-brand" routerLink="/workspace" aria-label="MediLink workspace">
+    <img src="/medilink-logo-horizontal.svg" alt="" />
+  </a>
+  <div class="breadcrumb">
+    <span>My care</span><span aria-hidden="true">/</span><strong>Workspace</strong>
+  </div>
+  <div class="topbar-actions">
+    <span class="role-chip">{{ activeRole }}</span>
+    <span class="material-symbols-outlined notification-icon" aria-hidden="true">notifications</span>
+    <div class="user-summary">
+      <span class="avatar" aria-hidden="true">{{ activeRole.slice(0, 1) }}</span>
+      <span><strong>{{ activeRole }}</strong><small>MediLink account</small></span>
+    </div>
+  </div>
+</header>

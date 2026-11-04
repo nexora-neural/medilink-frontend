@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
@@ -8,7 +8,7 @@ import { UiState, UiStateKind } from '../../../../shared/components/ui-state/ui-
 @Component({
   selector: 'app-workspace-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormField, UiState],
+  imports: [ReactiveFormsModule, FormField, UiState],
   templateUrl: './workspace-page.html',
   styleUrl: './workspace-page.scss',
 })
@@ -25,8 +25,9 @@ export class WorkspacePage {
     category: ['General', Validators.required],
     note: [''],
   });
-  constructor(route: ActivatedRoute) {
-    route.data.subscribe((data) => {
+  private readonly route = inject(ActivatedRoute);
+  constructor() {
+    this.route.data.pipe(takeUntilDestroyed()).subscribe((data) => {
       this.title = data['title'] ?? 'Workspace overview';
       this.description =
         data['description'] ??

@@ -1,5 +1,8 @@
-@use './styles/shared';
-@use './styles/landing';
-@use './styles/informational';
-
-@use './styles/registration';
+@use './styles/shared/base';
+@use './styles/shared/visual-theme';
+@use './home/styles/landing-base';
+@use './home/styles/landing-editorial';
+@use './home/styles/landing-introduction-faq';
+@use './home/styles/landing-responsive';
+@use './informational/styles/about';
+@use './informational/styles/contact-and-legal';

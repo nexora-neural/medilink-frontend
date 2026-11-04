@@ -1,0 +1,48 @@
+/* Viewport-led landing composition */
+@media (min-width: 851px) {
+  .header {
+    height: 88px;
+    width: min(1460px, calc(100% - 56px));
+  }
+  .landing .wrap {
+    width: min(1460px, calc(100% - 56px));
+  }
+}
+.hero-primary {
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.hero-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px #092a4a30;
+}
+.hero-secondary {
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.hero-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px #092a4a24;
+}
+.center-heading h2,
+.intro-title h2,
+.journey h2 {
+  letter-spacing: -0.035em;
+}
+.site-footer {
+  background: linear-gradient(110deg, #102d4b, #17577c 72%, #45b9df);
+}
+@media (max-width: 850px) {
+  .header {
+    height: 76px;
+  }
+}
+@media (max-width: 600px) {
+  .header {
+    height: 72px;
+  }
+}
+
+/* Use the available tablet width while keeping phone and desktop layouts unchanged. */

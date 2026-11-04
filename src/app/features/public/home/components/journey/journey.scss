@@ -1,1 +1,91 @@
-// Landing styles are loaded by the public feature stylesheet.
+
+.journey {
+  background: #edf7fd;
+  border-radius: 20px;
+  padding: 50px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 55px;
+  align-items: center;
+}
+.journey h2 {
+  max-width: 520px;
+  margin: 16px 0;
+}
+.journey-step {
+  background: #fff;
+  border-radius: 7px;
+  padding: 12px 15px;
+  margin: 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.journey-step:first-of-type {
+  background: #d4effc;
+}
+.journey-step > span {
+  color: #1387bc;
+  font-size: 12px;
+  font-weight: 700;
+}
+.journey-step strong {
+  font-size: 13px;
+  color: #193d58;
+}
+.journey-step small {
+  font-size: 11px;
+  color: #79919e;
+  margin-top: 4px;
+}
+.journey-copy > .btn {
+  margin-top: 15px;
+}
+.journey-image {
+  height: 390px;
+  position: relative;
+}
+.journey-image img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+}
+.journey-image > div {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  background: white;
+  border-radius: 10px;
+  padding: 14px 17px;
+  color: #214c68;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.journey-image > div span {
+  color: #138cca;
+}
+@media (max-width: 850px) {
+  .journey {
+    gap: 25px;
+    padding: 30px;
+  }
+}
+@media (max-width: 600px) {
+  .journey {
+    grid-template-columns: 1fr;
+    padding: 25px;
+  }
+  .journey-image {
+    height: 240px;
+  }
+}
+
+@media (min-width: 851px) {
+  .journey {
+    padding: 60px;
+    margin-inline: auto;
+  }
+}
