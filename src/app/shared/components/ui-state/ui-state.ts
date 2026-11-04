@@ -1,10 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 export type UiStateKind = 'loading' | 'error' | 'empty';
 @Component({
   selector: 'app-ui-state',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './ui-state.html',
   styleUrl: './ui-state.scss',
 })

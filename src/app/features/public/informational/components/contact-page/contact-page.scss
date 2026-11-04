@@ -1,1 +1,51 @@
-// Styles are supplied by the public feature stylesheet.
+.contact-layout {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 55px;
+}.contact-intro {
+  background: #eaf6fc;
+  border-radius: 16px;
+  padding: 40px;
+}.contact-intro > span {
+  color: #188fc4;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+}.contact-intro h2 {
+  margin-bottom: 15px;
+}
+.contact-card {
+  border: 1px solid #e4edf2;
+  border-radius: 16px;
+  padding: 35px;
+}
+.contact-card h2 {
+  font-size: 23px;
+  color: #173c58;
+  margin: 0 0 8px;
+}
+.contact-card form {
+  display: grid;
+  gap: 16px;
+}
+.contact-card label {
+  display: grid;
+  gap: 7px;
+  color: #33556a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.contact-card textarea {
+  resize: vertical;
+}
+.contact-card small {
+  color: #b43630;
+}
+.contact-card button {
+  justify-self: start;
+}
+
+@media (max-width: 750px) {
+  .contact-layout { grid-template-columns: 1fr; gap: 25px; }
+  .contact-intro, .contact-card { padding: 25px; }
+}

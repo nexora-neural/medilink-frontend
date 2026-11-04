@@ -1,0 +1,130 @@
+.mock-disclaimer {
+  background: #fff;
+  border-radius: 10px;
+  padding: 17px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #648195;
+  margin: 25px 0;
+}
+.mock-disclaimer strong {
+  color: #244f69;
+}
+.contact-intro > a,
+.public-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #147eae;
+}
+.contact-intro > a span,
+.public-text-link span {
+  font-size: 17px;
+}
+.contact-card form > p,
+.contact-success > p {
+  font-size: 12px;
+  color: #8196a4;
+}
+.contact-card input,
+.contact-card textarea {
+  width: 100%;
+  border: 1px solid #dce8ee;
+  border-radius: 8px;
+  padding: 13px;
+  font: inherit;
+  color: #25485c;
+  background: white;
+}
+.contact-success {
+  text-align: center;
+  padding: 50px 15px;
+}
+.contact-success > span {
+  font-size: 40px;
+  color: #158fba;
+}
+.contact-success h2 {
+  margin-top: 15px;
+}
+.legal-layout {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 40px;
+  max-width: 1100px;
+  margin: auto;
+}
+.legal-layout aside {
+  align-self: start;
+  background: #eef7fc;
+  border-radius: 13px;
+  padding: 24px;
+  color: #226080;
+}
+.legal-layout aside span,
+.legal-layout aside strong {
+  display: block;
+}
+.legal-layout aside span {
+  margin-bottom: 14px;
+  color: #168bc0;
+}
+.legal-layout aside strong {
+  font-size: 14px;
+}
+.legal-layout aside p {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+.legal-layout article {
+  border: 1px solid #e5eef2;
+  border-radius: 15px;
+  padding: 35px;
+}
+.legal-layout h2 {
+  color: #193e58;
+  font-size: 25px;
+}
+.legal-layout h3 {
+  color: #294f66;
+  font-size: 16px;
+  margin-top: 30px;
+}
+.legal-notice {
+  background: #eaf6fc;
+  display: flex;
+  gap: 12px;
+  border-radius: 9px;
+  padding: 15px;
+  color: #1887ba;
+}
+.legal-notice span {
+  font-size: 20px;
+}
+.legal-notice p {
+  margin: 0;
+  font-size: 12px;
+}
+.public-text-link {
+  margin-top: 20px;
+}
+@media (max-width: 750px) {
+  .about-layout,
+  .contact-layout,
+  .legal-layout {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .contact-intro,
+  .contact-card {
+    padding: 25px;
+  }
+  .legal-layout article {
+    padding: 24px;
+  }
+  .legal-layout aside {
+    display: none;
+  }
+}

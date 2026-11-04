@@ -1,18 +1,20 @@
-<section *ngIf="page === 'contact'" class="contact-layout">
-  <div class="contact-intro">
-    <span class="material-symbols-outlined">support_agent</span>
-    <h2>How can we help?</h2>
-    <p>Contact MediLink support for help with your account or questions about the project.</p>
-    <a routerLink="/help"
-      >Browse help &amp; support <span class="material-symbols-outlined">arrow_forward</span></a
-    >
-  </div>
-  <div class="contact-card">
-    <h2>Contact support</h2>
-    <p>Support is available 24 hours.</p>
-    <p>Email: <a href="mailto:nexora.io.dev@gmail.com">nexora.io.dev@gmail.com</a></p>
-    <a class="btn hero-primary" href="mailto:nexora.io.dev@gmail.com"
-      >Email support <span class="material-symbols-outlined">arrow_outward</span></a
-    >
-  </div>
-</section>
+@if (page === 'contact') {
+  <section class="contact-layout">
+    <div class="contact-intro">
+      <span class="material-symbols-outlined">support_agent</span>
+      <h2>How can we help?</h2>
+      <p>Contact MediLink support for help with your account or questions about the project.</p>
+      <a routerLink="/help"
+        >Browse help &amp; support <span class="material-symbols-outlined">arrow_forward</span></a
+      >
+    </div>
+    <div class="contact-card">
+      <h2>Contact support</h2>
+      <p>Support is available 24 hours.</p>
+      <p>Email: <a href="mailto:nexora.io.dev@gmail.com">nexora.io.dev@gmail.com</a></p>
+      <a class="btn hero-primary" href="mailto:nexora.io.dev@gmail.com"
+        >Email support <span class="material-symbols-outlined">arrow_outward</span></a
+      >
+    </div>
+  </section>
+}

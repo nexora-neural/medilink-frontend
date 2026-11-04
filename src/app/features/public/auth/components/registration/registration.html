@@ -1,179 +1,200 @@
-<div class="form-box register-box" *ngIf="page === 'register'">
-  <span class="eyebrow">{{
-    role === 'Patient' ? 'PATIENT REGISTRATION' : 'PROFESSIONAL REGISTRATION'
-  }}</span>
-  <h2>Create your {{ role === 'Patient' ? 'patient' : role }} account</h2>
-  <p>Complete your details step by step.</p>
-  <div
-    class="register-progress"
-    [attr.aria-label]="'Step ' + registerStep + ' of ' + registerSteps"
-  >
-    <div class="progress-label">
-      <span>STEP {{ registerStep }} OF {{ registerSteps }}</span
-      ><strong>{{
-        registerStep === 1
-          ? 'Personal details'
-          : role !== 'Patient' && registerStep === 2
-            ? 'Professional details'
-            : registerStep === registerSteps - 1
-              ? 'Account security'
-              : 'Review your details'
-      }}</strong>
+@if (page === 'register') {
+  <div class="form-box register-box">
+    <span class="eyebrow">{{
+      role === 'Patient' ? 'PATIENT REGISTRATION' : 'PROFESSIONAL REGISTRATION'
+    }}</span>
+    <h2>Create your {{ role === 'Patient' ? 'patient' : role }} account</h2>
+    <p>Complete your details step by step.</p>
+    <div
+      class="register-progress"
+      [attr.aria-label]="'Step ' + registerStep + ' of ' + registerSteps"
+    >
+      <div class="progress-label">
+        <span>STEP {{ registerStep }} OF {{ registerSteps }}</span
+        ><strong>{{
+          registerStep === 1
+            ? 'Personal details'
+            : role !== 'Patient' && registerStep === 2
+              ? 'Professional details'
+              : registerStep === registerSteps - 1
+                ? 'Account security'
+                : 'Review your details'
+        }}</strong>
+      </div>
+      <div class="progress-track">
+        <span [style.width.%]="(registerStep / registerSteps) * 100"></span>
+      </div>
     </div>
-    <div class="progress-track">
-      <span [style.width.%]="(registerStep / registerSteps) * 100"></span>
-    </div>
-  </div>
-  <div class="notice" *ngIf="role !== 'Patient'">
-    <span class="material-symbols-outlined">info</span>Professional accounts require verification
-    before access.
-  </div>
-  <div class="success" *ngIf="message" role="status">
-    <span class="material-symbols-outlined">info</span><span>{{ message }}</span>
-  </div>
-  <form #registerForm="ngForm" (ngSubmit)="registrationNext(registerForm)" novalidate>
-    <ng-container *ngIf="registerStep === 1"
-      ><label
-        >Full name <span>*</span
-        ><input
-          name="fullName"
-          [(ngModel)]="fullName"
-          required
-          placeholder="Enter your full name"
-          autocomplete="name"
-        /><small class="error" *ngIf="registerSubmitted && !fullName"
-          >Please enter your name.</small
-        ></label
-      ><label
-        >Email address <span>*</span
-        ><input
-          type="email"
-          name="email"
-          [(ngModel)]="email"
-          required
-          email
-          placeholder="you@example.com"
-          autocomplete="email"
-        /><small class="error" *ngIf="registerSubmitted && registerForm.controls['email']?.invalid"
-          >Enter a valid email address.</small
-        ></label
-      ><label
-        >Mobile number <span>*</span
-        ><input
-          name="phone"
-          [(ngModel)]="phone"
-          required
-          placeholder="Enter your mobile number"
-          autocomplete="tel"
-        /><small class="error" *ngIf="registerSubmitted && !phone"
-          >Enter your mobile number.</small
-        ></label
-      >
-    </ng-container>
-    <ng-container *ngIf="role !== 'Patient' && registerStep === 2"
-      ><label
-        >Professional registration number <span>*</span
-        ><input
-          name="professionalId"
-          [(ngModel)]="professionalId"
-          required
-          [placeholder]="role === 'Doctor' ? 'SLMC registration number' : 'Registration number'"
-        /><small class="error" *ngIf="registerSubmitted && !professionalId"
-          >Enter your registration number.</small
-        ></label
-      ><label
-        >Organisation / workplace <span>*</span
-        ><input
-          name="organization"
-          [(ngModel)]="organization"
-          required
-          placeholder="Clinic, pharmacy or laboratory"
-        /><small class="error" *ngIf="registerSubmitted && !organization"
-          >Enter your workplace.</small
-        ></label
-      >
+    @if (role !== 'Patient') {
       <div class="notice">
-        <span class="material-symbols-outlined">description</span>Supporting documents are required
-        for professional verification.
+        <span class="material-symbols-outlined">info</span>Professional accounts require
+        verification before access.
       </div>
-    </ng-container>
-    <ng-container *ngIf="registerStep === registerSteps - 1"
-      ><label
-        >Password <span>*</span>
-        <div class="password">
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            name="password"
-            [(ngModel)]="password"
+    }
+    @if (message) {
+      <div class="success" role="status">
+        <span class="material-symbols-outlined">info</span><span>{{ message }}</span>
+      </div>
+    }
+    <form [formGroup]="registrationForm" (ngSubmit)="registrationNext()" novalidate>
+      @if (registerStep === 1) {
+        <label
+          >Full name <span>*</span
+          ><input
+            name="fullName"
+            formControlName="fullName"
             required
-            minlength="8"
-            autocomplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder="Enter your full name"
+            autocomplete="name"
           />
-          <button
-            type="button"
-            (click)="showPassword = !showPassword"
-            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-          >
-            <span class="material-symbols-outlined">{{
-              showPassword ? 'visibility_off' : 'visibility'
-            }}</span>
-          </button>
+          @if (registerSubmitted && registrationForm.controls.fullName.invalid) {
+            <small class="error">Please enter your name.</small>
+          }</label
+        ><label
+          >Email address <span>*</span
+          ><input
+            type="email"
+            name="email"
+            formControlName="email"
+            required
+            email
+            placeholder="you@example.com"
+            autocomplete="email"
+          />
+          @if (registerSubmitted && registrationForm.controls.email.invalid) {
+            <small class="error">Enter a valid email address.</small>
+          }</label
+        ><label
+          >Mobile number <span>*</span
+          ><input
+            name="phone"
+            formControlName="phone"
+            required
+            placeholder="Enter your mobile number"
+            autocomplete="tel"
+          />
+          @if (registerSubmitted && registrationForm.controls.phone.invalid) {
+            <small class="error">Enter your mobile number.</small>
+          }
+        </label>
+      }
+      @if (role !== 'Patient' && registerStep === 2) {
+        <label
+          >Professional registration number <span>*</span
+          ><input
+            name="professionalId"
+            formControlName="professionalId"
+            required
+            [placeholder]="role === 'Doctor' ? 'SLMC registration number' : 'Registration number'"
+          />
+          @if (registerSubmitted && registrationForm.controls.professionalId.invalid) {
+            <small class="error">Enter your registration number.</small>
+          }</label
+        ><label
+          >Organisation / workplace <span>*</span
+          ><input
+            name="organization"
+            formControlName="organization"
+            required
+            placeholder="Clinic, pharmacy or laboratory"
+          />
+          @if (registerSubmitted && registrationForm.controls.organization.invalid) {
+            <small class="error">Enter your workplace.</small>
+          }
+        </label>
+        <div class="notice">
+          <span class="material-symbols-outlined">description</span>Supporting documents are
+          required for professional verification.
         </div>
-        <small class="error" *ngIf="registerSubmitted && registerForm.controls['password']?.invalid"
-          >Use at least 8 characters.</small
-        ></label
-      ><label
-        >Confirm password <span>*</span
-        ><input
-          type="password"
-          name="registerConfirm"
-          [(ngModel)]="registerConfirm"
-          required
-          autocomplete="new-password"
-          placeholder="Re-enter your password"
-        /><small
-          class="error"
-          *ngIf="registerSubmitted && (!registerConfirm || registerConfirm !== password)"
-          >Passwords must match.</small
-        ></label
-      ></ng-container
-    >
-    <ng-container *ngIf="registerStep === registerSteps">
-      <div class="registration-review">
-        <h3>Review your details</h3>
-        <div>
-          <span>Account type</span><strong>{{ role }}</strong>
+      }
+      @if (registerStep === registerSteps - 1) {
+        <label
+          >Password <span>*</span>
+          <div class="password">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              name="password"
+              formControlName="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="At least 8 characters"
+            />
+            <button
+              type="button"
+              (click)="showPassword = !showPassword"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+            >
+              <span class="material-symbols-outlined">{{
+                showPassword ? 'visibility_off' : 'visibility'
+              }}</span>
+            </button>
+          </div>
+          @if (registerSubmitted && registrationForm.controls.password.invalid) {
+            <small class="error">Use at least 8 characters.</small>
+          }</label
+        ><label
+          >Confirm password <span>*</span
+          ><input
+            type="password"
+            name="registerConfirm"
+            formControlName="registerConfirm"
+            required
+            autocomplete="new-password"
+            placeholder="Re-enter your password"
+          />
+          @if (
+            registerSubmitted &&
+            (registrationForm.controls.registerConfirm.invalid ||
+              registrationForm.controls.registerConfirm.value !==
+                registrationForm.controls.password.value)
+          ) {
+            <small class="error">Passwords must match.</small>
+          }
+        </label>
+      }
+      @if (registerStep === registerSteps) {
+        <div class="registration-review">
+          <h3>Review your details</h3>
+          <div>
+            <span>Account type</span><strong>{{ role }}</strong>
+          </div>
+          <div>
+            <span>Full name</span><strong>{{ registrationForm.controls.fullName.value }}</strong>
+          </div>
+          <div>
+            <span>Email</span><strong>{{ registrationForm.controls.email.value }}</strong>
+          </div>
+          <div>
+            <span>Mobile</span><strong>{{ registrationForm.controls.phone.value }}</strong>
+          </div>
+          @if (role !== 'Patient') {
+            <div>
+              <span>Registration number</span
+              ><strong>{{ registrationForm.controls.professionalId.value }}</strong>
+            </div>
+          }
+          @if (role !== 'Patient') {
+            <div>
+              <span>Workplace</span
+              ><strong>{{ registrationForm.controls.organization.value }}</strong>
+            </div>
+          }
         </div>
-        <div>
-          <span>Full name</span><strong>{{ fullName }}</strong>
-        </div>
-        <div>
-          <span>Email</span><strong>{{ email }}</strong>
-        </div>
-        <div>
-          <span>Mobile</span><strong>{{ phone }}</strong>
-        </div>
-        <div *ngIf="role !== 'Patient'">
-          <span>Registration number</span><strong>{{ professionalId }}</strong>
-        </div>
-        <div *ngIf="role !== 'Patient'">
-          <span>Workplace</span><strong>{{ organization }}</strong>
-        </div>
+        <p class="registration-hint">
+          Review your information before continuing. Contact verification follows account creation.
+        </p>
+      }
+      <div class="registration-actions">
+        <button class="subtle-button" type="button" (click)="registrationBack()">
+          <span class="material-symbols-outlined">arrow_back</span> Back
+        </button>
+        <button class="btn" type="submit">
+          {{ registerStep === registerSteps ? 'Create account' : 'Continue' }}
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
       </div>
-      <p class="registration-hint">
-        Review your information before continuing. Contact verification follows account creation.
-      </p></ng-container
-    >
-    <div class="registration-actions">
-      <button class="subtle-button" type="button" (click)="registrationBack()">
-        <span class="material-symbols-outlined">arrow_back</span> Back
-      </button>
-      <button class="btn" type="submit">
-        {{ registerStep === registerSteps ? 'Create account' : 'Continue' }}
-        <span class="material-symbols-outlined">arrow_forward</span>
-      </button>
-    </div>
-  </form>
-  <p class="under">Already have an account? <a routerLink="/login">Log in</a></p>
-</div>
+    </form>
+    <p class="under">Already have an account? <a routerLink="/login">Log in</a></p>
+  </div>
+}

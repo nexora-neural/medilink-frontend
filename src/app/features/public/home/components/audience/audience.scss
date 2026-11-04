@@ -1,1 +1,70 @@
-// Landing styles are loaded by the public feature stylesheet.
+
+.audience {
+  padding: 105px 0 90px;
+}
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 38px;
+}
+.audience-grid article {
+  background: #f3f7f9;
+  border-radius: 12px;
+  padding: 24px;
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+}
+.audience-grid article > span {
+  color: #198fc1;
+  background: #e0f3fc;
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+}
+.audience-grid h3 {
+  color: #163b57;
+  font-size: 17px;
+  margin: 20px 0 7px;
+}
+.audience-grid p {
+  color: #718997;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0;
+}
+.audience-grid small {
+  font-size: 9px;
+  color: #1780aa;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-top: auto;
+  padding-top: 20px;
+}
+@media (max-width: 850px) {
+  .audience-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .audience {
+    padding: 70px 0;
+  }
+  .audience-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .audience-grid article {
+    min-height: 230px;
+    padding: 17px;
+  }
+}
+
+@media (min-width: 851px) {
+  .audience {
+    padding: 120px 3% 100px;
+  }
+}

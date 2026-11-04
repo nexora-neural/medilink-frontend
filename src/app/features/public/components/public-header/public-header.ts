@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,11 +15,17 @@ export class PublicHeader {
   profileOpen = false;
   preview = false;
 
-  constructor(private readonly router: Router) {
-    this.preview = router.url.split('?')[0] === '/header-preview';
-    router.events.pipe(filter((event) => event instanceof NavigationEnd), takeUntilDestroyed())
+  private readonly router = inject(Router);
+
+  constructor() {
+    this.preview = this.router.url.split('?')[0] === '/header-preview';
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
       .subscribe(() => {
-        this.preview = router.url.split('?')[0] === '/header-preview';
+        this.preview = this.router.url.split('?')[0] === '/header-preview';
         this.profileOpen = false;
       });
   }

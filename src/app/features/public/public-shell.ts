@@ -6,20 +6,7 @@ import { PublicFooter } from './components/public-footer/public-footer';
   selector: 'app-public-shell',
   standalone: true,
   imports: [RouterOutlet, PublicHeader, PublicFooter],
-  template: '<app-public-header /><router-outlet /><app-public-footer />',
-  styles: [
-    `
-      :host {
-        display: block;
-        min-height: 100vh;
-        background: #fff;
-        color: #162e3a;
-        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;
-      }
-      :host ::ng-deep button {
-        cursor: pointer;
-      }
-    `,
-  ],
+  templateUrl: './public-shell.html',
+  styleUrl: './public-shell.scss',
 })
 export class PublicShell {}

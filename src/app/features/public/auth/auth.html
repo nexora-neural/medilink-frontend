@@ -1,37 +1,40 @@
-<main
-  *ngIf="
-    page !== 'home' &&
-    page !== 'notifications' &&
-    page !== 'profile' &&
-    page !== 'settings' &&
-    page !== 'verification-documents' &&
-    page !== 'verification-status' &&
-    page !== 'about' &&
-    page !== 'contact' &&
-    page !== 'privacy' &&
-    page !== 'terms'
-  "
-  class="auth-wrap"
->
-  <app-auth-intro></app-auth-intro>
-  <div class="auth-main">
-    <a
-      class="back"
-      [routerLink]="page === 'register' && role !== 'Patient' ? '/professional-registration' : '/'"
-      ><span class="material-symbols-outlined">arrow_back</span>
-      {{
-        page === 'register' && role !== 'Patient' ? 'Back to professional roles' : 'Back to home'
-      }}</a
-    >
-    <app-professional-roles
-      *ngIf="page === 'roles' || page === 'professional-registration'"
-    ></app-professional-roles>
-    <app-registration *ngIf="page === 'register'"></app-registration>
-    <app-access-form
-      *ngIf="page === 'login' || page === 'forgot' || page === 'reset' || page === 'verify'"
-    ></app-access-form>
-    <app-auth-help
-      *ngIf="page === 'help' || page === 'session-expired' || page === 'access-denied'"
-    ></app-auth-help>
-  </div>
-</main>
+@if (
+  page !== 'home' &&
+  page !== 'notifications' &&
+  page !== 'profile' &&
+  page !== 'settings' &&
+  page !== 'verification-documents' &&
+  page !== 'verification-status' &&
+  page !== 'about' &&
+  page !== 'contact' &&
+  page !== 'privacy' &&
+  page !== 'terms'
+) {
+  <main class="auth-wrap">
+    <app-auth-intro></app-auth-intro>
+    <div class="auth-main">
+      <a
+        class="back"
+        [routerLink]="
+          page === 'register' && role !== 'Patient' ? '/professional-registration' : '/'
+        "
+        ><span class="material-symbols-outlined">arrow_back</span>
+        {{
+          page === 'register' && role !== 'Patient' ? 'Back to professional roles' : 'Back to home'
+        }}</a
+      >
+      @if (page === 'roles' || page === 'professional-registration') {
+        <app-professional-roles [page]="page" [roles]="roles"></app-professional-roles>
+      }
+      @if (page === 'register') {
+        <app-registration [page]="page" [role]="role"></app-registration>
+      }
+      @if (page === 'login' || page === 'forgot' || page === 'reset' || page === 'verify') {
+        <app-access-form [page]="page" [role]="role"></app-access-form>
+      }
+      @if (page === 'help' || page === 'session-expired' || page === 'access-denied') {
+        <app-auth-help [page]="page" [role]="role"></app-auth-help>
+      }
+    </div>
+  </main>
+}

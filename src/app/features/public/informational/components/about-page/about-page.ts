@@ -1,18 +1,15 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PublicPageState } from '../../../public-page-state';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-about-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink],
   templateUrl: './about-page.html',
   styleUrl: './about-page.scss',
 })
-export class AboutPageComponent extends PublicPageState {
-  constructor(route: ActivatedRoute, router: Router) {
-    super(route, router);
-  }
+export class AboutPageComponent {
+  @Input() page = '';
 }

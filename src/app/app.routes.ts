@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { roleGuard } from './core/guards/role.guard';
+import { ActiveRole } from './core/context/active-role.service';
 import { AppShell } from './layout/workspace-shell/app-shell';
 import { StatusPage } from './pages/errors/status-page/status-page';
 import { WorkspacePage } from './features/workspace/pages/workspace-page/workspace-page';
@@ -10,7 +11,7 @@ import { PublicInformational } from './features/public/informational/information
 
 const rolePage = (
   path: string,
-  allowedRoles: string[],
+  allowedRoles: ActiveRole[],
   title: string,
   description: string,
 ): Route => ({

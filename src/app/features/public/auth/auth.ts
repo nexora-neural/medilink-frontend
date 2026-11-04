@@ -4,9 +4,9 @@ import { ProfessionalRolesComponent } from './components/professional-roles/prof
 import { RegistrationComponent } from './components/registration/registration';
 import { AuthHelpComponent } from './components/auth-help/auth-help';
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { PublicPageState } from '../public-page-state';
 
 @Component({
@@ -14,7 +14,6 @@ import { PublicPageState } from '../public-page-state';
   standalone: true,
   imports: [
     AuthIntroComponent,
-    CommonModule,
     FormsModule,
     RouterLink,
     ProfessionalRolesComponent,
@@ -25,8 +24,4 @@ import { PublicPageState } from '../public-page-state';
   templateUrl: './auth.html',
   styleUrl: './auth.scss',
 })
-export class PublicAuth extends PublicPageState {
-  constructor(route: ActivatedRoute, router: Router) {
-    super(route, router);
-  }
-}
+export class PublicAuth extends PublicPageState {}
