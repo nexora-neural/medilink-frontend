@@ -8,6 +8,7 @@ import { PublicAuth } from './features/public/auth/auth';
 import { PublicShell } from './features/public/public-shell';
 import { PublicHome } from './features/public/home/home';
 import { PublicInformational } from './features/public/informational/informational';
+import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
 
 const rolePage = (
   path: string,
@@ -128,6 +129,14 @@ export const routes: Routes = [
         data: {
           title: 'Workspace overview',
           description: 'A responsive MediLink workspace foundation for role-aware navigation.',
+        },
+      },
+      {
+        path: 'patient/profile',
+        component: PatientProfile,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
         },
       },
       ...rolePages,
