@@ -1,0 +1,27 @@
+
+<aside class="profile-summary-card">
+  <img
+    class="profile-avatar"
+    src="/patient-avatar.png"
+    alt="Patient profile avatar"
+  />
+
+  <h2>{{ profile().name }}</h2>
+  <p class="account-label">Patient account</p>
+
+  <div class="profile-divider"></div>
+
+  <div class="contact-row">
+    <span class="material-symbols-outlined" aria-hidden="true">
+      mail
+    </span>
+    <span>{{ profile().email }}</span>
+  </div>
+
+  <div class="contact-row">
+    <span class="material-symbols-outlined" aria-hidden="true">
+      call
+    </span>
+    <span>{{ profile().phone }}</span>
+  </div>
+</aside>
