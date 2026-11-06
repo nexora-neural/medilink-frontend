@@ -1,0 +1,26 @@
+<header class="header">
+  <div class="header-left">
+    <button class="mobile-toggle" type="button" (click)="menuToggle.emit()" aria-label="Toggle navigation">
+      <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
+    <div class="breadcrumb"><span>Super Admin Workspace</span><span class="slash">/</span><span>{{ pageTitle }}</span></div>
+  </div>
+
+  <div class="header-right">
+    <div class="popover-anchor">
+      <button type="button" class="notification-button" aria-label="Notifications" [attr.aria-expanded]="notificationsOpen"
+        (click)="toggleNotifications()">
+        <span class="material-symbols-outlined" aria-hidden="true">notifications</span><span class="count">1</span>
+      </button>
+      @if (notificationsOpen) { <div class="popover" role="status"><strong>Notifications</strong><p>Sample notification preview.</p></div> }
+    </div>
+    <div class="popover-anchor">
+      <button type="button" class="profile-button" [attr.aria-expanded]="profileOpen" (click)="toggleProfile()">
+        <span class="avatar" aria-hidden="true">RF</span>
+        <span class="profile-label"><strong>Ravi Fernando</strong><small>Super Admin account</small></span>
+        <span class="material-symbols-outlined arrow" aria-hidden="true">expand_more</span>
+      </button>
+      @if (profileOpen) { <div class="popover"><strong>Ravi Fernando</strong><p>Super Admin account · UI preview</p></div> }
+    </div>
+  </div>
+</header>

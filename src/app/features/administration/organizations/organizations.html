@@ -1,0 +1,23 @@
+<section class="organizations-page" aria-labelledby="organizations-title">
+  <div class="heading">
+    <h1 id="organizations-title">Organizations and memberships</h1>
+    <p>Review healthcare organizations and their status.</p>
+  </div>
+  <section class="list-panel" aria-label="Organizations">
+    @if (loading) {
+      <p class="message" role="status">Loading organizations…</p>
+    } @else if (showError) {
+      <p class="message error" role="alert">Unable to show organizations in this UI preview.</p>
+    } @else {
+      @for (organization of organizations; track organization.id) {
+        <a class="organization-row" [routerLink]="['/super-admin/organizations', organization.id]" [attr.aria-label]="'View ' + organization.name + ' details'">
+          <span class="details"><strong>{{ organization.name }}</strong><small>{{ organization.type }}</small></span>
+          <span class="status" [class.pending]="organization.status === 'Pending'" [class.rejected]="organization.status === 'Rejected'" [class.suspended]="organization.status === 'Suspended'">{{ organization.status }}</span>
+          <span class="arrow" aria-hidden="true">↗</span>
+        </a>
+      } @empty {
+        <p class="message">No organizations available.</p>
+      }
+    }
+  </section>
+</section>
