@@ -8,6 +8,10 @@ import { PublicAuth } from './features/public/auth/auth';
 import { PublicShell } from './features/public/public-shell';
 import { PublicHome } from './features/public/home/home';
 import { PublicInformational } from './features/public/informational/informational';
+import { SuperAdminShell } from './features/administration/super-admin-shell/super-admin-shell';
+import { Organizations } from './features/administration/organizations/organizations';
+import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
+import { MembershipRequest } from './features/administration/membership-request/membership-request';
 
 const rolePage = (
   path: string,
@@ -133,5 +137,30 @@ export const routes: Routes = [
       ...rolePages,
     ],
   },
+
+  {
+    path: 'super-admin',
+    component: SuperAdminShell,
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'organizations',
+      },
+      {
+        path: 'organizations',
+        component: Organizations,
+      },
+      {
+        path: 'organizations/:id',
+        component: OrganizationDetail,
+      },
+      {
+        path: 'membership-request',
+        component: MembershipRequest,
+      },
+    ],
+  },
+
   { path: '**', redirectTo: 'not-found' },
 ];
