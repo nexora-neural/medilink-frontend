@@ -7,10 +7,7 @@ import { WorkspaceSidebar } from './components/workspace-sidebar/workspace-sideb
 import { NavigationItem } from './models/navigation-item';
 
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
-  'Super Admin': [
-    { label: 'Organizations', icon: 'business', path: '/super-admin/organizations' },
-    { label: 'Professional applications', icon: 'fact_check', path: '/super-admin/applications' },
-  ],
+  'Super Admin': [{ label: 'Organizations', icon: 'business', path: '/super-admin/organizations' }],
   Patient: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
