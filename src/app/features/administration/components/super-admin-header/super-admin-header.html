@@ -1,7 +1,6 @@
 <header class="header">
   <div class="header-left">
-    <button #menuButton class="mobile-toggle" type="button" (click)="menuToggle.emit(menuButton)"
-      aria-label="Toggle navigation" aria-controls="super-admin-navigation" [attr.aria-expanded]="sidebarOpen()">
+    <button class="mobile-toggle" type="button" (click)="menuToggle.emit()" aria-label="Toggle navigation">
       <span class="material-symbols-outlined" aria-hidden="true">menu</span>
     </button>
     <div class="breadcrumb"><span>Super Admin Workspace</span><span class="slash">/</span><span>{{ pageTitle }}</span></div>

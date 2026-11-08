@@ -6,10 +6,6 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'super-admin/applications/:id',
-    renderMode: RenderMode.Server,
-  },
-  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },
