@@ -3,11 +3,33 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { ActiveRoleService } from './core/context/active-role.service';
 import { routes } from './app.routes';
+import { AuthService } from './core/auth.service';
 
 describe('workspace routing', () => {
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(routes),
+        { provide: AuthService, useValue: { restoreSession: vi.fn().mockResolvedValue(true) } },
+      ],
+    });
+  });
+
+  it('redirects an unauthenticated session to login', async () => {
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace');
+    expect(TestBed.inject(Router).url).toBe('/login');
+  });
+
+  it('does not open the workspace if session verification fails', async () => {
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockRejectedValue(
+      new Error('unavailable'),
+    );
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace');
+    expect(TestBed.inject(Router).url).toBe('/login');
   });
 
   it('opens an allowed role page and redirects a different role', async () => {

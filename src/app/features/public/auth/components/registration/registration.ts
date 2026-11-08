@@ -1,6 +1,14 @@
-import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  inject,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../core/auth.service';
 
 @Component({
   selector: 'app-registration',
@@ -13,6 +21,8 @@ export class RegistrationComponent implements OnChanges {
   @Input() page = '';
   @Input() role = 'Patient';
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   showPassword = false;
   private readonly formBuilder = inject(FormBuilder);
@@ -20,12 +30,15 @@ export class RegistrationComponent implements OnChanges {
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', Validators.required],
+    dateOfBirth: [''],
+    sex: [''],
     professionalId: ['', Validators.required],
     organization: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(8)]],
     registerConfirm: ['', Validators.required],
   });
   message = '';
+  busy = false;
   registerStep = 1;
   registerSubmitted = false;
 
@@ -40,7 +53,7 @@ export class RegistrationComponent implements OnChanges {
     this.message = '';
   }
 
-  registrationNext(): void {
+  async registrationNext(): Promise<void> {
     this.registerSubmitted = true;
     const controls = this.registrationForm.controls;
     const fields =
@@ -53,6 +66,12 @@ export class RegistrationComponent implements OnChanges {
             : [];
     if (fields.some((field) => field.invalid)) return;
     if (
+      this.role === 'Patient' &&
+      this.registerStep === 1 &&
+      (!controls.dateOfBirth.value || !['female', 'male'].includes(controls.sex.value))
+    )
+      return;
+    if (
       this.registerStep === this.registerSteps - 1 &&
       controls.password.value !== controls.registerConfirm.value
     )
@@ -61,7 +80,28 @@ export class RegistrationComponent implements OnChanges {
       this.registerStep++;
       this.registerSubmitted = false;
     } else {
-      this.message = 'Registration is currently unavailable. No account has been created.';
+      if (this.role !== 'Patient') {
+        this.message =
+          'Professional registration is currently unavailable. No account has been created.';
+        return;
+      }
+      this.busy = true;
+      try {
+        await this.auth.registerPatient({
+          email: controls.email.value,
+          password: controls.password.value,
+          displayName: controls.fullName.value,
+          phone: controls.phone.value,
+          dateOfBirth: controls.dateOfBirth.value,
+          sex: controls.sex.value as 'female' | 'male',
+        });
+        await this.router.navigate(['/workspace']);
+      } catch {
+        this.message = 'Registration could not be completed. Please try again.';
+      } finally {
+        this.busy = false;
+        this.changeDetector.markForCheck();
+      }
     }
   }
   registrationBack() {
