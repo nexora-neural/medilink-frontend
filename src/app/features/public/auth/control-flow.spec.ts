@@ -103,6 +103,12 @@ describe('Public authentication control flow', () => {
       input.value = value;
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    const dateInput = element.querySelector('input[name="dateOfBirth"]') as HTMLInputElement;
+    dateInput.value = '2000-01-01';
+    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const sexInput = element.querySelector('select[name="sex"]') as HTMLSelectElement;
+    sexInput.value = 'female';
+    sexInput.dispatchEvent(new Event('change', { bubbles: true }));
     await fixture.whenStable();
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();

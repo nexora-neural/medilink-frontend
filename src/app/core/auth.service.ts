@@ -1,0 +1,114 @@
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { FirebaseApp, FirebaseOptions, getApps, initializeApp } from 'firebase/app';
+import {
+  Auth,
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  getAuth,
+  setPersistence,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { firstValueFrom, timeout } from 'rxjs';
+
+export interface MediLinkConfig {
+  firebase: FirebaseOptions;
+  apiBaseUrl: string;
+}
+
+declare global {
+  interface Window {
+    medilinkConfig?: MediLinkConfig;
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly platform = inject(PLATFORM_ID);
+
+  private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
+    if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
+      throw new Error('Authentication is not configured.');
+    }
+    const config = window.medilinkConfig;
+    const app: FirebaseApp =
+      getApps().find((item) => item.name === 'medilink') ??
+      initializeApp(config.firebase, 'medilink');
+    const auth = getAuth(app);
+    await setPersistence(auth, browserLocalPersistence);
+    return { auth, config };
+  }
+
+  async restoreSession(): Promise<boolean> {
+    const { auth, config } = await this.firebase();
+    await auth.authStateReady();
+    if (!auth.currentUser) return false;
+    const token = await auth.currentUser.getIdToken();
+    await firstValueFrom(
+      this.http
+        .get(`${config.apiBaseUrl}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .pipe(timeout(10000)),
+    );
+    return true;
+  }
+
+  async signIn(email: string, password: string): Promise<void> {
+    const { auth, config } = await this.firebase();
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    try {
+      const token = await credential.user.getIdToken();
+      await firstValueFrom(
+        this.http
+          .get(`${config.apiBaseUrl}/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .pipe(timeout(10000)),
+      );
+    } catch (error) {
+      await signOut(auth);
+      throw error;
+    }
+  }
+
+  async registerPatient(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone: string;
+    dateOfBirth: string;
+    sex: 'female' | 'male';
+  }): Promise<void> {
+    const { auth, config } = await this.firebase();
+    await auth.authStateReady();
+    const credential =
+      auth.currentUser?.email?.toLowerCase() === input.email.toLowerCase()
+        ? await signInWithEmailAndPassword(auth, input.email, input.password)
+        : await createUserWithEmailAndPassword(auth, input.email, input.password);
+    try {
+      const token = await credential.user.getIdToken();
+      await firstValueFrom(
+        this.http
+          .post(
+            `${config.apiBaseUrl}/me/onboard`,
+            {
+              display_name: input.displayName,
+              phone: input.phone,
+              requested_role: 'patient',
+              date_of_birth: input.dateOfBirth,
+              sex: input.sex,
+            },
+            { headers: { Authorization: `Bearer ${token}` } },
+          )
+          .pipe(timeout(10000)),
+      );
+    } catch (error) {
+      // Keep the Firebase session so a failed backend onboarding can be retried.
+      throw error;
+    }
+  }
+}
