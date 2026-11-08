@@ -21,9 +21,9 @@ export class PersonalInformationCard {
   submitted = false;
 
   readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.maxLength(150)]],
+    name: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(150)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(/\S/)]],
   });
 
   constructor() {

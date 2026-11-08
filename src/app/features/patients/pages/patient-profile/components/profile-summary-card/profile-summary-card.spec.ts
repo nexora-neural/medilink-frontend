@@ -12,6 +12,11 @@ describe('ProfileSummaryCard', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProfileSummaryCard);
+    fixture.componentRef.setInput('profile', {
+      name: 'Test Patient',
+      email: 'test@example.com',
+      phone: '123456789',
+    });
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
