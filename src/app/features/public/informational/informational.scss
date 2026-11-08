@@ -1,0 +1,33 @@
+
+.public-detail {
+  padding: 45px 0 100px;
+}
+.public-detail-hero {
+  background: #edf7fc;
+  border-radius: 20px;
+  padding: 65px 7%;
+  margin-bottom: 65px;
+}
+.public-detail-hero h1 {
+  font-size: clamp(40px, 5vw, 66px);
+  line-height: 1.05;
+  letter-spacing: -2.5px;
+  color: #122d50;
+  margin: 16px 0;
+}
+.public-detail-hero > p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #69889c;
+  max-width: 590px;
+}
+
+@media (max-width: 750px) {
+  .public-detail {
+    padding: 25px 0 65px;
+  }
+  .public-detail-hero {
+    padding: 40px 25px;
+    margin-bottom: 40px;
+  }
+}

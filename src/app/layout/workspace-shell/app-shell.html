@@ -1,0 +1,18 @@
+<div class="app-layout">
+  <app-workspace-sidebar
+    [activeRole]="activeRole()"
+    [navigation]="navigation()"
+    [roles]="roles"
+    [menuOpen]="menuOpen"
+    (roleChange)="selectRole($event)"
+    (closeMenu)="closeMenu()"
+  />
+  <div class="main-shell">
+    <app-workspace-header
+      [activeRole]="activeRole()"
+      [menuOpen]="menuOpen"
+      (menuToggle)="toggleMenu()"
+    />
+    <main class="content"><router-outlet /></main>
+  </div>
+</div>

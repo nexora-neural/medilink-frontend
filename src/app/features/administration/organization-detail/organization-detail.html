@@ -1,0 +1,31 @@
+<section class="detail-page">
+  <a routerLink="/super-admin/organizations" class="back">← Back to organizations</a>
+  @if (loading) {
+    <div class="panel" role="status">Loading organization…</div>
+  } @else if (organization; as org) {
+    <div class="heading"><h1>{{ org.name }}</h1><p>{{ org.type }} · {{ org.status }}</p></div>
+    <div class="panel">
+      <div class="section-head"><h2>Organization information</h2><span class="pill">{{ org.status }}</span></div>
+      <div class="info-grid"><div><small>Organization</small><strong>{{ org.name }}</strong></div><div><small>Type</small><strong>{{ org.type }}</strong></div></div>
+      <h2>Membership review</h2>
+      @for (member of org.members; track member.id) {
+        <div class="member-row">
+          <div><strong>{{ member.name }}</strong><small>{{ member.role }} · {{ member.status }}</small></div>
+          <div class="member-actions">
+            <button type="button" (click)="prepareMemberDecision(member.id, 'Approved')" [disabled]="member.status === 'Approved'">Approve</button>
+            <button type="button" class="outline" (click)="prepareMemberDecision(member.id, 'Rejected')" [disabled]="member.status === 'Rejected'">Reject</button>
+          </div>
+        </div>
+      } @empty { <p class="muted">No memberships for this organization.</p> }
+      <h2 class="decision-title">Organization decision</h2>
+      <label for="reason">Decision reason <span aria-hidden="true">*</span></label>
+      <textarea id="reason" [(ngModel)]="reason" rows="3" placeholder="Enter a reason for the decision"></textarea>
+      @if (error) { <p class="error" role="alert">{{ error }}</p> }
+      <div class="actions"><button type="button" (click)="prepareOrganizationDecision('Approved')">Approve</button><button type="button" class="outline" (click)="prepareOrganizationDecision('Rejected')">Reject</button><button type="button" class="outline" (click)="prepareOrganizationDecision('Suspended')">Suspend</button></div>
+      @if (pendingDecision || memberDecision) {
+        <div class="confirmation" role="group" aria-label="Confirm UI preview decision"><strong>Confirm local decision?</strong><p>{{ pendingDecision ? 'Organization: ' + pendingDecision : 'Membership: ' + memberDecision?.status }}. This will only change the screen temporarily.</p><div class="actions"><button type="button" class="outline" (click)="cancelDecision()">Cancel</button><button type="button" (click)="pendingDecision ? confirmOrganizationDecision() : confirmMemberDecision()">Confirm</button></div></div>
+      }
+      @if (feedback) { <p class="feedback" role="status">{{ feedback }}</p> }
+    </div>
+  } @else { <div class="panel" role="alert"><h2>Organization not found</h2><a routerLink="/super-admin/organizations">Return to organization list</a></div> }
+</section>

@@ -1,0 +1,46 @@
+<header class="header">
+  <a class="brand" routerLink="/" (click)="menuOpen = false">
+    <img class="brand-logo" src="/medilink-logo-horizontal.svg" alt="MediLink" />
+  </a>
+
+  <button
+    class="menu-toggle"
+    type="button"
+    (click)="menuOpen = !menuOpen"
+    [attr.aria-expanded]="menuOpen"
+    aria-label="Toggle navigation"
+  >
+    <span class="material-symbols-outlined">{{ menuOpen ? 'close' : 'menu' }}</span>
+  </button>
+
+  <nav [class.open]="menuOpen" aria-label="Main navigation">
+    <a routerLink="/about" (click)="menuOpen = false">About MediLink</a>
+    <a routerLink="/" fragment="how-it-works" (click)="menuOpen = false">How it works</a>
+    <a routerLink="/contact" (click)="menuOpen = false">Contact</a>
+    @if (preview) {
+      <div class="account-actions" aria-label="Account navigation">
+      <a class="profile-icon dashboard-icon" routerLink="/workspace" aria-label="Go to dashboard" (click)="menuOpen = false">
+        <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+      </a>
+      <div class="profile-menu" (keydown.escape)="profileOpen = false">
+        <button class="profile-icon" type="button" aria-label="Profile menu" aria-controls="preview-profile-menu"
+          [attr.aria-expanded]="profileOpen" (click)="profileOpen = !profileOpen">
+          <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+        </button>
+        @if (profileOpen) {
+          <div id="preview-profile-menu" class="profile-dropdown">
+            <strong>Patient</strong>
+            <span>Account preview</span>
+            <a routerLink="/login" (click)="profileOpen = false; menuOpen = false">Log out</a>
+          </div>
+        }
+      </div>
+      </div>
+    } @else {
+      <a class="login-link" routerLink="/login" (click)="menuOpen = false">Log in</a>
+      <a class="btn btn-small" routerLink="/register" (click)="menuOpen = false">
+        Get started <span class="material-symbols-outlined">arrow_forward</span>
+      </a>
+    }
+  </nav>
+</header>

@@ -1,0 +1,152 @@
+/* Public landing: full-image hero and editorial sections. */
+.landing {
+  background: #fff;
+}
+.landing .wrap {
+  width: min(1320px, calc(100% - 56px));
+}
+.header {
+  width: min(1320px, calc(100% - 56px));
+  height: 92px;
+  position: relative;
+}
+.header > .brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.header nav {
+  width: 100%;
+  gap: 0;
+}
+.header nav > a:not(.btn) {
+  padding: 12px 15px;
+  font-size: 12px;
+}
+.header nav > a:first-child {
+  border-radius: 30px 0 0 30px;
+  background: #f6f9fb;
+}
+.header nav > a:nth-child(2),
+.header nav > a:nth-child(3) {
+  background: #f6f9fb;
+}
+.header nav > a:nth-child(3) {
+  border-radius: 0 30px 30px 0;
+}
+.header nav .login-link {
+  margin-left: auto;
+}
+.header nav .btn {
+  margin-left: 10px;
+  border-radius: 30px;
+  background: #126899;
+  border-color: #126899;
+}
+.brand-logo {
+  width: 60px;
+  height: 65px;
+}
+.hero-primary {
+  background: linear-gradient(110deg, #0963a0, #19a8d8);
+  border: 0;
+  border-radius: 40px;
+  padding: 12px 12px 12px 21px;
+  gap: 18px;
+}
+.hero-primary .material-symbols-outlined,
+.hero-secondary .material-symbols-outlined {
+  background: #fff;
+  color: #087cae;
+  border-radius: 50%;
+  padding: 7px;
+  font-size: 16px;
+}
+.hero-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 40px;
+  background: #fff;
+  padding: 8px 9px 8px 19px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #173956;
+}
+.hero-aside strong,
+.hero-aside small {
+  display: block;
+}
+.intro-title h2,
+.center-heading h2,
+.journey h2,
+.faq-section h2,
+.closing h2 {
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+  font-weight: 600;
+  color: #123451;
+}
+.intro-copy p,
+.journey-copy > p {
+  color: #708898;
+  line-height: 1.8;
+  font-size: 14px;
+  max-width: 470px;
+}
+.center-heading {
+  text-align: center;
+}
+.center-heading h2 {
+  margin: 14px 0 9px;
+}
+.center-heading p {
+  font-size: 13px;
+  color: #8194a2;
+}
+.journey-step strong,
+.journey-step small {
+  display: block;
+}
+footer {
+  background: #edf5fa;
+}
+.footer-inner {
+  padding: 50px 0;
+}
+@media (max-width: 850px) {
+  .header > .brand {
+    position: static;
+    transform: none;
+  }
+  .header nav {
+    width: auto;
+  }
+  .header nav > a:first-child,
+  .header nav > a:nth-child(2),
+  .header nav > a:nth-child(3) {
+    background: none;
+  }
+}
+@media (max-width: 600px) {
+  .landing .wrap,
+  .header {
+    width: calc(100% - 32px);
+  }
+  .header {
+    height: 76px;
+  }
+  .header nav {
+    width: 100%;
+  }
+  .header nav.open {
+    padding: 20px;
+  }
+  .header nav .login-link {
+    margin-left: 0;
+  }
+  .header nav .btn {
+    margin-left: 0;
+  }
+}

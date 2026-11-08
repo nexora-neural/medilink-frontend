@@ -1,0 +1,28 @@
+// Header layout and navigation styles are shared through public.scss.
+.account-actions { display: flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid #e7eff4; border-radius: 999px; background: #f6f9fb; }
+.profile-menu { position: relative; }
+.profile-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #1b638c; cursor: pointer; transition: background-color 160ms ease, color 160ms ease; }
+.profile-icon:hover, .profile-icon[aria-expanded='true'] { background: #e3f1f8; color: #0e537a; }
+.profile-icon .material-symbols-outlined { font-size: 23px; }
+.profile-icon:focus-visible, .profile-dropdown a:focus-visible { outline: 3px solid #137fac; outline-offset: 3px; }
+.profile-dropdown { position: absolute; right: 0; top: calc(100% + 12px); z-index: 30; display: grid; gap: 4px; width: 220px; padding: 18px; border: 1px solid #e3edf3; border-radius: 16px; background: white; box-shadow: 0 14px 36px rgb(20 47 75 / 14%); }
+.profile-dropdown strong { color: #173750; font-size: 14px; }
+.profile-dropdown span { color: #738997; font-size: 12px; }
+.profile-dropdown a { margin-top: 10px; padding: 12px 8px 4px; border-top: 1px solid #e8eff3; color: #126899; font-weight: 700; }
+.profile-dropdown a:hover { color: #0d4f77; }
+@media (min-width: 851px) { .account-actions { margin-left: auto; } }
+@media (max-width: 850px) { .account-actions { align-self: flex-start; } .profile-dropdown { right: auto; left: 0; } }
+@media (prefers-reduced-motion: reduce) { .profile-icon { transition: none; } }
+
+@media (max-width: 850px) {
+  .header nav.open { box-sizing: border-box; border: 1px solid #e7eff4; border-radius: 16px; gap: 8px; padding: 14px; }
+  .header nav.open > a:not(.btn) { display: block; padding: 12px 14px; border-radius: 10px; }
+  .header nav.open > a:not(.btn):hover { background: #f1f7fa; }
+  .account-actions { margin: 8px 0 0; }
+  .profile-dropdown { top: calc(100% + 8px); width: min(220px, calc(100vw - 64px)); box-sizing: border-box; }
+  .menu-toggle { min-width: 44px; min-height: 44px; border-radius: 50%; }
+  .menu-toggle:focus-visible { outline: 3px solid #137fac; outline-offset: 2px; }
+}
+@media (max-width: 600px) {
+  .header nav.open { width: 100%; padding: 12px; }
+}

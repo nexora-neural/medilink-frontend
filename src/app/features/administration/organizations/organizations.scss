@@ -1,0 +1,188 @@
+
+:host {
+  display: block;
+  width: 100%;
+  color: #183153;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Page Heading */
+
+.heading {
+  margin: 0 0 30px;
+}
+
+h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  margin: 0 0 13px;
+  line-height: 1.25;
+  color: #183153;
+}
+
+.heading p {
+  margin: 0;
+  color: #8c9fb7;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Organization List Container */
+
+.list-panel {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e4ecf3;
+  border-radius: 17px;
+  padding: 35px 27px;
+}
+
+/* Individual Organization Cards */
+
+.organization-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  width: 100%;
+  min-height: 76px;
+
+  margin-bottom: 10px;
+  padding: 20px 15px;
+
+  border-radius: 13px;
+  background: #f4f7fa;
+  color: #183153;
+  text-decoration: none;
+
+  transition: background-color 0.2s ease;
+}
+
+.organization-row:last-child {
+  margin-bottom: 0;
+}
+
+.organization-row:hover {
+  background: #ebf4fb;
+}
+
+.organization-row:focus-visible {
+  outline: 3px solid #3589ca;
+  outline-offset: 2px;
+}
+
+/* Organization Information */
+
+.details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.details strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #183153;
+}
+
+.details small {
+  font-size: 12px;
+  color: #91a4be;
+}
+
+/* Organization Status */
+
+.status {
+  padding: 8px 13px;
+  background: #edf3f9;
+  color: #4e6c8e;
+  border-radius: 19px;
+
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.status.pending {
+  background: #fff4de;
+  color: #9a6a17;
+}
+
+.status.rejected {
+  background: #ffeded;
+  color: #a63838;
+}
+
+.status.suspended {
+  background: #f2ecff;
+  color: #7854a9;
+}
+
+/* Arrow Icon */
+
+.arrow {
+  font-weight: 700;
+  color: #213c5a;
+  flex-shrink: 0;
+}
+
+/* Loading / Empty / Error States */
+
+.message {
+  padding: 24px;
+  text-align: center;
+  color: #8b9bb1;
+}
+
+.error {
+  color: #b33131;
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  h1 {
+    font-size: 28px;
+  }
+
+  .list-panel {
+    padding: 24px 20px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  .heading {
+    margin-bottom: 24px;
+  }
+
+  .list-panel {
+    padding: 15px;
+    border-radius: 14px;
+  }
+
+  .organization-row {
+    gap: 10px;
+    padding: 16px 12px;
+  }
+
+  .details {
+    gap: 5px;
+  }
+
+  .status {
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+}

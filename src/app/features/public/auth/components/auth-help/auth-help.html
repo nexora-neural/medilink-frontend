@@ -1,0 +1,54 @@
+@if (page === 'help' || page === 'session-expired' || page === 'access-denied') {
+  <div class="form-box">
+    <span class="eyebrow">{{ page === 'help' ? 'HERE FOR YOU' : 'ACCOUNT ACCESS' }}</span>
+    <h2>
+      {{
+        page === 'help'
+          ? 'How can we help?'
+          : page === 'session-expired'
+            ? 'Your session has expired'
+            : 'Access unavailable'
+      }}
+    </h2>
+    <p>
+      {{
+        page === 'help'
+          ? 'Find your way around MediLink and learn more about your account.'
+          : page === 'session-expired'
+            ? 'Please log in again to continue.'
+            : 'You do not currently have access to this page. Check your account or contact support.'
+      }}
+    </p>
+    @if (page === 'help') {
+      <div class="help-list">
+        <article>
+          <span class="material-symbols-outlined">account_circle</span>
+          <div>
+            <strong>Account access</strong>
+            <p>Having trouble signing in? Start with password reset.</p>
+            <a routerLink="/forgot">Reset password →</a>
+          </div>
+        </article>
+        <article>
+          <span class="material-symbols-outlined">shield_person</span>
+          <div>
+            <strong>Sharing and permissions</strong>
+            <p>Doctor access requires your explicit confirmation and can be managed by you.</p>
+          </div>
+        </article>
+        <article>
+          <span class="material-symbols-outlined">support_agent</span>
+          <div>
+            <strong>Contact support</strong>
+            <p>Support is available 24 hours. Email nexora.io.dev@gmail.com.</p>
+          </div>
+        </article>
+      </div>
+    }
+    @if (page !== 'help') {
+      <a class="btn" routerLink="/login"
+        >Go to log in <span class="material-symbols-outlined">arrow_forward</span></a
+      >
+    }
+  </div>
+}

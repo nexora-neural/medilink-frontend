@@ -1,0 +1,15 @@
+/* Public informational pages */
+.about-layout h2,
+.contact-intro h2 {
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.17;
+  letter-spacing: -1.4px;
+  color: #173c58;
+}
+.about-layout p,
+.contact-intro p,
+.legal-layout p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #688391;
+}

@@ -1,0 +1,141 @@
+@if (page === 'login' || page === 'forgot' || page === 'reset' || page === 'verify') {
+  <div class="form-box">
+    <span class="eyebrow">{{
+      page === 'login' ? 'WELCOME BACK' : page === 'verify' ? 'ONE MORE STEP' : 'ACCOUNT ACCESS'
+    }}</span>
+    <h2>
+      {{
+        page === 'login'
+          ? 'Welcome back'
+          : page === 'forgot'
+            ? 'Forgot your password?'
+            : page === 'reset'
+              ? 'Create a new password'
+              : 'Verify your contact'
+      }}
+    </h2>
+    <p>
+      {{
+        page === 'login'
+          ? 'Log in to continue to your MediLink account.'
+          : page === 'forgot'
+            ? 'Enter your email and we’ll guide you through the next step.'
+            : page === 'reset'
+              ? 'Choose a strong password for your account.'
+              : 'Enter the verification code to continue.'
+      }}
+    </p>
+    @if (message) {
+      <div class="success" role="status">
+        <span class="material-symbols-outlined">info</span><span>{{ message }}</span>
+      </div>
+    }
+    <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
+      @if (page === 'login' || page === 'forgot') {
+        <label
+          >Email address <span>*</span
+          ><input
+            [(ngModel)]="email"
+            email
+            name="email"
+            placeholder="you@example.com"
+            required
+            type="email"
+          />
+          @if (submitted && f.controls['email']?.invalid) {
+            <small class="error">Enter a valid email address.</small>
+          }
+        </label>
+      }
+      @if (page === 'login' || page === 'reset') {
+        <label
+          >Password
+          <span>*</span>
+          <div class="password">
+            <input
+              [(ngModel)]="password"
+              [type]="showPassword ? 'text' : 'password'"
+              minlength="8"
+              name="password"
+              placeholder="Enter your password"
+              required
+            />
+            <button
+              (click)="showPassword = !showPassword"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+              type="button"
+            >
+              <span class="material-symbols-outlined">{{
+                showPassword ? 'visibility_off' : 'visibility'
+              }}</span>
+            </button>
+          </div>
+          @if (submitted && f.controls['password']?.invalid) {
+            <small class="error">Use at least 8 characters.</small>
+          }
+        </label>
+      }
+      @if (page === 'reset') {
+        <label
+          >Confirm password <span>*</span
+          ><input
+            [(ngModel)]="confirm"
+            name="confirm"
+            placeholder="Re-enter your password"
+            required
+            type="password"
+          />
+          @if (submitted && (!confirm || confirm !== password)) {
+            <small class="error">Passwords must match.</small>
+          }
+        </label>
+      }
+      @if (page === 'verify') {
+        <label
+          >Verification code <span>*</span
+          ><input
+            [(ngModel)]="code"
+            minlength="4"
+            name="code"
+            placeholder="Enter verification code"
+            required
+          />
+          @if (submitted && f.controls['code']?.invalid) {
+            <small class="error">Enter a code of at least 4 characters.</small>
+          }
+          <small>Code delivery is currently unavailable.</small></label
+        >
+      }
+      @if (page === 'login') {
+        <div class="form-row">
+          <a routerLink="/forgot">Forgot password?</a>
+        </div>
+      }
+      <button [disabled]="busy" class="btn submit" type="submit">
+        @if (busy) {
+          <span class="spinner"></span>
+        }
+        {{
+          busy
+            ? 'Please wait…'
+            : page === 'login'
+              ? 'Log in'
+              : page === 'forgot'
+                ? 'Send reset link'
+                : page === 'reset'
+                  ? 'Reset password'
+                  : 'Verify contact'
+        }}
+        @if (!busy) {
+          <span class="material-symbols-outlined">arrow_forward</span>
+        }
+      </button>
+    </form>
+    @if (page === 'login') {
+      <p class="under">New to MediLink? <a routerLink="/register">Create a patient account</a></p>
+    }
+    @if (page !== 'login') {
+      <p class="under"><a routerLink="/login">Return to log in</a></p>
+    }
+  </div>
+}

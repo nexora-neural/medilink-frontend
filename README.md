@@ -1,6 +1,6 @@
 # MediLink Frontend
 
-Responsive healthcare web application frontend built with Angular 21 and SCSS. The current screen is a starter welcome page; feature screens and backend integration are not implemented yet.
+Responsive healthcare web application frontend built with Angular 21 and SCSS. Public pages and a workspace preview are available; clinical features and backend integration are not implemented yet.
 
 ## Requirements
 
@@ -26,6 +26,18 @@ npm run build
 
 The production build is written to `dist/`.
 
+## Quality checks
+
+After installing dependencies with npm ci, run these checks from the frontend repository root:
+
+    npm run lint
+    npm test -- --watch=false
+    npm run build
+
+The lint command checks TypeScript formatting and type-checks application and test code. The unit tests use the configured Vitest runner and do not require a live backend.
+
+The workspace role selector and route guard are for frontend navigation only. The current backend is a development scaffold and does not yet implement authentication or authorization for clinical data. Enforce identity, role, and patient-consent permissions on the server before connecting real data. Registration, sign-in, and verification remain demonstration flows; `/verification-documents` is not currently configured as a route.
+
 ## Project structure
 
 - `src/app/core/` — app-wide authentication, guards, interceptors, and services.
@@ -36,7 +48,7 @@ The production build is written to `dist/`.
 - `src/environments/` — public, non-secret environment configuration.
 - `src/styles/` — shared SCSS tokens and typography. Keep component-specific styles beside their components.
 
-Add feature-specific pages, components, services, and models inside the relevant feature when that work begins.
+The empty feature folders are planned placeholders, not implemented clinical features. Add feature-specific pages, components, services, and models inside the relevant feature when that work begins. The current workspace routes use a shared preview page until each feature is implemented.
 
 ## Shared libraries and conventions
 

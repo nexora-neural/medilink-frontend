@@ -1,0 +1,11 @@
+<main class="status-page">
+  <section class="status-card" aria-labelledby="status-title">
+    <span class="status-code">{{ isSuspended ? 'ACCOUNT STATUS' : code }}</span>
+    <span class="status-icon material-symbols-outlined" aria-hidden="true">{{
+      isSuspended || isForbidden ? 'lock' : 'search_off'
+    }}</span>
+    <h1 id="status-title">{{ title }}</h1>
+    <p>{{ description }}</p>
+    <a class="primary-link" [routerLink]="isSuspended ? '/contact' : '/workspace'">{{ isSuspended ? 'Contact support' : 'Back to workspace' }}</a>
+  </section>
+</main>

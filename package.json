@@ -7,7 +7,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:medilink-frontend": "node dist/medilink-frontend/server/server.mjs"
+    "serve:ssr:medilink-frontend": "node dist/medilink-frontend/server/server.mjs",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
+    "lint": "npm run format:check && npm run typecheck"
   },
   "private": true,
   "packageManager": "npm@11.13.0",

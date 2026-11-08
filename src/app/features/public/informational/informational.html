@@ -1,0 +1,69 @@
+@if (page === 'about' || page === 'contact' || page === 'privacy' || page === 'terms') {
+  <main class="public-detail wrap">
+    <section class="public-detail-hero">
+      <span class="eyebrow">{{
+        page === 'about'
+          ? 'GET TO KNOW MEDILINK'
+          : page === 'contact'
+            ? 'WE’RE HERE TO HELP'
+            : 'MEDILINK INFORMATION'
+      }}</span>
+      <h1>
+        {{
+          page === 'about'
+            ? 'Care, more connected.'
+            : page === 'contact'
+              ? 'Let’s get in touch.'
+              : page === 'privacy'
+                ? 'Privacy policy'
+                : 'Terms & conditions'
+        }}
+      </h1>
+      <p>
+        {{
+          page === 'about'
+            ? 'A clearer way to keep health information together and share it with the people involved in your care.'
+            : page === 'contact'
+              ? 'Have a question about MediLink? Send us a message using the form below.'
+              : page === 'privacy'
+                ? 'Privacy information for the MediLink website.'
+                : 'Information about using the MediLink website.'
+        }}
+      </p>
+    </section>
+    @if (page === 'about') {
+      <app-about-page [page]="page"></app-about-page>
+    }
+
+    @if (page === 'contact') {
+      <app-contact-page [page]="page"></app-contact-page>
+    }
+    @if (page === 'privacy' || page === 'terms') {
+      <section class="legal-layout">
+        <aside>
+          <span class="material-symbols-outlined">description</span><strong>Draft content</strong>
+          <p>For design review</p>
+        </aside>
+        <article>
+          <div class="legal-notice">
+            <span class="material-symbols-outlined">info</span>
+            <p>
+              This page is awaiting approved content. The final
+              {{ page === 'privacy' ? 'privacy policy' : 'terms and conditions' }} must be provided
+              and approved before publication.
+            </p>
+          </div>
+          @if (page === 'privacy') {
+            <app-privacy-page [page]="page"></app-privacy-page>
+          }
+          @if (page === 'terms') {
+            <app-terms-page [page]="page"></app-terms-page>
+          }
+          <a routerLink="/contact" class="public-text-link"
+            >Contact us <span class="material-symbols-outlined">arrow_forward</span></a
+          >
+        </article>
+      </section>
+    }
+  </main>
+}
