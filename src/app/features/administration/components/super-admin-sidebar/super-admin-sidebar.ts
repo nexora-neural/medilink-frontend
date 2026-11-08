@@ -1,7 +1,11 @@
 import { Component, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-interface NavigationItem { label: string; icon: string; route?: string; }
+interface NavigationItem {
+  label: string;
+  icon: string;
+  route?: string;
+}
 
 @Component({
   selector: 'app-super-admin-sidebar',
@@ -18,7 +22,11 @@ export class SuperAdminSidebar {
     { label: 'Overview', icon: 'dashboard' },
     { label: 'Admin accounts', icon: 'manage_accounts' },
     { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
-    { label: 'Membership request', icon: 'assignment_add', route: '/super-admin/membership-request' },
+    {
+      label: 'Membership request',
+      icon: 'assignment_add',
+      route: '/super-admin/membership-request',
+    },
     { label: 'Integrations', icon: 'hub' },
     { label: 'Security', icon: 'security' },
     { label: 'Privileged audit', icon: 'history' },

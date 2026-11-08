@@ -141,6 +141,8 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
+    canActivate: [roleGuard],
+    data: { allowedRoles: ['Super Admin'] },
     children: [
       {
         path: '',

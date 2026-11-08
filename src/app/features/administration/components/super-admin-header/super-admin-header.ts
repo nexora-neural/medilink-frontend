@@ -31,5 +31,8 @@ export class SuperAdminHeader {
   }
 
   @HostListener('document:keydown.escape')
-  dismissPopovers(): void { this.profileOpen = false; this.notificationsOpen = false; }
+  dismissPopovers(): void {
+    this.profileOpen = false;
+    this.notificationsOpen = false;
+  }
 }

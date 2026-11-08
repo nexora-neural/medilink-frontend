@@ -26,4 +26,13 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/verification-documents');
     expect(TestBed.inject(Router).url).toBe('/not-found');
   });
+
+  it('restricts the super admin preview to the selected admin role', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/super-admin/organizations');
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    await harness.navigateByUrl('/super-admin/organizations');
+    expect(harness.routeNativeElement?.textContent).toContain('Organizations and memberships');
+  });
 });

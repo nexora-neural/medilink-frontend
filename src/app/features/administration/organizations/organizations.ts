@@ -2,7 +2,12 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 type OrganizationStatus = 'Approved' | 'Pending' | 'Rejected' | 'Suspended';
-interface Organization { id: number; name: string; type: string; status: OrganizationStatus; }
+interface Organization {
+  id: number;
+  name: string;
+  type: string;
+  status: OrganizationStatus;
+}
 
 @Component({
   selector: 'app-admin-organizations',

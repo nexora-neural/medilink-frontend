@@ -12,8 +12,14 @@ import { SuperAdminHeader } from '../components/super-admin-header/super-admin-h
 })
 export class SuperAdminShell {
   sidebarOpen = false;
-  toggleSidebar(): void { this.sidebarOpen = !this.sidebarOpen; }
-  closeSidebar(): void { this.sidebarOpen = false; }
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+  closeSidebar(): void {
+    this.sidebarOpen = false;
+  }
   @HostListener('document:keydown.escape')
-  onEscape(): void { this.closeSidebar(); }
+  onEscape(): void {
+    this.closeSidebar();
+  }
 }
