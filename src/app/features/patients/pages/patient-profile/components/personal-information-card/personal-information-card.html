@@ -1,0 +1,135 @@
+
+<section class="information-card">
+  <header class="card-heading">
+    <span
+      class="card-heading-icon material-symbols-outlined"
+      aria-hidden="true"
+    >
+      badge
+    </span>
+
+    <div>
+      <h2>Personal information</h2>
+      <p>
+        {{
+          isEditing()
+            ? 'Changes will be reflected in your profile.'
+            : 'Your details as shown in your account.'
+        }}
+      </p>
+    </div>
+  </header>
+
+  @if (!isEditing()) {
+    <div class="profile-detail-row">
+      <span>Full name</span>
+      <strong>{{ profile().name }}</strong>
+    </div>
+
+    <div class="profile-detail-row">
+      <span>Email address</span>
+      <strong>{{ profile().email }}</strong>
+    </div>
+
+    <div class="profile-detail-row">
+      <span>Mobile number</span>
+      <strong>{{ profile().phone }}</strong>
+    </div>
+
+    <footer class="card-footer">
+      <button
+        class="secondary-btn"
+        type="button"
+        disabled
+        title="Account settings is not implemented yet"
+      >
+        Account settings
+        <span class="material-symbols-outlined">
+          arrow_outward
+        </span>
+      </button>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="editRequested.emit()"
+      >
+        <span class="material-symbols-outlined">edit</span>
+        Edit details
+      </button>
+    </footer>
+  } @else {
+    <form
+      class="profile-edit-form"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      novalidate
+    >
+      <div class="form-intro">
+        <strong>Contact details</strong>
+        <small>Fields marked with * are required.</small>
+      </div>
+
+      <label for="profile-name">
+        Full name <span>*</span>
+      </label>
+      <input
+        id="profile-name"
+        type="text"
+        formControlName="name"
+        autocomplete="name"
+      />
+      @if (submitted && form.controls.name.invalid) {
+        <small class="field-error">Enter a valid full name.</small>
+      }
+
+      <label for="profile-email">
+        Email address <span>*</span>
+      </label>
+      <input
+        id="profile-email"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+      />
+      @if (submitted && form.controls.email.invalid) {
+        <small class="field-error">Enter a valid email address.</small>
+      }
+
+      <label for="profile-phone">
+        Mobile number <span>*</span>
+      </label>
+      <input
+        id="profile-phone"
+        type="tel"
+        formControlName="phone"
+        autocomplete="tel"
+      />
+      @if (submitted && form.controls.phone.invalid) {
+        <small class="field-error">Enter your mobile number.</small>
+      }
+
+      <div class="card-footer">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="cancel()"
+        >
+          Cancel
+        </button>
+
+        <button class="primary-btn" type="submit">
+          Save changes
+          <span class="material-symbols-outlined">
+            arrow_forward
+          </span>
+        </button>
+      </div>
+
+      <p class="session-note">
+        <span class="material-symbols-outlined">info</span>
+        Changes are for this preview and are not sent to the server.
+      </p>
+    </form>
+  }
+</section>
