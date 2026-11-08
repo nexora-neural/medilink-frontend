@@ -13,6 +13,8 @@ import { Organizations } from './features/administration/organizations/organizat
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
+import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
+
 
 const rolePage = (
   path: string,
@@ -135,6 +137,16 @@ export const routes: Routes = [
           description: 'A responsive MediLink workspace foundation for role-aware navigation.',
         },
       },
+
+      {
+        path: 'doctor/dashboard',
+        component: DoctorDashboard,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
+
       {
         path: 'patient/profile',
         component: PatientProfile,

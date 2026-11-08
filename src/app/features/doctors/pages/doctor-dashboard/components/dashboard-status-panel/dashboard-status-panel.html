@@ -1,0 +1,6 @@
+<section class="status-panel" role="alert" aria-labelledby="dashboard-error-title">
+  <span class="material-symbols-outlined" aria-hidden="true">error_outline</span>
+  <h2 id="dashboard-error-title">Dashboard unavailable</h2>
+  <p>We couldn't load the dashboard preview. Try again.</p>
+  <button class="outline-button" type="button" (click)="retryRequested.emit()">Retry</button>
+</section>

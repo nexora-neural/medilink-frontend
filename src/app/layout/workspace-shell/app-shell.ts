@@ -21,11 +21,13 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
   ],
+
   Doctor: [
-    { label: 'Overview', icon: 'dashboard', path: '/workspace' },
-    { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records' },
-    { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
+    { label: 'Overview', icon: 'dashboard', path: '/workspace/doctor/dashboard', },
+    { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records', },
+    { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions', },
   ],
+
   Pharmacist: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Dispensing', icon: 'medication', path: '/workspace/pharmacist/dispensing' },
@@ -56,6 +58,15 @@ export class AppShell {
     this.menuOpen = false;
     void this.router.navigate(['/workspace']);
   }
+
+
+  get isDoctorDashboardRoute(): boolean {
+    return (
+      this.router.url.split(/[?#]/)[0] ===
+      '/workspace/doctor/dashboard'
+    );
+  }
+
 
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;

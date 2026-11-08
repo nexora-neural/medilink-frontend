@@ -1,0 +1,105 @@
+:host {
+  display: block;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.metric {
+  min-height: 163px;
+  background: #fff;
+  border: 1px solid #e6edf5;
+  border-radius: 16px;
+  padding: 27px 26px 21px;
+}
+
+.metric-blue {
+  background: linear-gradient(125deg, #e5f5ff, #c8edfc);
+  border-color: transparent;
+}
+
+.metric p {
+  margin: 0 0 19px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #738091;
+}
+
+.metric strong {
+  display: block;
+  font-size: 31px;
+  line-height: 1;
+  margin-bottom: 10px;
+  color: #183452;
+}
+
+.metric strong.verification {
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.metric strong.verified {
+  color: #478b62;
+}
+
+.metric span {
+  color: #a4afbb;
+  font-size: 11px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eef2f7 25%, #e4edf5 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+  border-radius: 7px;
+}
+
+.number-skeleton {
+  width: 65px;
+  height: 30px;
+  margin-bottom: 12px;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1050px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-grid {
+    gap: 10px;
+  }
+  .metric {
+    min-height: 125px;
+    padding: 17px 14px;
+  }
+  .metric p {
+    margin-bottom: 17px;
+  }
+  .metric strong {
+    font-size: 27px;
+  }
+}
+
+@media (max-width: 380px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

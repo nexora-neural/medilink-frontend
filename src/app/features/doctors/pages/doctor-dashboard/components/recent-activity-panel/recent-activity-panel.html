@@ -1,0 +1,26 @@
+<section class="panel" aria-labelledby="activity-title" [attr.aria-busy]="loading()">
+  <div class="panel-header">
+    <div><h2 id="activity-title">Recent activity</h2>
+      <p>Updates that need your attention</p></div>
+  </div>
+  @if (loading()) {
+    <div class="skeleton list-skeleton" role="status" aria-label="Loading recent activity"></div>
+  } @else if (activities().length === 0) {
+    <div class="empty-message"><span class="material-symbols-outlined" aria-hidden="true">inbox</span>
+      <p>No recent activity.</p></div>
+  } @else {
+    <ul class="activity-list">
+      @for (item of activities(); track item.id) {
+        <li>
+          <a [routerLink]="item.route" class="activity-row">
+            <span class="activity-icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+            <span class="activity-info"><strong>{{ item.title }}</strong><small>{{ item.detail }}</small></span>
+            <span class="activity-arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+  <p class="consent-note">Patient access is granted explicitly and expires at the time shown in each record. <span
+    class="demo-only">(Demo statement)</span></p>
+</section>

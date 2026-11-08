@@ -1,3 +1,4 @@
+
 <div class="app-layout">
   <app-workspace-sidebar
     [activeRole]="activeRole()"
@@ -7,12 +8,21 @@
     (roleChange)="selectRole($event)"
     (closeMenu)="closeMenu()"
   />
-  <div class="main-shell">
-    <app-workspace-header
+
+
+  <div
+    class="main-shell"
+    [class.doctor-dashboard-main]="activeRole() === 'Doctor'"
+  >
+
+  <app-workspace-header
       [activeRole]="activeRole()"
       [menuOpen]="menuOpen"
       (menuToggle)="toggleMenu()"
     />
-    <main class="content"><router-outlet /></main>
+
+    <main class="content">
+      <router-outlet />
+    </main>
   </div>
 </div>
