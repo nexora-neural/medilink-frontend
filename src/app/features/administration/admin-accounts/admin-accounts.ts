@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActiveRoleService } from '../../../core/context/active-role.service';
 import { UiState } from '../../../shared/components/ui-state/ui-state';
+import { A11yModule } from '@angular/cdk/a11y';
 
 interface AdminAccount {
   id: string;
@@ -13,7 +14,7 @@ interface AdminAccount {
 @Component({
   selector: 'app-admin-accounts',
   standalone: true,
-  imports: [ReactiveFormsModule, UiState],
+  imports: [ReactiveFormsModule, UiState, A11yModule],
   templateUrl: './admin-accounts.html',
   styleUrl: './admin-accounts.scss',
 })
@@ -93,7 +94,7 @@ export class AdminAccounts {
   }
 
   requestChange(account: AdminAccount): void {
-    if (!this.canManage()) {
+    if (!this.canManage() || this.pendingAccount()) {
       return;
     }
 

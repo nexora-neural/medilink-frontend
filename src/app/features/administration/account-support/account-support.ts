@@ -1,13 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  Injector,
-  ViewChild,
-  afterNextRender,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UiState } from '../../../shared/components/ui-state/ui-state';
 
@@ -24,26 +16,11 @@ interface SupportAccount {
 @Component({
   selector: 'app-account-support',
   standalone: true,
-  imports: [ReactiveFormsModule, UiState],
+  imports: [ReactiveFormsModule, UiState, A11yModule],
   templateUrl: './account-support.html',
   styleUrl: './account-support.scss',
 })
 export class AccountSupport {
-  private readonly injector = inject(Injector);
-  private actionButton: HTMLButtonElement | null = null;
-
-  @ViewChild('cancelButton')
-  set cancelButton(button: ElementRef<HTMLButtonElement> | undefined) {
-    if (!button) {
-      return;
-    }
-
-    queueMicrotask(() => {
-      if (button.nativeElement.isConnected) {
-        button.nativeElement.focus();
-      }
-    });
-  }
   readonly searchControl = new FormControl('', {
     nonNullable: true,
     validators: [Validators.maxLength(100)],
@@ -117,9 +94,10 @@ export class AccountSupport {
     return this.accounts();
   }
 
-  requestChange(account: SupportAccount, event?: Event): void {
-    this.actionButton =
-      event?.currentTarget instanceof HTMLButtonElement ? event.currentTarget : null;
+  requestChange(account: SupportAccount): void {
+    if (this.pendingAccount()) {
+      return;
+    }
 
     this.pendingAccount.set(account);
     this.message.set('');
@@ -127,21 +105,6 @@ export class AccountSupport {
 
   cancelChange(): void {
     this.pendingAccount.set(null);
-    this.restoreActionFocus();
-  }
-
-  private restoreActionFocus(): void {
-    const button = this.actionButton;
-    this.actionButton = null;
-
-    afterNextRender(
-      () => {
-        if (button?.isConnected && !button.disabled) {
-          button.focus();
-        }
-      },
-      { injector: this.injector },
-    );
   }
 
   confirmChange(): void {
@@ -166,6 +129,5 @@ export class AccountSupport {
     );
 
     this.pendingAccount.set(null);
-    this.restoreActionFocus();
   }
 }

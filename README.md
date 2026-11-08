@@ -93,11 +93,13 @@ selected preview role to Patient.
 
 - Production build passed with an initial bundle-size warning.
 - Formatting and TypeScript checks passed.
-- All 68 automated tests passed.
+- All 70 automated tests passed.
 - Account Support was visually checked at a 375px viewport width.
+- Keyboard focus was manually verified on Account Support and Admin Accounts.
 
-### Known issue
+### Keyboard accessibility
 
-Keyboard focus can leave the page when opening the account-status
-confirmation. Focus handling remains unresolved and requires review.
-Keyboard accessibility is not yet fully verified.
+- Confirmation panels move focus to Cancel when opened.
+- Tab and Shift+Tab keep focus within the confirmation panel.
+- Escape closes the confirmation panel.
+- Cancel and Confirm return focus to the original action button.
