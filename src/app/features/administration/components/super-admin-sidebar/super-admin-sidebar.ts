@@ -20,7 +20,11 @@ export class SuperAdminSidebar {
 
   readonly mainItems: NavigationItem[] = [
     { label: 'Overview', icon: 'dashboard' },
-    { label: 'Admin accounts', icon: 'manage_accounts' },
+    {
+      label: 'Admin accounts',
+      icon: 'manage_accounts',
+      route: '/super-admin/admin-accounts',
+    },
     { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
     {
       label: 'Membership request',
@@ -30,6 +34,11 @@ export class SuperAdminSidebar {
     { label: 'Integrations', icon: 'hub' },
     { label: 'Security', icon: 'security' },
     { label: 'Privileged audit', icon: 'history' },
+    {
+      label: 'Account support',
+      icon: 'support_agent',
+      route: '/super-admin/account-support',
+    },
   ];
 
   readonly footerItems: NavigationItem[] = [

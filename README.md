@@ -63,3 +63,41 @@ The empty feature folders are planned placeholders, not implemented clinical fea
 ## Team workflow
 
 Create a feature branch for each piece of work and merge through a reviewed pull request. Avoid committing generated output, local environment files, or patient data.
+
+## Account support and Admin accounts — ML-38
+
+These screens use fictional, in-memory accounts. Changes reset when
+the page reloads. Real API integration is tracked separately in ML-42.
+
+### Preview steps
+
+1. Start the application with `npm start`.
+2. Open `/workspace`.
+3. Select Admin and use the Account support sidebar link.
+4. Search accounts and preview suspend/reactivate actions.
+5. Select Super Admin, open Organizations, then use the Admin accounts
+   sidebar link to preview granting and removing delegated Admin access.
+
+Use sidebar links during preview. A full page reload resets the
+selected preview role to Patient.
+
+### Access rules
+
+- Admin can open Account support.
+- Only Super Admin can open Admin accounts and change Admin access.
+- Delegated Admin access does not grant clinical access.
+- The role selector and route guards are frontend preview controls.
+  Server-side authorization must be enforced during API integration.
+
+### Validation
+
+- Production build passed with an initial bundle-size warning.
+- Formatting and TypeScript checks passed.
+- All 68 automated tests passed.
+- Account Support was visually checked at a 375px viewport width.
+
+### Known issue
+
+Keyboard focus can leave the page when opening the account-status
+confirmation. Focus handling remains unresolved and requires review.
+Keyboard accessibility is not yet fully verified.
