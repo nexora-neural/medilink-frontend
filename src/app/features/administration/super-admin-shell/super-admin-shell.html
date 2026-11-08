@@ -1,0 +1,10 @@
+<div class="admin-layout">
+  @if (sidebarOpen) {
+    <button class="sidebar-overlay" type="button" aria-label="Close navigation" (click)="closeSidebar()"></button>
+  }
+  <app-super-admin-sidebar [isOpen]="sidebarOpen" (closeSidebar)="closeSidebar()" />
+  <div class="main-shell">
+    <app-super-admin-header (menuToggle)="toggleSidebar()" />
+    <main class="page-content"><router-outlet /></main>
+  </div>
+</div>

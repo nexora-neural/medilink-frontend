@@ -1,0 +1,26 @@
+<section class="request-page">
+  <a routerLink="/super-admin/organizations" class="back">← Back to organizations</a>
+  <div class="heading"><h1>Request organization membership</h1><p>Select an approved organization and complete the request form.</p></div>
+  <div class="panel">
+    @if (loading) { <p role="status">Loading organizations…</p> }
+    @else {
+      <form (ngSubmit)="submit()" #requestForm="ngForm" novalidate>
+        <div class="form-group"><label for="organization">Organization <span>*</span></label>
+          <select id="organization" name="organizationId" [(ngModel)]="organizationId" required>
+            <option [ngValue]="null">Select an approved organization</option>
+            @for (org of organizations; track org.id) { @if (org.approved) { <option [ngValue]="org.id">{{ org.name }} — {{ org.type }}</option> } }
+          </select>
+        </div>
+        <div class="field-grid">
+          <div class="form-group"><label for="fullName">Full name <span>*</span></label><input id="fullName" name="fullName" [(ngModel)]="fullName" required maxlength="100" placeholder="Enter your full name" /></div>
+          <div class="form-group"><label for="email">Email address <span>*</span></label><input type="email" id="email" name="email" [(ngModel)]="email" required email placeholder="name@example.com" /></div>
+        </div>
+        <div class="form-group"><label for="role">Professional role <span>*</span></label><select id="role" name="role" [(ngModel)]="professionalRole" required><option value="">Select role</option><option value="doctor">Doctor</option><option value="pharmacist">Pharmacist</option><option value="lab_staff">Lab staff</option></select></div>
+        <div class="form-group"><label for="reason">Reason for requesting membership <span>*</span></label><textarea id="reason" name="reason" [(ngModel)]="reason" rows="4" required minlength="10" maxlength="500" placeholder="Explain your connection to this organization"></textarea><small>Minimum 10 characters.</small></div>
+        @if (error) { <p class="error" role="alert">{{ error }}</p> }
+        @if (success) { <p class="success" role="status">{{ success }}</p> }
+        <div class="actions"><button type="submit">Preview membership request</button><a routerLink="/super-admin/organizations">Cancel</a></div>
+      </form>
+    }
+  </div>
+</section>
