@@ -2,9 +2,9 @@
   @if (sidebarOpen) {
     <button class="sidebar-overlay" type="button" aria-label="Close navigation" (click)="closeSidebar()"></button>
   }
-  <app-super-admin-sidebar [isOpen]="sidebarOpen" (closeSidebar)="closeSidebar()" />
+  <app-super-admin-sidebar #sidebar id="super-admin-navigation" [isOpen]="sidebarOpen" (closeSidebar)="closeSidebar()" />
   <div class="main-shell">
-    <app-super-admin-header (menuToggle)="toggleSidebar()" />
+    <app-super-admin-header [sidebarOpen]="sidebarOpen" (menuToggle)="toggleSidebar($event)" />
     <main class="page-content"><router-outlet /></main>
   </div>
 </div>

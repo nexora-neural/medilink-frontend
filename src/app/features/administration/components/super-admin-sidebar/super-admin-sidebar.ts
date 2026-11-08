@@ -27,6 +27,11 @@ export class SuperAdminSidebar {
       icon: 'assignment_add',
       route: '/super-admin/membership-request',
     },
+    {
+      label: 'Professional applications',
+      icon: 'fact_check',
+      route: '/super-admin/applications',
+    },
     { label: 'Integrations', icon: 'hub' },
     { label: 'Security', icon: 'security' },
     { label: 'Privileged audit', icon: 'history' },
