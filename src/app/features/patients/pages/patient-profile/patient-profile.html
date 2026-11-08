@@ -1,0 +1,43 @@
+
+<section class="patient-profile-page">
+  <header class="profile-heading">
+    <div class="heading-text">
+      <span class="eyebrow">YOUR ACCOUNT</span>
+
+      <h1>{{ isEditing ? 'Edit profile' : 'My profile' }}</h1>
+
+      <p>
+        {{
+          isEditing
+            ? 'Update your personal and contact details.'
+            : 'Your personal and contact information.'
+        }}
+      </p>
+    </div>
+
+    @if (!isEditing) {
+      <button
+        class="edit-profile-btn"
+        type="button"
+        (click)="editProfile()"
+      >
+        <span class="material-symbols-outlined">edit</span>
+        Edit profile
+      </button>
+    }
+  </header>
+
+  <div class="profile-layout">
+    <app-profile-summary-card
+      [profile]="patient"
+    />
+
+    <app-personal-information-card
+      [profile]="patient"
+      [isEditing]="isEditing"
+      (editRequested)="editProfile()"
+      (saveRequested)="saveProfile($event)"
+      (cancelRequested)="cancelEdit()"
+    />
+  </div>
+</section>

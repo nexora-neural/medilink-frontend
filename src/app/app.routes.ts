@@ -12,6 +12,7 @@ import { SuperAdminShell } from './features/administration/super-admin-shell/sup
 import { Organizations } from './features/administration/organizations/organizations';
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
+import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
 
 const rolePage = (
   path: string,
@@ -132,6 +133,14 @@ export const routes: Routes = [
         data: {
           title: 'Workspace overview',
           description: 'A responsive MediLink workspace foundation for role-aware navigation.',
+        },
+      },
+      {
+        path: 'patient/profile',
+        component: PatientProfile,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
         },
       },
       ...rolePages,
