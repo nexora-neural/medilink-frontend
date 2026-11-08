@@ -1,4 +1,4 @@
-import { Component, HostListener, output, inject } from '@angular/core';
+import { Component, HostListener, output, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -8,13 +8,16 @@ import { Router } from '@angular/router';
   styleUrl: './super-admin-header.scss',
 })
 export class SuperAdminHeader {
-  readonly menuToggle = output<void>();
+  readonly sidebarOpen = input(false);
+  readonly menuToggle = output<HTMLButtonElement>();
   private readonly router = inject(Router);
   profileOpen = false;
   notificationsOpen = false;
 
   get pageTitle(): string {
     const url = this.router.url;
+    if (/\/applications\/[^/?#]+/.test(url)) return 'Application review';
+    if (url.includes('/applications')) return 'Professional applications';
     if (url.includes('/membership-request')) return 'Membership request';
     if (/\/organizations\/[^/?]+/.test(url)) return 'Organization details';
     return 'Organizations';
