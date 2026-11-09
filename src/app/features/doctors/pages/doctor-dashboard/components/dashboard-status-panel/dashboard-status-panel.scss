@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.status-panel {
+  background: white;
+  border: 1px solid #e6edf5;
+  border-radius: 14px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.status-panel h2 {
+  font-size: 20px;
+  color: #17324d;
+}
+
+.status-panel p {
+  color: #8193a3;
+}
+
+.outline-button {
+  background: white;
+  color: #386f93;
+  border: 1px solid #d7e6f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.outline-button:hover {
+  background: #edf7fd;
+}

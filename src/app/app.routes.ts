@@ -14,6 +14,8 @@ import { Organizations } from './features/administration/organizations/organizat
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
+import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
+import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 
@@ -98,6 +100,13 @@ const rolePages: Route[] = [
   ),
 ];
 
+const doctorPreview = (path: string, title: string, description: string, qr = false): Route => ({
+  path,
+  component: DoctorPlaceholder,
+  canActivate: [roleGuard],
+  data: { allowedRoles: ['Doctor'], title, description, qr },
+});
+
 export const routes: Routes = [
   {
     path: '',
@@ -139,6 +148,52 @@ export const routes: Routes = [
           description: 'A responsive MediLink workspace foundation for role-aware navigation.',
         },
       },
+
+      {
+        path: 'doctor/dashboard',
+        component: DoctorDashboard,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
+      doctorPreview(
+        'doctor/patients',
+        'Patient queue',
+        'Patients who have shared access will appear here.',
+      ),
+      doctorPreview(
+        'doctor/patients/:id',
+        'Patient details',
+        'Patient-specific records will be available after integration.',
+      ),
+      doctorPreview(
+        'doctor/qr',
+        'My QR code',
+        'Your doctor QR code will be available after integration.',
+        true,
+      ),
+      doctorPreview(
+        'doctor/verification',
+        'Verification',
+        'Doctor verification details will appear here.',
+      ),
+      doctorPreview(
+        'doctor/notifications',
+        'Notifications',
+        'Your notifications will appear here.',
+      ),
+      doctorPreview(
+        'doctor/prescription-review',
+        'Patient-added prescription review',
+        'Prescription review will be available after integration.',
+      ),
+      doctorPreview(
+        'doctor/reports',
+        'Laboratory reports',
+        'Authorized laboratory reports will be available after integration.',
+      ),
+
       {
         path: 'patient/profile',
         component: PatientProfile,

@@ -1,0 +1,32 @@
+<section class="doctor-dashboard" aria-labelledby="doctor-dashboard-heading">
+  <header class="heading">
+    <div>
+      <p class="eyebrow">YOUR WORKSPACE</p>
+      <h1 id="doctor-dashboard-heading">Good morning, {{ doctorName }}</h1>
+      <p class="subheading">Your patient care overview for today.</p>
+    </div>
+    <a class="qr-button" routerLink="/workspace/doctor/qr">
+      <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> My QR code
+    </a>
+  </header>
+
+  @if (showPreviewTools()) {
+    <div class="preview-tools" aria-label="Dashboard visual preview states">
+      <span>Demo states:</span>
+      <button type="button" (click)="setPreviewState('ready')">Ready</button>
+      <button type="button" (click)="setPreviewState('loading')">Loading</button>
+      <button type="button" (click)="setPreviewState('empty')">Empty</button>
+      <button type="button" (click)="setPreviewState('error')">Error</button>
+    </div>
+  }
+
+  @if (state() === 'error') {
+    <app-dashboard-status-panel (retryRequested)="retry()" />
+  } @else {
+    <app-dashboard-summary-cards [summary]="summary()" [loading]="state() === 'loading'" />
+    <div class="dashboard-grid">
+      <app-patient-queue [patients]="patients()" [loading]="state() === 'loading'" />
+      <app-recent-activity-panel [activities]="activities()" [loading]="state() === 'loading'" />
+    </div>
+  }
+</section>

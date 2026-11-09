@@ -47,7 +47,7 @@ describe('AppShell', () => {
     expect(roles.activeRole()).toBe('Doctor');
     expect(fixture.componentInstance.menuOpen).toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/workspace']);
-    expect(element.querySelector('.role-chip')?.textContent).toContain('Doctor');
+    expect(element.querySelector('.user-summary')?.textContent).toContain('Doctor account');
   });
   it('closes the mobile navigation when the scrim is selected', () => {
     const element = fixture.nativeElement as HTMLElement;
