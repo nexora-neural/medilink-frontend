@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 const nonblank = (control: AbstractControl) =>
@@ -13,8 +13,10 @@ const nonblank = (control: AbstractControl) =>
 })
 export class ProfessionalVerification {
   @ViewChild('formHeading') formHeading?: ElementRef<HTMLElement>;
+  @ViewChild('documentsHeading') documentsHeading?: ElementRef<HTMLElement>;
   @ViewChild('statusHeading') statusHeading?: ElementRef<HTMLElement>;
   private readonly formBuilder = new FormBuilder();
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   readonly roles = ['Doctor', 'Pharmacist', 'Lab Staff'];
 
@@ -37,11 +39,13 @@ export class ProfessionalVerification {
     qualification: string;
     documents: string[];
   } | null = null;
-  previewStatus: 'pending' | 'rejected' | 'more_info_requested' = 'pending';
+  previewStatus: 'pending' | 'under_review' | 'verified' | 'rejected' | 'more_info_requested' =
+    'pending';
   submissionError = '';
   fileError = '';
   applicationSubmitted = false;
   showStatus = false;
+  showDocuments = false;
   submitted = false;
   busy = false;
 
@@ -94,6 +98,7 @@ export class ProfessionalVerification {
       if (!this.selectedFiles.length) {
         this.fileError = 'Please upload your supporting document.';
       }
+      if (this.verificationForm.invalid) this.showDocuments = false;
       return;
     }
 
@@ -119,6 +124,7 @@ export class ProfessionalVerification {
       this.submissionError = 'Unable to submit the preview. Please try again.';
     } finally {
       this.busy = false;
+      this.changeDetector.markForCheck();
     }
   }
 
@@ -126,9 +132,28 @@ export class ProfessionalVerification {
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }
 
+  setPreviewStatus(status: string): void {
+    if (
+      status === 'pending' ||
+      status === 'under_review' ||
+      status === 'verified' ||
+      status === 'rejected' ||
+      status === 'more_info_requested'
+    ) {
+      this.previewStatus = status;
+    }
+  }
+
   viewApplicationForm(): void {
     this.showStatus = false;
+    this.showDocuments = false;
     setTimeout(() => this.formHeading?.nativeElement.focus());
+  }
+
+  viewDocuments(): void {
+    this.showStatus = false;
+    this.showDocuments = true;
+    setTimeout(() => this.documentsHeading?.nativeElement.focus());
   }
 
   viewApplicationStatus(): void {

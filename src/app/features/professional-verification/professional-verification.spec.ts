@@ -87,4 +87,47 @@ describe('ProfessionalVerification', () => {
     expect(service).toHaveBeenCalledTimes(2);
     expect(component.applicationSubmitted).toBe(true);
   });
+
+  it('navigates between application and documents without losing entered details', () => {
+    component.verificationForm.controls.fullName.setValue('Example Doctor');
+    fixture.detectChanges();
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    buttons.find((button) => button.textContent?.includes('Continue to documents'))?.click();
+    fixture.detectChanges();
+    expect(component.showDocuments).toBe(true);
+    expect(fixture.nativeElement.querySelector('#evidence-document')).toBeTruthy();
+    buttons.find((button) => button.textContent?.trim() === 'Application')?.click();
+    fixture.detectChanges();
+    expect(component.showDocuments).toBe(false);
+    expect(component.verificationForm.controls.fullName.value).toBe('Example Doctor');
+  });
+
+  it('shows validation errors when the document step is submitted without required details', async () => {
+    component.viewDocuments();
+    await component.submitApplication();
+    fixture.detectChanges();
+    expect(component.showDocuments).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Please enter your full name.');
+    expect(component.fileError).toContain('supporting document');
+  });
+
+  it('keeps status changes clearly labelled as samples', async () => {
+    component.verificationForm.patchValue({
+      fullName: 'Example Doctor',
+      email: 'test@example.com',
+      role: 'Doctor',
+      registrationNumber: 'D123',
+    });
+    component.selectedFiles = [new File(['sample'], 'evidence.pdf')];
+    await component.submitApplication();
+    component.setPreviewStatus('verified');
+    fixture.changeDetectorRef.detectChanges();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Verified (sample)');
+    expect(fixture.nativeElement.textContent).toContain(
+      'does not change a real application or grant access',
+    );
+  });
 });

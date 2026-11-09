@@ -480,3 +480,89 @@ h1 {
     width: 100%;
   }
 }
+
+.verification-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #dce7ee;
+}
+.verification-nav button {
+  flex: 0 0 auto;
+  padding: 0.8rem 1rem;
+  color: #58788c;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-weight: 650;
+  cursor: pointer;
+}
+.verification-nav button.active {
+  color: #137fac;
+  border-bottom-color: #137fac;
+}
+.verification-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  align-items: start;
+  gap: 1.25rem;
+}
+.help-card {
+  padding: 1.4rem;
+  color: #376a86;
+  background: #eff8fc;
+  border: 1px solid #d8edf7;
+  border-radius: 0.85rem;
+}
+.help-card > span {
+  color: #137fac;
+  font-size: 1.8rem;
+}
+.help-card h2 {
+  margin: 0.7rem 0;
+  color: #173750;
+  font-size: 1rem;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+.help-card p {
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.section-heading h2,
+.status-card h2 {
+  letter-spacing: normal;
+}
+.progress-steps {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+  color: #58788c;
+  font-size: 0.75rem;
+}
+.progress-steps li {
+  flex: 1;
+  padding: 0.7rem 0.3rem;
+  border-bottom: 3px solid #b9d7e6;
+}
+.preview-select {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+.preview-select small {
+  color: #58788c;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 800px) {
+  .verification-layout {
+    grid-template-columns: 1fr;
+  }
+}
