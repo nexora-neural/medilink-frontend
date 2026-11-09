@@ -1,6 +1,16 @@
-import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  inject,
+} from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../core/auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { TimeoutError } from 'rxjs';
 
 @Component({
   selector: 'app-access-form',
@@ -13,6 +23,8 @@ export class AccessFormComponent implements OnChanges {
   @Input() page = '';
   @Input() role = 'Patient';
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   showPassword = false;
   submitted = false;
@@ -29,10 +41,32 @@ export class AccessFormComponent implements OnChanges {
     this.message = '';
   }
 
-  submit(form: NgForm) {
+  async submit(form: NgForm) {
     this.submitted = true;
     if (!form.valid) return;
     if (this.page === 'reset' && this.password !== this.confirm) return;
+    if (this.page === 'login') {
+      this.busy = true;
+      this.message = '';
+      try {
+        await this.auth.signIn(this.email, this.password);
+        await this.router.navigate(['/workspace']);
+      } catch (error) {
+        this.message =
+          error instanceof TimeoutError ||
+          (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)) ||
+          (typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 'auth/network-request-failed')
+            ? 'The service is unavailable. Please try again later.'
+            : 'Unable to sign in. Check your account and try again.';
+      } finally {
+        this.busy = false;
+        this.changeDetector.markForCheck();
+      }
+      return;
+    }
     this.busy = true;
     setTimeout(() => {
       this.busy = false;

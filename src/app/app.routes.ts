@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { roleGuard } from './core/guards/role.guard';
+import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
 import { AppShell } from './layout/workspace-shell/app-shell';
 import { StatusPage } from './pages/errors/status-page/status-page';
@@ -128,6 +129,7 @@ export const routes: Routes = [
   {
     path: 'workspace',
     component: AppShell,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -160,7 +162,7 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
-    canActivate: [roleGuard],
+    canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [
       {
@@ -175,22 +177,6 @@ export const routes: Routes = [
       {
         path: 'organizations/:id',
         component: OrganizationDetail,
-      },
-      {
-        path: 'applications',
-        loadComponent: () =>
-          import('./features/administration/professional-applications/professional-applications').then(
-            (module) => module.ProfessionalApplications,
-          ),
-        title: 'Professional applications | MediLink',
-      },
-      {
-        path: 'applications/:id',
-        loadComponent: () =>
-          import('./features/administration/professional-applications/professional-application-detail').then(
-            (module) => module.ProfessionalApplicationDetail,
-          ),
-        title: 'Application review | MediLink',
       },
       {
         path: 'membership-request',
