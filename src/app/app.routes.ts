@@ -174,11 +174,11 @@ export const routes: Routes = [
         'Your doctor QR code will be available after integration.',
         true,
       ),
-      doctorPreview(
-        'doctor/verification',
-        'Verification',
-        'Doctor verification details will appear here.',
-      ),
+      {
+        path: 'doctor/verification',
+        pathMatch: 'full',
+        redirectTo: '/workspace/professional-verification',
+      },
       doctorPreview(
         'doctor/notifications',
         'Notifications',
