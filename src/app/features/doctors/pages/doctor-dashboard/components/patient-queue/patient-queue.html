@@ -1,0 +1,39 @@
+<section class="panel" aria-labelledby="queue-title" [attr.aria-busy]="loading()">
+  <div class="panel-header">
+    <div>
+      <h2 id="queue-title">Patient queue</h2>
+      <p>Patients who have shared access with you</p>
+    </div>
+    <a routerLink="/workspace/doctor/patients" class="view-all"
+      >View all <span aria-hidden="true">→</span></a
+    >
+  </div>
+  @if (loading()) {
+    <div class="skeleton list-skeleton" role="status" aria-label="Loading patient queue"></div>
+  } @else if (patients().length === 0) {
+    <div class="empty-message">
+      <span class="material-symbols-outlined" aria-hidden="true">group_off</span>
+      <p>No patients with active access.</p>
+    </div>
+  } @else {
+    <ul class="patient-list">
+      @for (patient of patients(); track patient.id) {
+        <li>
+          <a
+            [routerLink]="['/workspace/doctor/patients', patient.id]"
+            class="patient-row"
+            [attr.aria-label]="'Open patient records for ' + patient.name"
+          >
+            <span class="avatar">{{ patient.initials }}</span>
+            <span class="patient-info"
+              ><strong>{{ patient.name }}</strong
+              ><small>{{ patient.id }} · {{ patient.detail }}</small></span
+            >
+            <span class="access-pill">{{ patient.accessLabel }}</span>
+            <span class="material-symbols-outlined arrow" aria-hidden="true">north_east</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

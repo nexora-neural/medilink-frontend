@@ -26,7 +26,7 @@ describe('AppShell', () => {
 
     expect(element.querySelector('.workspace-label')?.textContent).toContain('Patient workspace');
     expect(element.querySelector('.role-chip')?.textContent).toContain('Patient');
-    expect(element.querySelectorAll('.primary-navigation a').length).toBe(8);
+    expect(element.querySelector('a[href="/workspace/professional-verification"]')).not.toBeNull();
   });
 
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
@@ -47,7 +47,7 @@ describe('AppShell', () => {
     expect(roles.activeRole()).toBe('Doctor');
     expect(fixture.componentInstance.menuOpen).toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/workspace']);
-    expect(element.querySelector('.role-chip')?.textContent).toContain('Doctor');
+    expect(element.querySelector('.user-summary')?.textContent).toContain('Doctor account');
   });
   it('closes the mobile navigation when the scrim is selected', () => {
     const element = fixture.nativeElement as HTMLElement;

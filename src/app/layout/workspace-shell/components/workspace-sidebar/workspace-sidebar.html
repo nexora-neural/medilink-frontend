@@ -1,31 +1,73 @@
-<aside class="sidebar" [class.open]="menuOpen" aria-label="Main navigation">
-  <a class="brand" routerLink="/workspace" (click)="closeMenu.emit()" aria-label="MediLink workspace">
-    <img src="/medilink-logo-horizontal.svg" alt="MediLink" />
+
+<aside
+  class="sidebar"
+  [class.open]="menuOpen"
+  [class.doctor-dashboard-sidebar]="isDoctorWorkspace"
+  aria-label="Main navigation"
+>
+  <a
+    class="brand"
+    routerLink="/workspace"
+    (click)="closeMenu.emit()"
+    aria-label="MediLink workspace"
+  >
+    <img
+      src="/medilink-logo-horizontal.svg"
+      alt="MediLink"
+    />
   </a>
-  <p class="workspace-label">{{ activeRole }} workspace</p>
-  <nav class="primary-navigation" aria-label="Workspace">
+
+  <p class="workspace-label">
+    {{ activeRole }} workspace
+  </p>
+
+  <nav
+    class="primary-navigation"
+    aria-label="Workspace"
+  >
     @for (item of navigation; track item.path) {
       <a
         [routerLink]="item.path"
         routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: item.path === '/workspace' }"
+        [routerLinkActiveOptions]="{
+          exact: item.path === '/workspace' ||
+                 item.path === '/workspace/doctor/dashboard'
+        }"
         (click)="closeMenu.emit()"
       >
-        <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+        <span
+          class="material-symbols-outlined"
+          aria-hidden="true"
+        >
+          {{ item.icon }}
+        </span>
+
         <span>{{ item.label }}</span>
       </a>
     }
   </nav>
+
   <div class="sidebar-footer">
     <label for="active-role">Active role</label>
-    <select id="active-role" [value]="activeRole" (change)="selectRole($event)">
+
+    <select
+      id="active-role"
+      [value]="activeRole"
+      (change)="selectRole($event)"
+    >
       @for (role of roles; track role) {
-        <option [value]="role">{{ role }}</option>
+        <option [value]="role">
+          {{ role }}
+        </option>
       }
     </select>
-    <span class="demo-note">Local role context for frontend review</span>
+
+    <span class="demo-note">
+      Local role context for frontend review
+    </span>
   </div>
 </aside>
+
 @if (menuOpen) {
   <button
     class="sidebar-scrim"

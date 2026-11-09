@@ -7,7 +7,17 @@ import { WorkspaceSidebar } from './components/workspace-sidebar/workspace-sideb
 import { NavigationItem } from './models/navigation-item';
 
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
-  'Super Admin': [{ label: 'Organizations', icon: 'business', path: '/super-admin/organizations' }],
+  Admin: [
+    {
+      label: 'Account support',
+      icon: 'support_agent',
+      path: '/workspace/admin/account-support',
+    },
+  ],
+  'Super Admin': [
+    { label: 'Organizations', icon: 'business', path: '/super-admin/organizations' },
+    { label: 'Professional applications', icon: 'fact_check', path: '/super-admin/applications' },
+  ],
   Patient: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
@@ -23,11 +33,17 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
       path: '/workspace/professional-verification',
     },
   ],
+
   Doctor: [
-    { label: 'Overview', icon: 'dashboard', path: '/workspace' },
+    { label: 'Overview', icon: 'dashboard', path: '/workspace/doctor/dashboard' },
+    { label: 'Patients', icon: 'group', path: '/workspace/doctor/patients' },
+    { label: 'My QR code', icon: 'qr_code_2', path: '/workspace/doctor/qr' },
+    { label: 'Verification', icon: 'verified_user', path: '/workspace/doctor/verification' },
+    { label: 'Notifications', icon: 'notifications', path: '/workspace/doctor/notifications' },
     { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
   ],
+
   Pharmacist: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Dispensing', icon: 'medication', path: '/workspace/pharmacist/dispensing' },
@@ -57,6 +73,10 @@ export class AppShell {
     this.roleContext.setActiveRole(role);
     this.menuOpen = false;
     void this.router.navigate(['/workspace']);
+  }
+
+  get isDoctorDashboardRoute(): boolean {
+    return this.router.url.split(/[?#]/)[0] === '/workspace/doctor/dashboard';
   }
 
   toggleMenu(): void {

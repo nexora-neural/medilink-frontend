@@ -3,17 +3,10 @@
     <div>
       <span class="eyebrow">PROFESSIONAL VERIFICATION</span>
       <h1>Professional verification</h1>
-      <p>
-        Submit your professional information and supporting documents
-        to request verification.
-      </p>
+      <p>Submit your professional information and supporting documents to request verification.</p>
     </div>
 
-    <button
-      type="button"
-      class="secondary-button"
-      (click)="viewApplicationStatus()"
-    >
+    <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
       <span class="material-symbols-outlined">fact_check</span>
       Application status
     </button>
@@ -26,7 +19,7 @@
           <span class="material-symbols-outlined">verified_user</span>
         </div>
         <div>
-          <h2>Verification application</h2>
+          <h2 #formHeading tabindex="-1">Verification application</h2>
           <p>Complete all required fields marked with an asterisk.</p>
         </div>
       </div>
@@ -34,16 +27,12 @@
       <div class="notice" role="note">
         <span class="material-symbols-outlined">info</span>
         <p>
-          Your professional access will remain restricted until your
-          application has been reviewed and approved.
+          Your professional access will remain restricted until your application has been reviewed
+          and approved.
         </p>
       </div>
 
-      <form
-        [formGroup]="verificationForm"
-        (ngSubmit)="submitApplication()"
-        novalidate
-      >
+      <form [formGroup]="verificationForm" (ngSubmit)="submitApplication()" novalidate>
         <div class="form-section">
           <h3>Personal information</h3>
 
@@ -53,11 +42,15 @@
               <input
                 type="text"
                 formControlName="fullName"
+                [attr.aria-invalid]="submitted && verificationForm.controls.fullName.invalid"
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.fullName.invalid ? 'full-name-error' : null
+                "
                 placeholder="Enter your full name"
                 autocomplete="name"
               />
               @if (submitted && verificationForm.controls.fullName.invalid) {
-                <small class="error">Please enter your full name.</small>
+                <small id="full-name-error" class="error">Please enter your full name.</small>
               }
             </label>
 
@@ -66,11 +59,15 @@
               <input
                 type="email"
                 formControlName="email"
+                [attr.aria-invalid]="submitted && verificationForm.controls.email.invalid"
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.email.invalid ? 'email-error' : null
+                "
                 placeholder="you@example.com"
                 autocomplete="email"
               />
               @if (submitted && verificationForm.controls.email.invalid) {
-                <small class="error">Enter a valid email address.</small>
+                <small id="email-error" class="error">Enter a valid email address.</small>
               }
             </label>
           </div>
@@ -82,53 +79,102 @@
           <div class="form-grid">
             <label class="field">
               <span>Professional role <b>*</b></span>
-              <select formControlName="role">
+              <select
+                formControlName="role"
+                [attr.aria-invalid]="submitted && verificationForm.controls.role.invalid"
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.role.invalid ? 'role-error' : null
+                "
+              >
                 <option value="">Select your role</option>
                 @for (role of roles; track role) {
                   <option [value]="role">{{ role }}</option>
                 }
               </select>
               @if (submitted && verificationForm.controls.role.invalid) {
-                <small class="error">Please select your professional role.</small>
+                <small id="role-error" class="error">Please select your professional role.</small>
               }
             </label>
 
             <label class="field">
-              <span>Registration number <b>*</b></span>
+              <span
+                >{{
+                  verificationForm.controls.role.value === 'Doctor'
+                    ? 'SLMC registration number'
+                    : verificationForm.controls.role.value === 'Pharmacist'
+                      ? 'Pharmacist registration number'
+                      : verificationForm.controls.role.value === 'Lab Staff'
+                        ? 'Laboratory registration number'
+                        : 'Registration number'
+                }}
+                <b>*</b></span
+              >
               <input
                 type="text"
                 formControlName="registrationNumber"
+                [attr.aria-invalid]="
+                  submitted && verificationForm.controls.registrationNumber.invalid
+                "
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.registrationNumber.invalid
+                    ? 'registration-error'
+                    : null
+                "
                 placeholder="Enter your registration number"
               />
-              @if (
-                submitted &&
-                verificationForm.controls.registrationNumber.invalid
-                ) {
-                <small class="error">Registration number is required.</small>
+              @if (submitted && verificationForm.controls.registrationNumber.invalid) {
+                <small id="registration-error" class="error"
+                  >Registration number is required.</small
+                >
               }
             </label>
 
             <label class="field">
-              <span>Specialty / Department <b>*</b></span>
+              <span>Specialty / Department (optional)</span>
               <input
                 type="text"
                 formControlName="specialty"
+                maxlength="150"
+                [attr.aria-invalid]="submitted && verificationForm.controls.specialty.invalid"
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.specialty.invalid
+                    ? 'specialty-error'
+                    : null
+                "
                 placeholder="Enter your specialty or department"
               />
               @if (submitted && verificationForm.controls.specialty.invalid) {
-                <small class="error">This field is required.</small>
+                <small id="specialty-error" class="error">Use no more than 150 characters.</small>
               }
             </label>
 
             <label class="field">
-              <span>Institution / Workplace <b>*</b></span>
+              <span>Organization (optional)</span>
+              <select formControlName="institution">
+                <option value="">No organization selected</option>
+                <option value="Lakeside Clinic">Lakeside Clinic (sample)</option>
+                <option value="Lakeside Pharmacy">Lakeside Pharmacy (sample)</option>
+                <option value="Central Laboratory">Central Laboratory (sample)</option>
+              </select>
+              <small>Sample organizations shown for this preview.</small>
+            </label>
+            <label class="field">
+              <span>Qualification (optional)</span>
               <input
-                type="text"
-                formControlName="institution"
-                placeholder="Enter your institution or workplace"
+                formControlName="qualification"
+                maxlength="2000"
+                placeholder="Enter your qualification"
+                [attr.aria-invalid]="submitted && verificationForm.controls.qualification.invalid"
+                [attr.aria-describedby]="
+                  submitted && verificationForm.controls.qualification.invalid
+                    ? 'qualification-error'
+                    : null
+                "
               />
-              @if (submitted && verificationForm.controls.institution.invalid) {
-                <small class="error">Institution or workplace is required.</small>
+              @if (submitted && verificationForm.controls.qualification.invalid) {
+                <small id="qualification-error" class="error"
+                  >Use no more than 2,000 characters.</small
+                >
               }
             </label>
           </div>
@@ -137,38 +183,37 @@
         <div class="form-section">
           <h3>Supporting document</h3>
           <p class="section-description">
-            Upload a document that supports your professional registration.
-            Accepted formats: PDF, JPG and PNG. Maximum size: 10 MB.
+            Upload a document that supports your professional registration. Accepted formats: PDF,
+            JPG and PNG. Maximum size: 10 MB.
           </p>
 
           <label class="upload-area" for="evidence-document">
-            <span class="material-symbols-outlined upload-icon">
-              cloud_upload
-            </span>
+            <span class="material-symbols-outlined upload-icon"> cloud_upload </span>
             <strong>Choose a document to upload</strong>
             <span>Browse your device to select a file</span>
             <input
               id="evidence-document"
               type="file"
+              multiple
+              [attr.aria-invalid]="!!fileError"
+              [attr.aria-describedby]="fileError ? 'file-error' : null"
               accept=".pdf,.jpg,.jpeg,.png"
               (change)="onFileSelected($event)"
             />
           </label>
 
-          @if (selectedFile) {
+          @for (file of selectedFiles; track $index; let index = $index) {
             <div class="selected-file">
               <span class="material-symbols-outlined">description</span>
               <div class="file-details">
-                <strong>{{ selectedFile.name }}</strong>
-                <small>
-                  {{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB
-                </small>
+                <strong>{{ file.name }}</strong>
+                <small> {{ (file.size / 1024 / 1024).toFixed(2) }} MB </small>
               </div>
               <button
                 type="button"
                 class="remove-file"
-                aria-label="Remove selected document"
-                (click)="removeSelectedFile()"
+                [attr.aria-label]="'Remove ' + file.name"
+                (click)="removeSelectedFile(index)"
               >
                 <span class="material-symbols-outlined">close</span>
               </button>
@@ -176,7 +221,7 @@
           }
 
           @if (fileError) {
-            <small class="error" role="alert">{{ fileError }}</small>
+            <small id="file-error" class="error" role="alert">{{ fileError }}</small>
           }
         </div>
 
@@ -194,17 +239,21 @@
         </div>
 
         <div class="form-footer">
+          @if (submissionError) {
+            <p class="error" role="alert">{{ submissionError }}</p>
+          }
+          @if (busy) {
+            <p role="status">Submitting preview…</p>
+          }
           <p>
             <span class="material-symbols-outlined">lock</span>
-            Your information is submitted for verification review.
+            Preview only. Information and documents are not sent to the server.
           </p>
 
-          <button
-            type="submit"
-            class="primary-button"
-            [disabled]="busy"
-          >
-            Submit application
+          <button type="submit" class="primary-button" [disabled]="busy">
+            {{
+              busy ? 'Submitting preview…' : submissionError ? 'Try again' : 'Submit application'
+            }}
             <span class="material-symbols-outlined">arrow_forward</span>
           </button>
         </div>
@@ -219,46 +268,69 @@
       </div>
 
       @if (applicationSubmitted) {
-        <span class="eyebrow">APPLICATION RECEIVED</span>
-        <h2>Your application is pending review</h2>
+        <span class="eyebrow">APPLICATION PREVIEW</span>
+        <h2 #statusHeading tabindex="-1">
+          {{
+            previewStatus === 'pending'
+              ? 'Your application is pending review'
+              : previewStatus === 'rejected'
+                ? 'Application rejected'
+                : 'More information requested'
+          }}
+        </h2>
         <p class="status-description">
-          Your application has been completed in this frontend preview.
-          The verification team will review your professional details
-          and supporting documents once API integration is available.
+          Your application has been completed in this frontend preview. The verification team will
+          review your professional details and supporting documents once API integration is
+          available.
         </p>
 
         <div class="status-summary">
           <div>
             <span>Professional role</span>
-            <strong>{{ verificationForm.controls.role.value }}</strong>
+            <strong>{{ submittedSnapshot?.role }}</strong>
           </div>
           <div>
             <span>Registration number</span>
-            <strong>{{ verificationForm.controls.registrationNumber.value }}</strong>
+            <strong>{{ submittedSnapshot?.registrationNumber }}</strong>
           </div>
           <div>
-            <span>Institution</span>
-            <strong>{{ verificationForm.controls.institution.value }}</strong>
+            <span>Organization</span>
+            <strong>{{ submittedSnapshot?.institution || 'Not selected' }}</strong>
           </div>
           <div>
             <span>Application status</span>
-            <strong class="pending-text">Pending</strong>
+            <strong class="pending-text">{{
+              previewStatus === 'pending'
+                ? 'Pending'
+                : previewStatus === 'rejected'
+                  ? 'Rejected'
+                  : 'More information requested'
+            }}</strong>
+          </div>
+          <div>
+            <span>Qualification</span><strong>{{ submittedSnapshot?.qualification }}</strong>
+          </div>
+          <div>
+            <span>Supporting documents</span
+            ><strong>{{ submittedSnapshot?.documents?.join(', ') }}</strong>
           </div>
         </div>
+        <p>Demo only: select a sample status. This does not change an actual application.</p>
+        <button type="button" (click)="previewStatus = 'pending'">Pending</button>
+        <button type="button" (click)="previewStatus = 'rejected'">Rejected</button>
+        <button type="button" (click)="previewStatus = 'more_info_requested'">
+          More information requested
+        </button>
       } @else {
         <span class="eyebrow">APPLICATION STATUS</span>
-        <h2>No application submitted yet</h2>
+        <h2 #statusHeading tabindex="-1">No application submitted yet</h2>
         <p class="status-description">
-          You have not submitted a professional verification application.
-          Complete the application form to get started.
+          You have not submitted a professional verification application. Complete the application
+          form to get started.
         </p>
       }
 
-      <button
-        type="button"
-        class="primary-button"
-        (click)="viewApplicationForm()"
-      >
+      <button type="button" class="primary-button" (click)="viewApplicationForm()">
         {{ applicationSubmitted ? 'Back to application' : 'Start application' }}
         <span class="material-symbols-outlined">arrow_forward</span>
       </button>

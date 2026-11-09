@@ -154,3 +154,76 @@
     font-size: 0.65rem;
   }
 }
+
+
+/* ML-235: Doctor Dashboard header only */
+
+.topbar.doctor-dashboard-header {
+  min-height: 90px;
+  padding: 0 44px;
+}
+
+.doctor-dashboard-header .breadcrumb {
+  gap: 18px;
+  font-size: 14px;
+  color: #8a9cb2;
+}
+
+.doctor-dashboard-header .breadcrumb strong {
+  color: #8a9cb2;
+  font-weight: 400;
+}
+
+.doctor-dashboard-header .topbar-actions {
+  gap: 28px;
+}
+
+.doctor-dashboard-header .notification-icon {
+  font-size: 25px;
+  color: #758ba7;
+}
+
+.doctor-dashboard-header .user-summary {
+  gap: 12px;
+}
+
+.doctor-dashboard-header .avatar {
+  width: 46px;
+  height: 46px;
+  background: #e3f0fa;
+  color: #397dac;
+  font-size: 14px;
+}
+
+.doctor-dashboard-header .user-summary strong {
+  color: #122b4c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.doctor-dashboard-header .user-summary small {
+  margin-top: 4px;
+  color: #8a9cb2;
+  font-size: 11px;
+}
+
+@media (max-width: 700px) {
+  .topbar.doctor-dashboard-header {
+    min-height: 96px;
+    padding: 0 16px;
+  }
+
+  .doctor-dashboard-header .breadcrumb {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .doctor-dashboard-header .topbar-actions {
+    gap: 10px;
+  }
+
+  .doctor-dashboard-header .avatar {
+    width: 36px;
+    height: 36px;
+  }
+}

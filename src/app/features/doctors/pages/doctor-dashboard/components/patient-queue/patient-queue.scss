@@ -1,0 +1,160 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e6edf5;
+  border-radius: 16px;
+  min-height: 385px;
+  height: 100%;
+  padding: 26px 24px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 21px;
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  line-height: 1.3;
+  margin: 0 0 9px;
+  color: #17324d;
+}
+
+.panel-header p {
+  margin: 0;
+  color: #9eabb6;
+  font-size: 12px;
+}
+
+.view-all {
+  color: #4685aa;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.patient-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.patient-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 84px;
+  padding: 10px 13px;
+  background: #f6f9fc;
+  border-radius: 10px;
+  color: #17324d;
+  text-decoration: none;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 45px;
+  width: 45px;
+  height: 45px;
+  background: #e5f3fd;
+  border-radius: 50%;
+  color: #3a80a7;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.patient-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.patient-info strong {
+  font-size: 12px;
+}
+
+.patient-info small {
+  color: #9ba8b6;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.access-pill {
+  color: #42895d;
+  background: #e9f7ed;
+  padding: 4px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.arrow {
+  color: #183452;
+  font-size: 20px;
+}
+
+.empty-message {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: #8396a8;
+  min-height: 160px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.empty-message p {
+  margin: 0;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eef2f7 25%, #e4edf5 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+  border-radius: 7px;
+}
+
+.list-skeleton {
+  height: 68px;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    min-height: 230px;
+    padding: 20px 14px;
+  }
+  .patient-row {
+    flex-wrap: wrap;
+  }
+  .access-pill {
+    margin-left: 47px;
+  }
+  .panel-header {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

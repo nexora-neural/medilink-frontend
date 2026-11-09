@@ -1,4 +1,6 @@
-<header class="topbar">
+
+<header class="topbar"
+        [class.doctor-dashboard-header]="isDoctorWorkspace">
   <button
     class="menu-button"
     type="button"
@@ -6,20 +8,72 @@
     [attr.aria-expanded]="menuOpen"
     (click)="menuToggle.emit()"
   >
-    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    <span
+      class="material-symbols-outlined"
+      aria-hidden="true"
+    >menu</span>
   </button>
-  <a class="mobile-brand" routerLink="/workspace" aria-label="MediLink workspace">
-    <img src="/medilink-logo-horizontal.svg" alt="" />
+
+  <a
+    class="mobile-brand"
+    routerLink="/workspace"
+    aria-label="MediLink workspace"
+  >
+    <img src="/medilink-logo-horizontal.svg" alt="MediLink" />
   </a>
+
+
   <div class="breadcrumb">
-    <span>My care</span><span aria-hidden="true">/</span><strong>Workspace</strong>
+    @if (isDoctorWorkspace) {
+      <span>Doctor Workspace</span>
+      <span aria-hidden="true">/</span>
+      <strong>{{ doctorPageTitle }}</strong>
+    } @else {
+      <span>My care</span>
+      <span aria-hidden="true">/</span>
+      <strong>Workspace</strong>
+    }
   </div>
+
+
   <div class="topbar-actions">
-    <span class="role-chip">{{ activeRole }}</span>
-    <span class="material-symbols-outlined notification-icon" aria-hidden="true">notifications</span>
-    <div class="user-summary">
-      <span class="avatar" aria-hidden="true">{{ activeRole.slice(0, 1) }}</span>
-      <span><strong>{{ activeRole }}</strong><small>MediLink account</small></span>
-    </div>
+    @if (activeRole === 'Doctor') {
+      <span
+        class="material-symbols-outlined notification-icon"
+        aria-hidden="true"
+      >notifications</span>
+
+      <div class="user-summary">
+        <span class="avatar" aria-hidden="true">MP</span>
+
+        <span>
+          <strong>Dr. Maya Perera</strong>
+          <small>Doctor account</small>
+        </span>
+
+        <span
+          class="material-symbols-outlined"
+          aria-hidden="true"
+        >keyboard_arrow_down</span>
+      </div>
+    } @else {
+      <span class="role-chip">{{ activeRole }}</span>
+
+      <span
+        class="material-symbols-outlined notification-icon"
+        aria-hidden="true"
+      >notifications</span>
+
+      <div class="user-summary">
+        <span class="avatar" aria-hidden="true">
+          {{ activeRole.slice(0, 1) }}
+        </span>
+
+        <span>
+          <strong>{{ activeRole }}</strong>
+          <small>MediLink account</small>
+        </span>
+      </div>
+    }
   </div>
 </header>

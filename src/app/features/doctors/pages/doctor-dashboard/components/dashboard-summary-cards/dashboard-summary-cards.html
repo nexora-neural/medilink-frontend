@@ -1,0 +1,26 @@
+<section class="summary-grid" aria-label="Doctor dashboard summary" [attr.aria-busy]="loading()">
+  <article class="metric metric-blue">
+    <p>Patients with access</p>
+    @if (loading()) { <div class="skeleton number-skeleton" aria-label="Loading"></div> }
+    @else { <strong>{{ summary().patientsWithAccess }}</strong> }
+    <span>Available to review</span>
+  </article>
+  <article class="metric">
+    <p>Patient records</p>
+    @if (loading()) { <div class="skeleton number-skeleton" aria-label="Loading"></div> }
+    @else { <strong>{{ summary().patientRecords }}</strong> }
+    <span>Prescription records</span>
+  </article>
+  <article class="metric">
+    <p>Review needed</p>
+    @if (loading()) { <div class="skeleton number-skeleton" aria-label="Loading"></div> }
+    @else { <strong>{{ summary().reviewNeeded }}</strong> }
+    <span>Patient-added record</span>
+  </article>
+  <article class="metric">
+    <p>Verification</p>
+    @if (loading()) { <div class="skeleton number-skeleton" aria-label="Loading"></div> }
+    @else { <strong class="verification" [class.verified]="summary().verification === 'Verified'">{{ summary().verification }}</strong> }
+    <span>Doctor account (demo)</span>
+  </article>
+</section>

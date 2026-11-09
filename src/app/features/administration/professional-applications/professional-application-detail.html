@@ -1,0 +1,192 @@
+<section aria-labelledby="review-title">
+  <a class="back" routerLink="/super-admin/applications">← Application queue</a>
+  <header class="heading">
+    <h1 #heading id="review-title" tabindex="-1">Application review</h1>
+    <p class="preview">Preview · Sample applications and decisions</p>
+  </header>
+  <p class="notice" role="status">
+    {{ saved() ? 'Decision recorded. See decision history below.' : '' }}
+  </p>
+
+  @switch (state()) {
+    @case ('loading') {
+      <app-ui-state
+        kind="loading"
+        title="Loading application"
+        description="Fetching the application and evidence details."
+      />
+    }
+    @case ('error') {
+      <app-ui-state
+        kind="error"
+        title="Unable to open this application"
+        description="Try again or choose an application from the queue."
+        actionLabel="Try again"
+        (action)="load()"
+      />
+    }
+    @case ('ready') {
+      @if (application(); as item) {
+        <div class="review-grid">
+          <section class="panel" aria-labelledby="applicant-title">
+            <h2 id="applicant-title">{{ item.name }}</h2>
+            <p class="applicant-meta">{{ item.id }} · {{ item.role }}</p>
+            <span class="badge" [attr.data-status]="item.status">{{ item.status }}</span>
+            <dl class="facts">
+              <div>
+                <dt>Organization</dt>
+                <dd>{{ item.organization }}</dd>
+              </div>
+              <div>
+                <dt>
+                  {{
+                    item.role === 'Doctor' ? 'Submitted SLMC number' : 'Professional registration'
+                  }}
+                </dt>
+                <dd>{{ item.registration }}</dd>
+              </div>
+            </dl>
+            @if (item.role === 'Doctor') {
+              <p class="tip">
+                <strong>Manual SLMC comparison</strong><br />
+                Compare the submitted name and SLMC registration number with the SLMC record and
+                identity evidence before deciding.
+              </p>
+            }
+            <h3>Supporting evidence</h3>
+            <p class="muted">Sample file metadata</p>
+            @for (evidence of item.evidence; track evidence.name) {
+              <details class="evidence">
+                <summary>{{ evidence.name }}</summary>
+                <dl class="facts">
+                  <div>
+                    <dt>Filename</dt>
+                    <dd>{{ evidence.fileName }}</dd>
+                  </div>
+                  <div>
+                    <dt>Uploaded</dt>
+                    <dd>
+                      <time [attr.datetime]="evidence.uploadedAt"
+                        >{{ evidence.uploadedAt | date: 'd MMM y, h:mm a' : '+0530' }} SLST</time
+                      >
+                    </dd>
+                  </div>
+                </dl>
+              </details>
+            } @empty {
+              <p role="status">No evidence attached.</p>
+            }
+          </section>
+
+          <section class="panel" aria-labelledby="decision-title">
+            <h2 id="decision-title">Review decision</h2>
+            @if (canReview(item.status)) {
+              <form [formGroup]="form" (ngSubmit)="submit()">
+                <fieldset [disabled]="saving()">
+                  <legend class="muted">Both fields are required.</legend>
+                  <label for="decision">Decision</label>
+                  <select
+                    id="decision"
+                    formControlName="decision"
+                    required
+                    [attr.aria-invalid]="
+                      submitted() && form.controls.decision.invalid ? 'true' : null
+                    "
+                    [attr.aria-describedby]="
+                      submitted() && form.controls.decision.invalid ? 'decision-error' : null
+                    "
+                  >
+                    <option value="">Select a decision</option>
+                    <option [value]="decisions[0]">Approve</option>
+                    <option [value]="decisions[1]">Reject</option>
+                    <option [value]="decisions[2]">Request more information</option>
+                  </select>
+                  @if (submitted() && form.controls.decision.invalid) {
+                    <p class="error" id="decision-error" role="alert">Select a decision.</p>
+                  }
+
+                  <label for="reason">Reason or information requested</label>
+                  <textarea
+                    id="reason"
+                    formControlName="reason"
+                    rows="4"
+                    maxlength="1000"
+                    required
+                    [attr.aria-invalid]="
+                      submitted() && form.controls.reason.invalid ? 'true' : null
+                    "
+                    [attr.aria-describedby]="
+                      submitted() && form.controls.reason.invalid
+                        ? 'reason-hint reason-error'
+                        : 'reason-hint'
+                    "
+                  ></textarea>
+                  <small id="reason-hint" class="muted">Up to 1,000 characters.</small>
+                  @if (submitted() && form.controls.reason.invalid) {
+                    <p class="error" id="reason-error" role="alert">
+                      Enter a reason of 1 to 1,000 characters.
+                    </p>
+                  }
+
+                  <button type="submit">Record decision</button>
+                </fieldset>
+                @if (saving()) {
+                  <p role="status">Recording decision…</p>
+                }
+                @if (saveError()) {
+                  <p class="error" role="alert">
+                    Unable to record the decision. Try again or reload the application from the
+                    queue.
+                  </p>
+                }
+              </form>
+            } @else {
+              <p class="muted">
+                {{
+                  item.status === 'Information requested'
+                    ? 'Waiting for the applicant to provide more information.'
+                    : 'This application has a final decision.'
+                }}
+              </p>
+            }
+          </section>
+
+          <section class="panel history" aria-labelledby="history-title">
+            <h2 id="history-title">Decision history</h2>
+            @if (item.history.length) {
+              <ol>
+                @for (record of item.history; track record) {
+                  <li>
+                    <span class="badge" [attr.data-status]="record.decision">{{
+                      record.decision
+                    }}</span>
+                    <dl class="facts">
+                      <div>
+                        <dt>Reviewer</dt>
+                        <dd>{{ record.reviewer }}</dd>
+                      </div>
+                      <div>
+                        <dt>Recorded</dt>
+                        <dd>
+                          <time [attr.datetime]="record.decidedAt"
+                            >{{ record.decidedAt | date: 'd MMM y, h:mm a' : '+0530' }} SLST</time
+                          >
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Reason</dt>
+                        <dd class="reason">{{ record.reason }}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="muted">No decisions recorded yet.</p>
+            }
+          </section>
+        </div>
+      }
+    }
+  }
+</section>
