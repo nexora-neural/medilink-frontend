@@ -1,20 +1,28 @@
 <section class="admin-page" aria-labelledby="page-title">
   <header>
     <p class="eyebrow">Super Admin</p>
-    <h1 id="page-title">Admin accounts</h1>
+    <h1 id="page-title">Admin accounts and permissions</h1>
     <p>Manage delegated Admin access for account support.</p>
+    @if (canManage()) {
+      <button class="primary" type="button" (click)="appointing.set(!appointing())">
+        {{ appointing() ? 'Back to accounts' : '+ Appoint admin' }}
+      </button>
+    }
   </header>
 
   @if (canManage()) {
+    @if (appointing()) {
+      <section class="panel" aria-labelledby="appoint-title">
+        <h2 id="appoint-title">Appoint an admin</h2>
+        <p>Choose an existing account below, then provide a reason for the appointment.</p>
+      </section>
+    }
     <p class="notice">
-      Fictional preview accounts. Changes reset when this page reloads.
-      Admin access does not grant access to clinical records.
+      Fictional preview accounts. Changes reset when this page reloads. Admin access does not grant
+      access to clinical records.
     </p>
 
-    <form
-      class="panel"
-      (submit)="$event.preventDefault(); search()"
-    >
+    <form class="panel" (submit)="$event.preventDefault(); search()">
       <label for="admin-search">Find an account</label>
 
       <div class="search-row">
@@ -31,14 +39,10 @@
         <button class="primary" type="submit">Search</button>
       </div>
 
-      <p id="search-help" class="help-text">
-        Only Super Admin can grant or revoke Admin access.
-      </p>
+      <p id="search-help" class="help-text">Only Super Admin can grant or revoke Admin access.</p>
 
       @if (searchControl.invalid && searchControl.touched) {
-        <p class="error" role="alert">
-          Use no more than 100 characters.
-        </p>
+        <p class="error" role="alert">Use no more than 100 characters.</p>
       }
     </form>
 
@@ -61,8 +65,24 @@
         </h2>
 
         <p>
-          Confirm this change for <strong>{{ account.name }}</strong>.
+          Confirm this change for <strong>{{ account.name }}</strong
+          >.
         </p>
+
+        <label for="admin-action-reason">Reason for action *</label>
+        <textarea
+          id="admin-action-reason"
+          [formControl]="reasonControl"
+          rows="3"
+          maxlength="1000"
+          [attr.aria-invalid]="reasonControl.invalid && reasonControl.touched"
+          [attr.aria-describedby]="
+            reasonControl.invalid && reasonControl.touched ? 'admin-reason-error' : null
+          "
+        ></textarea>
+        @if (reasonControl.invalid && reasonControl.touched) {
+          <p class="error" id="admin-reason-error" role="alert">Enter a reason for this action.</p>
+        }
 
         <p>
           {{
@@ -73,29 +93,13 @@
         </p>
 
         <div class="actions">
-          <button
-            type="button"
-            cdkFocusInitial
-            (click)="cancelChange()"
-          >
-            Cancel
-          </button>
-          <button
-            class="primary"
-            type="button"
-            (click)="confirmChange()"
-          >
-            Confirm
-          </button>
+          <button type="button" cdkFocusInitial (click)="cancelChange()">Cancel</button>
+          <button class="primary" type="button" (click)="confirmChange()">Confirm</button>
         </div>
       </section>
     }
     @if (loading()) {
-      <app-ui-state
-        kind="loading"
-        title="Searching accounts"
-        description="Please wait."
-      />
+      <app-ui-state kind="loading" title="Searching accounts" description="Please wait." />
     }
 
     @if (searchError()) {
@@ -108,11 +112,7 @@
       />
     }
 
-    <section
-      class="panel"
-      aria-labelledby="accounts-title"
-      [hidden]="loading() || !!searchError()"
-    >
+    <section class="panel" aria-labelledby="accounts-title" [hidden]="loading() || !!searchError()">
       <div class="results-header">
         <h2 id="accounts-title">Accounts</h2>
         <span>{{ filteredAccounts().length }} found</span>
@@ -125,6 +125,10 @@
             <p>{{ account.email }}</p>
             <p class="help-text">{{ account.id }}</p>
           </div>
+
+          <button type="button" (click)="showDetails(account)">
+            {{ selectedDetails()?.id === account.id ? 'Hide details' : 'View details' }}
+          </button>
 
           <span class="badge" [class.admin]="account.isAdmin">
             {{ account.isAdmin ? 'Admin' : 'No Admin access' }}
@@ -142,6 +146,64 @@
             {{ account.isAdmin ? 'Remove access' : 'Grant access' }}
           </button>
         </article>
+        @if (selectedDetails()?.id === account.id) {
+          <div class="account-detail">
+            @if (account.isAdmin) {
+              <p>
+                Preview only: changes are kept on this page and are not enforced or sent to the
+                server.
+              </p>
+              <label [for]="'permissions-' + account.id">Delegated permissions</label>
+              <input
+                [id]="'permissions-' + account.id"
+                [formControl]="permissionsControl"
+                maxlength="500"
+              />
+              @if (permissionsControl.invalid && permissionsControl.touched) {
+                <p class="error" role="alert">Enter delegated permissions.</p>
+              }
+              <label [for]="'permissions-reason-' + account.id">Reason for action *</label>
+              <textarea
+                [id]="'permissions-reason-' + account.id"
+                [formControl]="permissionsReasonControl"
+                rows="3"
+                maxlength="1000"
+              ></textarea>
+              @if (permissionsReasonControl.invalid && permissionsReasonControl.touched) {
+                <p class="error" role="alert">Enter a reason for this change.</p>
+              }
+              <button class="primary" type="button" (click)="reviewPermissions()">
+                Review permissions
+              </button>
+              @if (confirmingPermissions()) {
+                <section
+                  class="confirmation"
+                  aria-labelledby="permissions-confirm-title"
+                  cdkTrapFocus
+                  [cdkTrapFocusAutoCapture]="true"
+                  (keydown.escape)="confirmingPermissions.set(false); $event.stopPropagation()"
+                >
+                  <h2 id="permissions-confirm-title">Confirm permission changes?</h2>
+                  <p>Update preview permissions for {{ account.name }}?</p>
+                  <div class="actions">
+                    <button
+                      cdkFocusInitial
+                      type="button"
+                      (click)="confirmingPermissions.set(false)"
+                    >
+                      Back
+                    </button>
+                    <button class="primary" type="button" (click)="savePermissions()">
+                      Confirm
+                    </button>
+                  </div>
+                </section>
+              }
+            } @else {
+              <p>This account does not have Admin access.</p>
+            }
+          </div>
+        }
       } @empty {
         <div class="empty" role="status">
           <h3>No accounts found</h3>

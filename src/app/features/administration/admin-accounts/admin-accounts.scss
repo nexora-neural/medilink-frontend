@@ -1,6 +1,6 @@
 :host {
   display: block;
-  color: #18322c;
+  color: #1d3454;
 }
 
 * {
@@ -14,7 +14,7 @@
 }
 
 .eyebrow {
-  color: #42685d;
+  color: #427da4;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -64,7 +64,8 @@ label {
   gap: 16px;
 }
 
-input {
+input,
+textarea {
   flex: 1;
   min-width: 0;
   min-height: 46px;
@@ -72,6 +73,11 @@ input {
   border: 1px solid #9aac9f;
   border-radius: 10px;
   font: inherit;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
 }
 
 button {
@@ -87,8 +93,8 @@ button {
 }
 
 button.primary {
-  border-color: #17634c;
-  background: #17634c;
+  border-color: #347da9;
+  background: #347da9;
   color: #fff;
 }
 
@@ -98,7 +104,8 @@ button:disabled {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 3px;
 }

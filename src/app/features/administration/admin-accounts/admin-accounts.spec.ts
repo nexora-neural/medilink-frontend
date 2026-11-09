@@ -65,14 +65,47 @@ describe('AdminAccounts', () => {
 
   it('grants and removes Admin access after confirmation', () => {
     component.requestChange(component.accounts()[1]);
+    component.reasonControl.setValue('Appointment approved');
     component.confirmChange();
 
     expect(component.accounts()[1].isAdmin).toBe(true);
 
     component.requestChange(component.accounts()[1]);
+    component.reasonControl.setValue('Access no longer required');
     component.confirmChange();
 
     expect(component.accounts()[1].isAdmin).toBe(false);
+  });
+
+  it('requires a nonblank reason before changing Admin access', () => {
+    component.requestChange(component.accounts()[1]);
+    component.reasonControl.setValue('   ');
+    component.confirmChange();
+    expect(component.accounts()[1].isAdmin).toBe(false);
+    expect(component.reasonControl.invalid).toBe(true);
+  });
+
+  it('requires a reason and confirmation before saving preview permissions', () => {
+    component.showDetails(component.accounts()[0]);
+    component.permissionsControl.setValue('Account support');
+    component.reviewPermissions();
+    expect(component.confirmingPermissions()).toBe(false);
+    expect(component.accounts()[0].permissions).toBe('Verification review, account support');
+    component.permissionsReasonControl.setValue('Role review');
+    component.reviewPermissions();
+    expect(component.confirmingPermissions()).toBe(true);
+    component.savePermissions();
+    expect(component.accounts()[0].permissions).toBe('Account support');
+  });
+
+  it('does not save permissions after Super Admin role is lost', () => {
+    component.showDetails(component.accounts()[0]);
+    component.permissionsControl.setValue('Account support');
+    component.permissionsReasonControl.setValue('Role review');
+    component.reviewPermissions();
+    roleContext.setActiveRole('Admin');
+    component.savePermissions();
+    expect(component.accounts()[0].permissions).toBe('Verification review, account support');
   });
 
   it('finds accounts using a case-insensitive search', async () => {
