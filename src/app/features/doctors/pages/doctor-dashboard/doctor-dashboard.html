@@ -5,20 +5,10 @@
       <h1 id="doctor-dashboard-heading">Good morning, {{ doctorName }}</h1>
       <p class="subheading">Your patient care overview for today.</p>
     </div>
-    <button class="qr-button" type="button" (click)="toggleQrPreview()"
-            [attr.aria-expanded]="showQrPreview()" aria-controls="doctor-qr-preview">
+    <a class="qr-button" routerLink="/workspace/doctor/qr">
       <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> My QR code
-    </button>
+    </a>
   </header>
-
-  @if (showQrPreview()) {
-    <section id="doctor-qr-preview" class="qr-preview" aria-label="Demonstration QR code">
-      <img src="/doctor-qr-placeholder.svg" alt="Non-functional demonstration QR placeholder" />
-      <div><strong>QR code preview</strong>
-        <p>Demo image only. This is not a valid identity or access credential.</p></div>
-      <button type="button" class="outline-button" (click)="toggleQrPreview()">Close</button>
-    </section>
-  }
 
   @if (showPreviewTools()) {
     <div class="preview-tools" aria-label="Dashboard visual preview states">

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   DashboardStatus,
   DoctorActivity,
@@ -14,7 +14,13 @@ import { DashboardStatusPanel } from './components/dashboard-status-panel/dashbo
 @Component({
   selector: 'app-doctor-dashboard',
   standalone: true,
-  imports: [DashboardSummaryCards, PatientQueue, RecentActivityPanel, DashboardStatusPanel],
+  imports: [
+    RouterLink,
+    DashboardSummaryCards,
+    PatientQueue,
+    RecentActivityPanel,
+    DashboardStatusPanel,
+  ],
   templateUrl: './doctor-dashboard.html',
   styleUrl: './doctor-dashboard.scss',
 })
@@ -24,7 +30,6 @@ export class DoctorDashboard {
   readonly doctorName = 'Dr. Maya';
   readonly state = signal<DashboardStatus>('ready');
   readonly showPreviewTools = signal(false);
-  readonly showQrPreview = signal(false);
 
   // The following is synthetic UI demo data only. No backend requests or claims
   // of authenticated verification, consent or clinical record access are made.
@@ -43,14 +48,14 @@ export class DoctorDashboard {
       icon: 'description',
       title: 'Patient-added prescription',
       detail: 'Ready for your review · Nadeesha Perera',
-      route: '/workspace/doctor/prescriptions',
+      route: '/workspace/doctor/prescription-review',
     },
     {
       id: 'a2',
       icon: 'lab_profile',
       title: 'New laboratory report',
       detail: 'Full blood count · Nadeesha Perera',
-      route: '/workspace/doctor/records',
+      route: '/workspace/doctor/reports',
     },
   ];
   private readonly sampleSummary: DoctorDashboardSummary = {
@@ -83,8 +88,5 @@ export class DoctorDashboard {
   }
   retry(): void {
     this.state.set('ready');
-  }
-  toggleQrPreview(): void {
-    this.showQrPreview.update((show) => !show);
   }
 }

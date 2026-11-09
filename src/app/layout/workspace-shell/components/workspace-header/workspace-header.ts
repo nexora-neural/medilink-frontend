@@ -34,7 +34,21 @@ export class WorkspaceHeader {
       case '/workspace/doctor/prescriptions':
         return 'Prescriptions';
 
+      case '/workspace/doctor/patients':
+        return 'Patients';
+      case '/workspace/doctor/qr':
+        return 'My QR code';
+      case '/workspace/doctor/verification':
+        return 'Verification';
+      case '/workspace/doctor/notifications':
+        return 'Notifications';
+      case '/workspace/doctor/prescription-review':
+        return 'Prescription review';
+      case '/workspace/doctor/reports':
+        return 'Laboratory reports';
+
       default:
+        if (url.startsWith('/workspace/doctor/patients/')) return 'Patient details';
         return 'Workspace';
     }
   }
