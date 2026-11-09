@@ -27,13 +27,18 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Measurements', icon: 'monitor_heart', path: '/workspace/patient/measurements' },
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
+    {
+      label: 'Professional verification',
+      icon: 'verified_user',
+      path: '/workspace/professional-verification',
+    },
   ],
 
   Doctor: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace/doctor/dashboard' },
     { label: 'Patients', icon: 'group', path: '/workspace/doctor/patients' },
     { label: 'My QR code', icon: 'qr_code_2', path: '/workspace/doctor/qr' },
-    { label: 'Verification', icon: 'verified_user', path: '/workspace/doctor/verification' },
+    { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
     { label: 'Notifications', icon: 'notifications', path: '/workspace/doctor/notifications' },
     { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
@@ -42,10 +47,12 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Pharmacist: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Dispensing', icon: 'medication', path: '/workspace/pharmacist/dispensing' },
+    { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
   'Lab Staff': [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Laboratory reports', icon: 'science', path: '/workspace/lab-staff/reports' },
+    { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
 };
 

@@ -39,6 +39,7 @@ export class WorkspaceHeader {
       case '/workspace/doctor/qr':
         return 'My QR code';
       case '/workspace/doctor/verification':
+      case '/workspace/professional-verification':
         return 'Verification';
       case '/workspace/doctor/notifications':
         return 'Notifications';

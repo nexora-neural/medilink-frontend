@@ -26,8 +26,25 @@ describe('AppShell', () => {
 
     expect(element.querySelector('.workspace-label')?.textContent).toContain('Patient workspace');
     expect(element.querySelector('.role-chip')?.textContent).toContain('Patient');
-    expect(element.querySelectorAll('.primary-navigation a').length).toBe(8);
+    expect(element.querySelector('a[href="/workspace/professional-verification"]')).not.toBeNull();
   });
+
+  it.each(['Doctor', 'Pharmacist', 'Lab Staff'] as const)(
+    'links %s to the professional verification application',
+    async (role) => {
+      roles.setActiveRole(role);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const link = fixture.nativeElement.querySelector(
+        'a[href="/workspace/professional-verification"]',
+      ) as HTMLAnchorElement | null;
+      expect(link).not.toBeNull();
+      expect(link?.textContent).toContain('Verification');
+      expect(
+        fixture.nativeElement.querySelector('a[href="/workspace/doctor/verification"]'),
+      ).toBeNull();
+    },
+  );
 
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
     const element = fixture.nativeElement as HTMLElement;

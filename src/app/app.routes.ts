@@ -14,6 +14,7 @@ import { Organizations } from './features/administration/organizations/organizat
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
+import { ProfessionalVerification } from './features/professional-verification/professional-verification';
 import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
@@ -173,11 +174,11 @@ export const routes: Routes = [
         'Your doctor QR code will be available after integration.',
         true,
       ),
-      doctorPreview(
-        'doctor/verification',
-        'Verification',
-        'Doctor verification details will appear here.',
-      ),
+      {
+        path: 'doctor/verification',
+        pathMatch: 'full',
+        redirectTo: '/workspace/professional-verification',
+      },
       doctorPreview(
         'doctor/notifications',
         'Notifications',
@@ -201,6 +202,10 @@ export const routes: Routes = [
         data: {
           allowedRoles: ['Patient'],
         },
+      },
+      {
+        path: 'professional-verification',
+        component: ProfessionalVerification,
       },
       {
         path: 'admin/account-support',
