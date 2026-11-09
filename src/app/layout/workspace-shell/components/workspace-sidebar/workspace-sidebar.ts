@@ -1,6 +1,5 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
-import { Router,
-  RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ActiveRole } from '../../../../core/context/active-role.service';
 import { NavigationItem } from '../../models/navigation-item';
 

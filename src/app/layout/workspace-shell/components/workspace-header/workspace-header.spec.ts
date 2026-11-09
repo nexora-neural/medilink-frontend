@@ -27,7 +27,7 @@ describe('WorkspaceHeader', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('.role-chip')?.textContent).toContain('Doctor');
+    expect(element.querySelector('.user-summary')?.textContent).toContain('Doctor account');
     let toggled = false;
     fixture.componentInstance.menuToggle.subscribe(() => (toggled = true));
     (element.querySelector('.menu-button') as HTMLButtonElement).click();

@@ -1,7 +1,6 @@
 import { Component, input } from '@angular/core';
 import { DoctorDashboardSummary } from '../../models/doctor-dashboard.models';
 
-
 @Component({
   selector: 'app-dashboard-summary-cards',
   standalone: true,

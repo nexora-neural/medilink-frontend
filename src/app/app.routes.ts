@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { roleGuard } from './core/guards/role.guard';
+import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
 import { AppShell } from './layout/workspace-shell/app-shell';
 import { StatusPage } from './pages/errors/status-page/status-page';
@@ -14,7 +15,8 @@ import { OrganizationDetail } from './features/administration/organization-detai
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
 import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
-
+import { AccountSupport } from './features/administration/account-support/account-support';
+import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 
 const rolePage = (
   path: string,
@@ -128,6 +130,7 @@ export const routes: Routes = [
   {
     path: 'workspace',
     component: AppShell,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -155,6 +158,14 @@ export const routes: Routes = [
           allowedRoles: ['Patient'],
         },
       },
+      {
+        path: 'admin/account-support',
+        component: AccountSupport,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Admin', 'Super Admin'],
+        },
+      },
       ...rolePages,
     ],
   },
@@ -162,7 +173,7 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
-    canActivate: [roleGuard],
+    canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [
       {
@@ -197,6 +208,14 @@ export const routes: Routes = [
       {
         path: 'membership-request',
         component: MembershipRequest,
+      },
+      {
+        path: 'account-support',
+        component: AccountSupport,
+      },
+      {
+        path: 'admin-accounts',
+        component: AdminAccounts,
       },
     ],
   },

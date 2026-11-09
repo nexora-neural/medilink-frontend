@@ -16,6 +16,7 @@ lerna-debug.log*
 # Local environment and secrets
 .env
 .env.*
+/public/medilink-config.js
 !.env.example
 !.env.*.example
 

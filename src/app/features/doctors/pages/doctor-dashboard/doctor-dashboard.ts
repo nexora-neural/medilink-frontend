@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   DashboardStatus,
   DoctorActivity,
@@ -14,13 +14,7 @@ import { DashboardStatusPanel } from './components/dashboard-status-panel/dashbo
 @Component({
   selector: 'app-doctor-dashboard',
   standalone: true,
-  imports: [
-    RouterLink,
-    DashboardSummaryCards,
-    PatientQueue,
-    RecentActivityPanel,
-    DashboardStatusPanel,
-  ],
+  imports: [DashboardSummaryCards, PatientQueue, RecentActivityPanel, DashboardStatusPanel],
   templateUrl: './doctor-dashboard.html',
   styleUrl: './doctor-dashboard.scss',
 })

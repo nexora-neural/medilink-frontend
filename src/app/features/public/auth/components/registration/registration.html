@@ -38,6 +38,23 @@
     }
     <form [formGroup]="registrationForm" (ngSubmit)="registrationNext()" novalidate>
       @if (registerStep === 1) {
+        @if (role === 'Patient') {
+          <label>Date of birth <span>*</span>
+            <input name="dateOfBirth" type="date" formControlName="dateOfBirth" required />
+            @if (registerSubmitted && !registrationForm.controls.dateOfBirth.value) {
+              <small class="error">Enter your date of birth.</small>
+            }
+          </label>
+          <label>Sex <span>*</span>
+            <select name="sex" formControlName="sex" required>
+              <option value="">Select</option><option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+            @if (registerSubmitted && !registrationForm.controls.sex.value) {
+              <small class="error">Select your sex.</small>
+            }
+          </label>
+        }
         <label
           >Full name <span>*</span
           ><input
