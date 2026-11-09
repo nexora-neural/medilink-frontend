@@ -7,6 +7,13 @@ import { WorkspaceSidebar } from './components/workspace-sidebar/workspace-sideb
 import { NavigationItem } from './models/navigation-item';
 
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
+  Admin: [
+    {
+      label: 'Account support',
+      icon: 'support_agent',
+      path: '/workspace/admin/account-support',
+    },
+  ],
   'Super Admin': [
     { label: 'Organizations', icon: 'business', path: '/super-admin/organizations' },
     { label: 'Professional applications', icon: 'fact_check', path: '/super-admin/applications' },

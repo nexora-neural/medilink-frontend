@@ -1,0 +1,140 @@
+<section class="support-page" aria-labelledby="page-title">
+  <header class="page-header">
+    <span class="eyebrow">Administration</span>
+    <h1 id="page-title">Account support</h1>
+    <p>Find an account and manage its account status.</p>
+  </header>
+
+  <p class="demo-notice">
+    Preview with fictional accounts. Changes apply only to this page and reset when it reloads.
+  </p>
+
+  <form class="search-panel" (submit)="$event.preventDefault(); search()">
+    <label for="account-search">Search accounts</label>
+
+    <div class="search-row">
+      <input
+        id="account-search"
+        type="search"
+        [formControl]="searchControl"
+        placeholder="Enter a name, email or account ID"
+        maxlength="100"
+        [attr.aria-invalid]="searchControl.invalid && searchControl.touched"
+        aria-describedby="search-help"
+      />
+
+      <button class="primary-button" type="submit">Search</button>
+    </div>
+
+    <p id="search-help" class="help-text">
+      Search shows account details only. Medical records are not included.
+    </p>
+
+    @if (searchControl.invalid && searchControl.touched) {
+      <p class="error-text" role="alert">Use no more than 100 characters.</p>
+    }
+  </form>
+
+  <div aria-live="polite" aria-atomic="true">
+    @if (message()) {
+      <p class="success-message">{{ message() }}</p>
+    }
+  </div>
+
+  @if (pendingAccount(); as account) {
+    <section
+      class="confirmation"
+      aria-labelledby="confirmation-title"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="cancelChange(); $event.stopPropagation()"
+    >
+      <h2 id="confirmation-title">
+        {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
+        this account?
+      </h2>
+
+      <p>
+        You are changing the demo account status for
+        <strong>{{ account.name }}</strong
+        >.
+      </p>
+
+      <label for="action-reason">Reason for action *</label>
+      <textarea
+        id="action-reason"
+        [formControl]="reasonControl"
+        rows="3"
+        maxlength="1000"
+        [attr.aria-invalid]="reasonControl.invalid && reasonControl.touched"
+        [attr.aria-describedby]="
+          reasonControl.invalid && reasonControl.touched ? 'action-reason-error' : null
+        "
+      ></textarea>
+      @if (reasonControl.invalid && reasonControl.touched) {
+        <p id="action-reason-error" class="error-text" role="alert">
+          Enter a reason for this action.
+        </p>
+      }
+
+      <div class="confirmation-actions">
+        <button cdkFocusInitial class="secondary-button" type="button" (click)="cancelChange()">
+          Cancel
+        </button>
+
+        <button class="primary-button" type="button" (click)="confirmChange()">Confirm</button>
+      </div>
+    </section>
+  }
+  @if (loading()) {
+    <app-ui-state kind="loading" title="Searching accounts" description="Please wait." />
+  }
+
+  @if (searchError()) {
+    <app-ui-state
+      kind="error"
+      title="Unable to load accounts"
+      [description]="searchError()"
+      actionLabel="Try again"
+      (action)="search()"
+    />
+  }
+
+  <section class="results" aria-labelledby="results-title" [hidden]="loading() || !!searchError()">
+    <div class="results-header">
+      <h2 id="results-title">Accounts</h2>
+      <span>{{ filteredAccounts().length }} found</span>
+    </div>
+
+    @for (account of filteredAccounts(); track account.id) {
+      <article class="account-card">
+        <div class="account-details">
+          <h3>{{ account.name }}</h3>
+          <p>{{ account.email }}</p>
+          <p class="account-meta">{{ account.id }} · {{ account.role }}</p>
+        </div>
+
+        <span class="status" [class.suspended]="account.status === 'suspended'">
+          {{ account.status === 'active' ? 'Active' : 'Suspended' }}
+        </span>
+
+        <button
+          class="secondary-button"
+          type="button"
+          [attr.aria-disabled]="pendingAccount() !== null"
+          [attr.aria-label]="
+            (account.status === 'active' ? 'Suspend ' : 'Reactivate ') + account.name
+          "
+          (click)="requestChange(account)"
+        >
+          {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
+        </button>
+      </article>
+    } @empty {
+      <div class="empty-state" role="status">
+        <h3>No accounts found</h3>
+        <p>Try another name, email or account ID.</p>
+      </div>
+    }
+  </section>
+</section>

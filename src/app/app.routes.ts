@@ -14,6 +14,8 @@ import { Organizations } from './features/administration/organizations/organizat
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
+import { AccountSupport } from './features/administration/account-support/account-support';
+import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 
 const rolePage = (
   path: string,
@@ -145,6 +147,14 @@ export const routes: Routes = [
           allowedRoles: ['Patient'],
         },
       },
+      {
+        path: 'admin/account-support',
+        component: AccountSupport,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Admin', 'Super Admin'],
+        },
+      },
       ...rolePages,
     ],
   },
@@ -187,6 +197,14 @@ export const routes: Routes = [
       {
         path: 'membership-request',
         component: MembershipRequest,
+      },
+      {
+        path: 'account-support',
+        component: AccountSupport,
+      },
+      {
+        path: 'admin-accounts',
+        component: AdminAccounts,
       },
     ],
   },
