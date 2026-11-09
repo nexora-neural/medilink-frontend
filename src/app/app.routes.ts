@@ -169,6 +169,22 @@ export const routes: Routes = [
         component: OrganizationDetail,
       },
       {
+        path: 'applications',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-applications').then(
+            (module) => module.ProfessionalApplications,
+          ),
+        title: 'Professional applications | MediLink',
+      },
+      {
+        path: 'applications/:id',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-application-detail').then(
+            (module) => module.ProfessionalApplicationDetail,
+          ),
+        title: 'Application review | MediLink',
+      },
+      {
         path: 'membership-request',
         component: MembershipRequest,
       },
