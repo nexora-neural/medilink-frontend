@@ -1,0 +1,267 @@
+<div class="verification-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">PROFESSIONAL VERIFICATION</span>
+      <h1>Professional verification</h1>
+      <p>
+        Submit your professional information and supporting documents
+        to request verification.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="viewApplicationStatus()"
+    >
+      <span class="material-symbols-outlined">fact_check</span>
+      Application status
+    </button>
+  </header>
+
+  @if (!showStatus) {
+    <section class="verification-card">
+      <div class="section-heading">
+        <div class="heading-icon">
+          <span class="material-symbols-outlined">verified_user</span>
+        </div>
+        <div>
+          <h2>Verification application</h2>
+          <p>Complete all required fields marked with an asterisk.</p>
+        </div>
+      </div>
+
+      <div class="notice" role="note">
+        <span class="material-symbols-outlined">info</span>
+        <p>
+          Your professional access will remain restricted until your
+          application has been reviewed and approved.
+        </p>
+      </div>
+
+      <form
+        [formGroup]="verificationForm"
+        (ngSubmit)="submitApplication()"
+        novalidate
+      >
+        <div class="form-section">
+          <h3>Personal information</h3>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Full name <b>*</b></span>
+              <input
+                type="text"
+                formControlName="fullName"
+                placeholder="Enter your full name"
+                autocomplete="name"
+              />
+              @if (submitted && verificationForm.controls.fullName.invalid) {
+                <small class="error">Please enter your full name.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Email address <b>*</b></span>
+              <input
+                type="email"
+                formControlName="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+              />
+              @if (submitted && verificationForm.controls.email.invalid) {
+                <small class="error">Enter a valid email address.</small>
+              }
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Professional information</h3>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Professional role <b>*</b></span>
+              <select formControlName="role">
+                <option value="">Select your role</option>
+                @for (role of roles; track role) {
+                  <option [value]="role">{{ role }}</option>
+                }
+              </select>
+              @if (submitted && verificationForm.controls.role.invalid) {
+                <small class="error">Please select your professional role.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Registration number <b>*</b></span>
+              <input
+                type="text"
+                formControlName="registrationNumber"
+                placeholder="Enter your registration number"
+              />
+              @if (
+                submitted &&
+                verificationForm.controls.registrationNumber.invalid
+                ) {
+                <small class="error">Registration number is required.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Specialty / Department <b>*</b></span>
+              <input
+                type="text"
+                formControlName="specialty"
+                placeholder="Enter your specialty or department"
+              />
+              @if (submitted && verificationForm.controls.specialty.invalid) {
+                <small class="error">This field is required.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Institution / Workplace <b>*</b></span>
+              <input
+                type="text"
+                formControlName="institution"
+                placeholder="Enter your institution or workplace"
+              />
+              @if (submitted && verificationForm.controls.institution.invalid) {
+                <small class="error">Institution or workplace is required.</small>
+              }
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Supporting document</h3>
+          <p class="section-description">
+            Upload a document that supports your professional registration.
+            Accepted formats: PDF, JPG and PNG. Maximum size: 10 MB.
+          </p>
+
+          <label class="upload-area" for="evidence-document">
+            <span class="material-symbols-outlined upload-icon">
+              cloud_upload
+            </span>
+            <strong>Choose a document to upload</strong>
+            <span>Browse your device to select a file</span>
+            <input
+              id="evidence-document"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event)"
+            />
+          </label>
+
+          @if (selectedFile) {
+            <div class="selected-file">
+              <span class="material-symbols-outlined">description</span>
+              <div class="file-details">
+                <strong>{{ selectedFile.name }}</strong>
+                <small>
+                  {{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB
+                </small>
+              </div>
+              <button
+                type="button"
+                class="remove-file"
+                aria-label="Remove selected document"
+                (click)="removeSelectedFile()"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          }
+
+          @if (fileError) {
+            <small class="error" role="alert">{{ fileError }}</small>
+          }
+        </div>
+
+        <div class="form-section">
+          <h3>Additional information</h3>
+
+          <label class="field">
+            <span>Notes <small>(Optional)</small></span>
+            <textarea
+              rows="4"
+              formControlName="notes"
+              placeholder="Add any additional information for the verification team"
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="form-footer">
+          <p>
+            <span class="material-symbols-outlined">lock</span>
+            Your information is submitted for verification review.
+          </p>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="busy"
+          >
+            Submit application
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  } @else {
+    <section class="verification-card status-card">
+      <div class="status-icon" [class.pending]="applicationSubmitted">
+        <span class="material-symbols-outlined">
+          {{ applicationSubmitted ? 'hourglass_top' : 'description' }}
+        </span>
+      </div>
+
+      @if (applicationSubmitted) {
+        <span class="eyebrow">APPLICATION RECEIVED</span>
+        <h2>Your application is pending review</h2>
+        <p class="status-description">
+          Your application has been completed in this frontend preview.
+          The verification team will review your professional details
+          and supporting documents once API integration is available.
+        </p>
+
+        <div class="status-summary">
+          <div>
+            <span>Professional role</span>
+            <strong>{{ verificationForm.controls.role.value }}</strong>
+          </div>
+          <div>
+            <span>Registration number</span>
+            <strong>{{ verificationForm.controls.registrationNumber.value }}</strong>
+          </div>
+          <div>
+            <span>Institution</span>
+            <strong>{{ verificationForm.controls.institution.value }}</strong>
+          </div>
+          <div>
+            <span>Application status</span>
+            <strong class="pending-text">Pending</strong>
+          </div>
+        </div>
+      } @else {
+        <span class="eyebrow">APPLICATION STATUS</span>
+        <h2>No application submitted yet</h2>
+        <p class="status-description">
+          You have not submitted a professional verification application.
+          Complete the application form to get started.
+        </p>
+      }
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="viewApplicationForm()"
+      >
+        {{ applicationSubmitted ? 'Back to application' : 'Start application' }}
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    </section>
+  }
+</div>

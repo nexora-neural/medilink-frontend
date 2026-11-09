@@ -14,6 +14,7 @@ import { Organizations } from './features/administration/organizations/organizat
 import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
 import { MembershipRequest } from './features/administration/membership-request/membership-request';
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
+import { ProfessionalVerification } from './features/professional-verification/professional-verification';
 
 const rolePage = (
   path: string,
@@ -144,6 +145,10 @@ export const routes: Routes = [
         data: {
           allowedRoles: ['Patient'],
         },
+      },
+      {
+        path: 'professional-verification',
+        component: ProfessionalVerification,
       },
       ...rolePages,
     ],

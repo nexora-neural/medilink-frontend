@@ -17,6 +17,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Measurements', icon: 'monitor_heart', path: '/workspace/patient/measurements' },
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
+    {
+      label: 'Professional verification',
+      icon: 'verified_user',
+      path: '/workspace/professional-verification',
+    },
   ],
   Doctor: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
