@@ -25,6 +25,10 @@ export class AccountSupport {
     nonNullable: true,
     validators: [Validators.maxLength(100)],
   });
+  readonly reasonControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(1000)],
+  });
 
   readonly accounts = signal<SupportAccount[]>([
     {
@@ -99,6 +103,7 @@ export class AccountSupport {
       return;
     }
 
+    this.reasonControl.reset();
     this.pendingAccount.set(account);
     this.message.set('');
   }
@@ -108,6 +113,11 @@ export class AccountSupport {
   }
 
   confirmChange(): void {
+    this.reasonControl.markAsTouched();
+    if (this.reasonControl.invalid || !this.reasonControl.value.trim()) {
+      this.reasonControl.setErrors({ required: true });
+      return;
+    }
     const selected = this.pendingAccount();
 
     if (!selected) {

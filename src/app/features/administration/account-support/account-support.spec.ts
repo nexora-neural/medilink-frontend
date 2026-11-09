@@ -55,14 +55,24 @@ describe('AccountSupport', () => {
 
   it('suspends and then reactivates an account after confirmation', () => {
     component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review required');
     component.confirmChange();
 
     expect(component.accounts()[0].status).toBe('suspended');
 
     component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review complete');
     component.confirmChange();
 
     expect(component.accounts()[0].status).toBe('active');
+  });
+
+  it('requires a nonblank reason before changing an account status', () => {
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('   ');
+    component.confirmChange();
+    expect(component.accounts()[0].status).toBe('active');
+    expect(component.reasonControl.invalid).toBe(true);
   });
 
   it('rejects a search longer than 100 characters', async () => {
