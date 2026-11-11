@@ -1,5 +1,13 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, ElementRef, OnDestroy, PLATFORM_ID, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  PLATFORM_ID,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -34,19 +42,18 @@ export class PatientDoctorAccess implements OnDestroy {
     doctorCode: ['', Validators.required],
   });
 
-  cameraStatus: CameraStatus = 'idle';
-  reviewStatus: ReviewStatus = 'empty';
+  // Signal-based UI state.
+  readonly cameraStatus = signal<CameraStatus>('idle');
+  readonly reviewStatus = signal<ReviewStatus>('empty');
+  readonly cameraMessage = signal('');
+  readonly reviewMessage = signal('');
+  readonly enteredCode = signal('');
+  readonly cameraStartInProgress = signal(false);
 
-  cameraMessage = '';
-  reviewMessage = '';
-  enteredCode = '';
-
-  cameraStream?: MediaStream;
-  detector?: BarcodeDetectorLike;
-  scanTimer?: ReturnType<typeof setTimeout>;
-  reviewTimer?: ReturnType<typeof setTimeout>;
-
-  cameraStartInProgress = false;
+  private cameraStream?: MediaStream;
+  private detector?: BarcodeDetectorLike;
+  private scanTimer?: ReturnType<typeof setTimeout>;
+  private reviewTimer?: ReturnType<typeof setTimeout>;
 
   private cameraSession = 0;
   private scanInProgress = false;
@@ -56,25 +63,26 @@ export class PatientDoctorAccess implements OnDestroy {
     if (
       !isPlatformBrowser(this.platformId) ||
       this.destroyed ||
-      this.cameraStartInProgress ||
-      this.cameraStatus === 'scanning'
+      this.cameraStartInProgress() ||
+      this.cameraStatus() === 'scanning'
     ) {
       return;
     }
 
-    this.cameraStartInProgress = true;
+    this.cameraStartInProgress.set(true);
     const session = ++this.cameraSession;
 
-    this.cameraMessage = '';
-    this.reviewMessage = '';
-    this.cameraStatus = 'requesting';
+    this.cameraMessage.set('');
+    this.reviewMessage.set('');
+    this.cameraStatus.set('requesting');
 
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         if (this.isCurrentSession(session)) {
-          this.cameraStatus = 'unsupported';
-          this.cameraMessage =
-            'Camera access is not available in this browser. Please enter the doctor code manually.';
+          this.cameraStatus.set('unsupported');
+          this.cameraMessage.set(
+            'Camera access is not available in this browser. Please enter the doctor code manually.',
+          );
         }
         return;
       }
@@ -87,21 +95,24 @@ export class PatientDoctorAccess implements OnDestroy {
 
       if (!detectorConstructor) {
         if (this.isCurrentSession(session)) {
-          this.cameraStatus = 'unsupported';
-          this.cameraMessage =
-            'QR scanning is not supported in this browser. Please use manual code entry.';
+          this.cameraStatus.set('unsupported');
+          this.cameraMessage.set(
+            'QR scanning is not supported in this browser. Please use manual code entry.',
+          );
         }
         return;
       }
 
-      this.detector = new detectorConstructor({ formats: ['qr_code'] });
+      this.detector = new detectorConstructor({
+        formats: ['qr_code'],
+      });
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
       });
 
-      // Permission may resolve after the user leaves or cancels.
+      // Stop a stream if the user cancelled while permission was pending.
       if (!this.isCurrentSession(session)) {
         stream.getTracks().forEach((track) => track.stop());
         return;
@@ -113,9 +124,10 @@ export class PatientDoctorAccess implements OnDestroy {
 
       if (!video) {
         this.stopCamera();
+
         if (!this.destroyed) {
-          this.cameraStatus = 'error';
-          this.cameraMessage = 'Unable to initialise the camera preview.';
+          this.cameraStatus.set('error');
+          this.cameraMessage.set('Unable to initialise the camera preview.');
         }
         return;
       }
@@ -123,23 +135,23 @@ export class PatientDoctorAccess implements OnDestroy {
       video.srcObject = stream;
       await video.play();
 
-      // The page may have been closed while video.play() was pending.
       if (!this.isCurrentSession(session)) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
 
-      this.cameraStatus = 'scanning';
+      this.cameraStatus.set('scanning');
       this.scanForQr(session);
     } catch {
       if (this.isCurrentSession(session)) {
         this.stopCamera();
-        this.cameraStatus = 'error';
-        this.cameraMessage =
-          'Camera permission was denied or the camera could not be opened. You can enter the doctor code manually.';
+        this.cameraStatus.set('error');
+        this.cameraMessage.set(
+          'Camera permission was denied or the camera could not be opened. You can enter the doctor code manually.',
+        );
       }
     } finally {
-      this.cameraStartInProgress = false;
+      this.cameraStartInProgress.set(false);
     }
   }
 
@@ -148,17 +160,20 @@ export class PatientDoctorAccess implements OnDestroy {
   }
 
   private scheduleScan(session: number): void {
-    if (!this.isCurrentSession(session) || this.cameraStatus !== 'scanning') {
+    if (!this.isCurrentSession(session) || this.cameraStatus() !== 'scanning') {
       return;
     }
 
-    this.scanTimer = setTimeout(() => this.scanForQr(session), 300);
+    this.scanTimer = setTimeout(() => {
+      this.scanTimer = undefined;
+      void this.scanForQr(session);
+    }, 300);
   }
 
   private async scanForQr(session: number): Promise<void> {
     if (
       !this.isCurrentSession(session) ||
-      this.cameraStatus !== 'scanning' ||
+      this.cameraStatus() !== 'scanning' ||
       !this.detector ||
       this.scanInProgress
     ) {
@@ -173,37 +188,43 @@ export class PatientDoctorAccess implements OnDestroy {
     }
 
     this.scanInProgress = true;
+    let captured = false;
 
     try {
       const codes = await this.detector.detect(video);
 
-      // Ignore results from a cancelled or replaced scan.
-      if (!this.isCurrentSession(session) || this.cameraStatus !== 'scanning') {
+      // Ignore results from a cancelled or replaced camera session.
+      if (!this.isCurrentSession(session) || this.cameraStatus() !== 'scanning') {
         return;
       }
 
       const reference = codes[0]?.rawValue.trim();
 
       if (reference) {
+        captured = true;
         this.codeForm.controls.doctorCode.setValue(reference);
-        this.stopCamera();
-        this.cameraStatus = 'found';
-        this.reviewCode();
-        return;
-      }
 
-      this.scheduleScan(session);
+        this.stopCamera();
+        this.cameraStatus.set('found');
+        this.reviewCode();
+      }
     } catch {
       if (this.isCurrentSession(session)) {
         this.stopCamera();
-        this.cameraStatus = 'error';
-        this.cameraMessage =
-          'The QR code could not be read. Please try again or enter the code manually.';
+        this.cameraStatus.set('error');
+        this.cameraMessage.set(
+          'The QR code could not be read. Please try again or enter the code manually.',
+        );
       }
     } finally {
       this.scanInProgress = false;
+
+      if (!captured && this.isCurrentSession(session) && this.cameraStatus() === 'scanning') {
+        this.scheduleScan(session);
+      }
     }
   }
+
 
   stopCamera(): void {
     // Invalidate pending permission and scan operations.
@@ -216,47 +237,54 @@ export class PatientDoctorAccess implements OnDestroy {
 
     this.cameraStream?.getTracks().forEach((track) => track.stop());
     this.cameraStream = undefined;
+    this.detector = undefined;
 
     const video = this.cameraVideo?.nativeElement;
 
-    if (typeof window !== 'undefined' && video && typeof video.pause === 'function') {
+    // Protect SSR/prerendering when media methods are unavailable.
+    if (video && typeof video.pause === 'function') {
       video.pause();
       video.srcObject = null;
     }
 
     if (!this.destroyed) {
-      this.cameraStatus = 'idle';
+      this.cameraStatus.set('idle');
     }
   }
+
 
   reviewCode(): void {
     const code = this.codeForm.controls.doctorCode.value.trim();
 
     if (!code) {
       this.codeForm.controls.doctorCode.markAsTouched();
-      this.enteredCode = '';
-      this.reviewStatus = 'error';
-      this.reviewMessage = 'Please enter a doctor QR reference.';
+      this.enteredCode.set('');
+      this.reviewStatus.set('error');
+      this.reviewMessage.set('Please enter a doctor QR reference.');
       return;
     }
 
     if (this.reviewTimer) {
       clearTimeout(this.reviewTimer);
+      this.reviewTimer = undefined;
     }
 
-    this.enteredCode = code;
-    this.reviewStatus = 'loading';
-    this.reviewMessage = 'Loading sample review preview...';
+    this.enteredCode.set(code);
+    this.reviewStatus.set('loading');
+    this.reviewMessage.set('Loading sample review preview...');
 
     // Local sample-state transition only. This is not an API request.
     this.reviewTimer = setTimeout(() => {
-      if (this.destroyed || this.enteredCode !== code) {
+      this.reviewTimer = undefined;
+
+      if (this.destroyed || this.enteredCode() !== code) {
         return;
       }
 
-      this.reviewStatus = 'ready';
-      this.reviewMessage =
-        'Sample preview only. Doctor identity has not been verified by the server.';
+      this.reviewStatus.set('ready');
+      this.reviewMessage.set(
+        'Sample preview only. Doctor identity has not been verified by the server.',
+      );
     }, 350);
   }
 
@@ -269,11 +297,11 @@ export class PatientDoctorAccess implements OnDestroy {
     }
 
     this.codeForm.reset({ doctorCode: '' });
-    this.enteredCode = '';
-    this.reviewMessage = '';
-    this.cameraMessage = '';
-    this.reviewStatus = 'empty';
-    this.cameraStatus = 'idle';
+    this.enteredCode.set('');
+    this.reviewMessage.set('');
+    this.cameraMessage.set('');
+    this.reviewStatus.set('empty');
+    this.cameraStatus.set('idle');
   }
 
   ngOnDestroy(): void {

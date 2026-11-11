@@ -10,7 +10,7 @@
       </p>
     </div>
 
-    <a routerLink="/workspace/patient" class="back-link">
+    <a routerLink="/workspace" class="back-link">
       Back to dashboard
     </a>
   </header>
@@ -26,69 +26,80 @@
         <video
           #cameraVideo
           class="camera-video"
-          [class.visible]="cameraStatus === 'scanning'"
+          [class.visible]="cameraStatus() === 'scanning'"
           autoplay
           muted
           playsinline
           aria-label="Camera preview for scanning a doctor QR code"
         ></video>
 
-        @if (cameraStatus === 'idle' || cameraStatus === 'unsupported') {
+        @if (
+          cameraStatus() === 'idle' ||
+          cameraStatus() === 'unsupported'
+          ) {
           <div class="camera-placeholder">
             <span class="material-symbols-outlined">qr_code_scanner</span>
             <p>Camera is not active</p>
           </div>
         }
 
-        @if (cameraStatus === 'requesting') {
+        @if (cameraStatus() === 'requesting') {
           <div class="camera-placeholder" role="status" aria-live="polite">
             <span class="material-symbols-outlined">progress_activity</span>
             <p>Requesting camera permission...</p>
           </div>
         }
 
-        @if (cameraStatus === 'found') {
+        @if (cameraStatus() === 'found') {
           <div class="camera-placeholder" role="status">
             <span class="material-symbols-outlined">check_circle</span>
             <p>QR reference captured</p>
           </div>
         }
 
-        @if (cameraStatus === 'error') {
+        @if (cameraStatus() === 'error') {
           <div class="camera-placeholder error-state" role="alert">
             <span class="material-symbols-outlined">error</span>
             <p>Camera could not be started</p>
           </div>
         }
+
+        @if (cameraStatus() === 'scanning') {
+          <div class="scan-indicator" role="status" aria-live="polite">
+            Scanning for QR code...
+          </div>
+        }
       </div>
 
-      @if (cameraMessage) {
+      @if (cameraMessage()) {
         <p
           class="status-message"
-          [class.error-message]="cameraStatus === 'error'"
+          [class.error-message]="cameraStatus() === 'error'"
           role="status"
           aria-live="polite"
         >
-          {{ cameraMessage }}
+          {{ cameraMessage() }}
         </p>
       }
 
       <div class="camera-actions">
-        @if (cameraStatus === 'idle' ||
-        cameraStatus === 'error' ||
-        cameraStatus === 'unsupported') {
+        @if (
+          cameraStatus() === 'idle' ||
+          cameraStatus() === 'error' ||
+          cameraStatus() === 'unsupported'
+          ) {
           <button
             type="button"
             class="primary-button"
             (click)="startCamera()"
-            [disabled]="cameraStartInProgress"
+            [disabled]="cameraStartInProgress()"
           >
             <span class="material-symbols-outlined">photo_camera</span>
             Scan QR code
           </button>
         }
 
-        @if (cameraStatus === 'requesting') {
+        @if (cameraStatus() === 'requesting') {
           <button type="button" class="primary-button" disabled>
             Requesting camera...
           </button>
@@ -102,7 +113,7 @@
           </button>
         }
 
-        @if (cameraStatus === 'scanning') {
+        @if (cameraStatus() === 'scanning') {
           <button
             type="button"
             class="secondary-button"
@@ -112,7 +123,7 @@
           </button>
         }
 
-        @if (cameraStatus === 'found') {
+        @if (cameraStatus() === 'found') {
           <button
             type="button"
             class="secondary-button"
@@ -127,7 +138,9 @@
     <article class="manual-card">
       <div class="section-heading">
         <h2>Enter doctor reference</h2>
-        <p>You can enter the reference manually if scanning is unavailable.</p>
+        <p>
+          You can enter the reference manually if scanning is unavailable.
+        </p>
       </div>
 
       <form [formGroup]="codeForm" (ngSubmit)="reviewCode()">
@@ -168,32 +181,45 @@
       <p>Review the identity information before any access decision.</p>
     </div>
 
-    @if (reviewStatus === 'empty') {
+    @if (reviewStatus() === 'empty') {
       <div class="review-state empty-state" role="status">
         <span class="material-symbols-outlined">person_search</span>
         <h3>No doctor reference entered</h3>
-        <p>Scan a QR code or enter a reference to begin the review.</p>
+        <p>
+          Scan a QR code or enter a reference to begin the review.
+        </p>
       </div>
     }
 
-    @if (reviewStatus === 'loading') {
+
+    @if (reviewStatus() === 'loading') {
       <div class="review-state loading-state" role="status" aria-live="polite">
         <span class="material-symbols-outlined">progress_activity</span>
         <h3>Loading sample review</h3>
-        <p>{{ reviewMessage }}</p>
+        <p>{{ reviewMessage() }}</p>
+
+        @if (enteredCode()) {
+          <div class="review-details">
+            <div>
+              <span>Entered reference</span>
+              <strong>{{ enteredCode() }}</strong>
+            </div>
+          </div>
+        }
       </div>
     }
 
-    @if (reviewStatus === 'ready') {
+
+    @if (reviewStatus() === 'ready') {
       <div class="review-state ready-state" role="status">
         <span class="material-symbols-outlined">info</span>
         <h3>Sample review ready</h3>
-        <p>{{ reviewMessage }}</p>
+        <p>{{ reviewMessage() }}</p>
 
         <div class="review-details">
           <div>
             <span>Entered reference</span>
-            <strong>{{ enteredCode }}</strong>
+            <strong>{{ enteredCode() }}</strong>
           </div>
 
           <div>
@@ -209,15 +235,15 @@
       </div>
     }
 
-    @if (reviewStatus === 'error') {
+    @if (reviewStatus() === 'error') {
       <div class="review-state error-state" role="alert">
         <span class="material-symbols-outlined">error</span>
         <h3>Unable to review reference</h3>
-        <p>{{ reviewMessage }}</p>
+        <p>{{ reviewMessage() }}</p>
       </div>
     }
 
-    @if (reviewStatus !== 'empty') {
+    @if (reviewStatus() !== 'empty') {
       <button
         type="button"
         class="secondary-button"

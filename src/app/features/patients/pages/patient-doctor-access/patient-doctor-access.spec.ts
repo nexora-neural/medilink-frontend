@@ -25,6 +25,8 @@ describe('PatientDoctorAccess', () => {
     detect = detectQr;
   }
 
+  const getScreenText = (): string => (fixture!.nativeElement as HTMLElement).textContent ?? '';
+
   beforeEach(async () => {
     getUserMedia = vi.fn();
     detectQr = vi.fn().mockResolvedValue([]);
@@ -46,7 +48,8 @@ describe('PatientDoctorAccess', () => {
     fixture = TestBed.createComponent(PatientDoctorAccess);
     component = fixture.componentInstance;
 
-    fixture.detectChanges(false);
+    // Initial rendering only. Subsequent UI updates must happen automatically.
+    fixture.detectChanges();
 
     const video = fixture.nativeElement.querySelector('video') as HTMLVideoElement;
 
@@ -81,47 +84,63 @@ describe('PatientDoctorAccess', () => {
   });
 
   it('shows the empty doctor review state initially', () => {
-    expect(component.reviewStatus).toBe('empty');
+    expect(component.reviewStatus()).toBe('empty');
 
-    expect((fixture!.nativeElement as HTMLElement).textContent).toContain(
-      'No doctor reference entered',
-    );
+    expect(getScreenText()).toContain('No doctor reference entered');
   });
 
-  it('shows a validation error when the manual reference is empty', () => {
+  it('navigates back to the workspace dashboard', () => {
+    const dashboardLink = fixture!.nativeElement.querySelector('.back-link') as HTMLAnchorElement;
+
+    expect(dashboardLink.getAttribute('routerLink')).toBe('/workspace');
+    expect(dashboardLink.textContent).toContain('Back to dashboard');
+  });
+
+  it('shows a validation error when the manual reference is empty', async () => {
     component.reviewCode();
-    fixture!.detectChanges(false);
 
-    expect(component.reviewStatus).toBe('error');
-    expect(component.reviewMessage).toContain('Please enter');
+    await fixture!.whenStable();
 
-    expect((fixture!.nativeElement as HTMLElement).textContent).toContain(
-      'Unable to review reference',
-    );
+    expect(component.reviewStatus()).toBe('error');
+    expect(component.reviewMessage()).toContain('Please enter');
+
+    expect(getScreenText()).toContain('Unable to review reference');
+    expect(getScreenText()).toContain('Please enter a doctor QR reference.');
   });
 
-  it('moves manual review from loading to ready', async () => {
+  it('automatically updates the visible screen from loading to ready', async () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
 
     component.reviewCode();
 
-    expect(component.reviewStatus).toBe('loading');
+    await fixture!.whenStable();
+
+    expect(component.reviewStatus()).toBe('loading');
+    expect(getScreenText()).toContain('Loading sample review');
 
     await new Promise((resolve) => setTimeout(resolve, 400));
+    await fixture!.whenStable();
 
-    expect(component.reviewStatus).toBe('ready');
-    expect(component.enteredCode).toBe('DEMO-DOCTOR-01');
-    expect(component.reviewMessage).toContain('Sample preview only');
+    expect(component.reviewStatus()).toBe('ready');
+    expect(component.enteredCode()).toBe('DEMO-DOCTOR-01');
+    expect(component.reviewMessage()).toContain('Sample preview only');
+
+    expect(getScreenText()).toContain('Sample review ready');
+    expect(getScreenText()).toContain('DEMO-DOCTOR-01');
+    expect(getScreenText()).toContain('Not verified');
   });
 
-  it('shows an error when camera permission is denied', async () => {
+  it('automatically updates the visible screen when camera permission is denied', async () => {
     getUserMedia.mockRejectedValue(new Error('Permission denied'));
 
     await component.startCamera();
-    fixture!.detectChanges(false);
+    await fixture!.whenStable();
 
-    expect(component.cameraStatus).toBe('error');
-    expect(component.cameraMessage).toContain('permission was denied');
+    expect(component.cameraStatus()).toBe('error');
+    expect(component.cameraMessage()).toContain('permission was denied');
+
+    expect(getScreenText()).toContain('Camera could not be started');
+    expect(getScreenText()).toContain('permission was denied');
   });
 
   it('prevents overlapping camera permission requests', async () => {
@@ -141,12 +160,14 @@ describe('PatientDoctorAccess', () => {
     expect(getUserMedia).toHaveBeenCalledTimes(1);
 
     resolvePermission(stream);
+
     await Promise.all([firstRequest, secondRequest]);
+    await fixture!.whenStable();
 
     component.stopCamera();
   });
 
-  it('captures a QR reference and starts the doctor review', async () => {
+  it('automatically displays a captured QR reference and starts doctor review', async () => {
     const { stream } = createStream();
 
     getUserMedia.mockResolvedValue(stream);
@@ -155,14 +176,19 @@ describe('PatientDoctorAccess', () => {
     await component.startCamera();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
+    await fixture!.whenStable();
 
     expect(detectQr).toHaveBeenCalled();
-    expect(component.codeForm.controls.doctorCode.value).toBe('DEMO-QR-DOCTOR-01');
-    expect(component.cameraStatus).toBe('found');
-    expect(component.reviewStatus).toBe('loading');
-    expect(component.enteredCode).toBe('DEMO-QR-DOCTOR-01');
 
-    component.stopCamera();
+    expect(component.codeForm.controls.doctorCode.value).toBe('DEMO-QR-DOCTOR-01');
+
+    expect(component.cameraStatus()).toBe('found');
+    expect(component.reviewStatus()).toBe('loading');
+    expect(component.enteredCode()).toBe('DEMO-QR-DOCTOR-01');
+
+    expect(getScreenText()).toContain('QR reference captured');
+    expect(getScreenText()).toContain('DEMO-QR-DOCTOR-01');
+    expect(getScreenText()).toContain('Loading sample review');
   });
 
   it('ignores a QR result returned after scan cancellation', async () => {
@@ -187,11 +213,15 @@ describe('PatientDoctorAccess', () => {
     resolveDetection([{ rawValue: 'CANCELLED-QR-REFERENCE' }]);
 
     await new Promise((resolve) => setTimeout(resolve, 0));
+    await fixture!.whenStable();
 
     expect(component.codeForm.controls.doctorCode.value).toBe('');
-    expect(component.cameraStatus).toBe('idle');
-    expect(component.reviewStatus).toBe('empty');
-    expect(component.enteredCode).toBe('');
+    expect(component.cameraStatus()).toBe('idle');
+    expect(component.reviewStatus()).toBe('empty');
+    expect(component.enteredCode()).toBe('');
+
+    expect(getScreenText()).toContain('No doctor reference entered');
+    expect(getScreenText()).not.toContain('CANCELLED-QR-REFERENCE');
   });
 
   it('stops a stream when permission resolves after cancellation', async () => {
@@ -210,14 +240,18 @@ describe('PatientDoctorAccess', () => {
     component.stopCamera();
 
     resolvePermission(stream);
+
     await request;
+    await fixture!.whenStable();
 
     expect(stopTrack).toHaveBeenCalled();
-    expect(component.cameraStatus).toBe('idle');
+    expect(component.cameraStatus()).toBe('idle');
+    expect(getScreenText()).toContain('Camera is not active');
   });
 
   it('cleans up camera tracks when the component is destroyed', async () => {
     const { stream, stopTrack } = createStream();
+
     getUserMedia.mockResolvedValue(stream);
 
     await component.startCamera();
@@ -226,19 +260,26 @@ describe('PatientDoctorAccess', () => {
     fixture = undefined;
 
     expect(stopTrack).toHaveBeenCalled();
-    expect(component.cameraStream).toBeUndefined();
   });
 
-  it('clears the entered reference and review state', () => {
+  it('clears the entered reference and automatically resets the visible review state', async () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
-    component.enteredCode = 'DEMO-DOCTOR-01';
-    component.reviewStatus = 'ready';
+    component.reviewCode();
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await fixture!.whenStable();
+
+    expect(component.reviewStatus()).toBe('ready');
 
     component.clearCode();
-    fixture!.detectChanges(false);
+
+    await fixture!.whenStable();
 
     expect(component.codeForm.controls.doctorCode.value).toBe('');
-    expect(component.enteredCode).toBe('');
-    expect(component.reviewStatus).toBe('empty');
+    expect(component.enteredCode()).toBe('');
+    expect(component.reviewStatus()).toBe('empty');
+
+    expect(getScreenText()).toContain('No doctor reference entered');
+    expect(getScreenText()).not.toContain('DEMO-DOCTOR-01');
   });
 });
