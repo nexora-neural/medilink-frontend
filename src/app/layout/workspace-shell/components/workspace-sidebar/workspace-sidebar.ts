@@ -2,6 +2,7 @@ import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ActiveRole } from '../../../../core/context/active-role.service';
 import { NavigationItem } from '../../models/navigation-item';
+import { ActiveOrganizationService } from '../../../../core/context/active-organization.service';
 
 @Component({
   selector: 'app-workspace-sidebar',
@@ -12,6 +13,12 @@ import { NavigationItem } from '../../models/navigation-item';
 })
 export class WorkspaceSidebar {
   private readonly router = inject(Router);
+  readonly organizationContext = inject(ActiveOrganizationService);
+
+  selectOrganization(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.organizationContext.selectOrganization(select.value);
+  }
 
   @Input({ required: true }) activeRole!: ActiveRole;
   @Input({ required: true }) navigation: NavigationItem[] = [];

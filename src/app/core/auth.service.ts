@@ -13,10 +13,21 @@ import {
 } from 'firebase/auth';
 import { firstValueFrom, timeout } from 'rxjs';
 import { ActiveRoleService } from './context/active-role.service';
+import { ActiveOrganizationService } from './context/active-organization.service';
 
 export interface MediLinkConfig {
   firebase: FirebaseOptions;
   apiBaseUrl: string;
+}
+
+export interface MembershipResponse {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: string;
+  status: string;
+  verified_at: string | null;
+  created_at: string;
 }
 
 export interface MeResponse {
@@ -28,6 +39,7 @@ export interface MeResponse {
     status: string;
   };
   roles: string[];
+  memberships: MembershipResponse[];
   patient_profile: {
     user_id: string;
     date_of_birth: string;
@@ -49,6 +61,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly platform = inject(PLATFORM_ID);
   private readonly roleContext = inject(ActiveRoleService);
+  private readonly organizationContext = inject(ActiveOrganizationService);
 
   private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
@@ -187,6 +200,7 @@ export class AuthService {
 
       if (!auth.currentUser) {
         this.roleContext.clear();
+        this.organizationContext.clear();
         return false;
       }
 
@@ -203,10 +217,12 @@ export class AuthService {
       );
 
       this.roleContext.setAccountRoles(response.user.id, response.roles);
+      this.organizationContext.setAccountMemberships(response.user.id, response.memberships);
 
       return true;
     } catch (error) {
       this.roleContext.clear();
+      this.organizationContext.clear();
       throw error;
     }
   }

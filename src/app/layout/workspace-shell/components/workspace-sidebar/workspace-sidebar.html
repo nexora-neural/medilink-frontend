@@ -62,9 +62,30 @@
       }
     </select>
 
+    @if (organizationContext.availableMemberships().length > 0) {
+      <label for="active-organization">Active organization</label>
+
+      <select
+        id="active-organization"
+        [value]="organizationContext.activeOrganizationId() ?? ''"
+        (change)="selectOrganization($event)"
+      >
+        <option value="">Select an organization</option>
+
+        @for (
+          membership of organizationContext.availableMemberships();
+          track membership.id
+          ) {
+          <option [value]="membership.organization_id">
+            {{ membership.organization_id }}
+          </option>
+        }
+      </select>
+    }
+
     <span class="demo-note">
-      Local role context for frontend review
-    </span>
+  Available roles and organizations come from your account.
+</span>
   </div>
 </aside>
 

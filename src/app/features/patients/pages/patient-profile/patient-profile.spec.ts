@@ -14,6 +14,7 @@ function profileResponse(name = 'Demo Patient'): MeResponse {
       status: 'active',
     },
     roles: ['patient'],
+    memberships: [],
     patient_profile: {
       user_id: 'demo-patient-001',
       date_of_birth: '2000-01-01',
