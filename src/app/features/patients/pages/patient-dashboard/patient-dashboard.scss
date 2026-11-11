@@ -419,6 +419,8 @@ h2 {
   border-radius: 25px;
   background: #f2f6f9;
   max-width: 210px;
+  left: clamp(105px, var(--timeline-position), calc(100% - 105px));
+  transform: translateX(-50%);
   text-decoration: none;
 }
 .time-med-icon {

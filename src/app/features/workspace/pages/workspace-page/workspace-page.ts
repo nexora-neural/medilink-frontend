@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { FormField } from '../../../../shared/components/form-field/form-field';
 import { UiState, UiStateKind } from '../../../../shared/components/ui-state/ui-state';
@@ -16,11 +16,15 @@ import { PatientDashboard } from '../../../patients/pages/patient-dashboard/pati
 export class WorkspacePage {
   private readonly formBuilder = inject(FormBuilder);
   readonly activeRole = inject(ActiveRoleService).activeRole;
+  private readonly router = inject(Router);
   title = 'Workspace overview';
   description = 'A responsive MediLink workspace foundation for role-aware navigation.';
   selectedState: UiStateKind = 'empty';
   submitted = false;
   formMessage = '';
+  get isPatientOverview(): boolean {
+    return this.activeRole() === 'Patient' && this.router.url.split(/[?#]/)[0] === '/workspace';
+  }
   readonly previewForm = this.formBuilder.nonNullable.group({
     displayName: ['', Validators.required],
     category: ['General', Validators.required],

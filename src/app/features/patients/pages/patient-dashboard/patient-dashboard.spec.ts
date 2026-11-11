@@ -26,10 +26,19 @@ describe('PatientDashboard', () => {
     expect(element.textContent).toContain('Sample preview only');
     expect(element.querySelector('a[href="/workspace/patient/prescriptions"]')).not.toBeNull();
     expect(element.querySelector('a[href="/workspace/patient/history"]')).not.toBeNull();
+    expect(element.querySelector('a.update-row[href="/workspace/patient/reports"]')).not.toBeNull();
     expect(element.querySelector('a[href="/workspace/patient/access"]')).not.toBeNull();
     expect(
       element.querySelector('[aria-label="Today’s medication schedule timeline"]'),
     ).not.toBeNull();
+  });
+
+  it('positions late evening doses at their actual time on the full-day timeline', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+
+    expect(dashboard.timelinePosition('9:00 PM')).toBe(87.5);
+    expect(dashboard.timelinePosition('8:00 PM')).toBeCloseTo(83.333, 2);
   });
 
   it('shows empty messages when there are no dashboard records', () => {

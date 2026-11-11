@@ -151,7 +151,7 @@
           <p class="dash-empty" role="status">You do not have any recent notifications.</p>
         }
         @for (notice of visibleNotices; track notice.title) {
-          <a class="update-row" routerLink="/workspace/patient/history">
+          <a class="update-row" routerLink="/workspace/patient/reports">
             <span class="update-icon material-symbols-outlined" aria-hidden="true"
               >description</span
             >
@@ -203,7 +203,7 @@
               <a
                 class="time-med"
                 routerLink="/workspace/patient/medications"
-                [style.left.%]="timelinePosition(medicine.time)"
+                [style.--timeline-position]="timelinePosition(medicine.time) + '%'"
                 [style.top.px]="medicines.length > 4 ? 24 + (i % 5) * 54 : i % 2 === 0 ? 24 : 86"
                 [attr.aria-label]="medicine.name + ', ' + medicine.dose + ', ' + medicine.time"
               >

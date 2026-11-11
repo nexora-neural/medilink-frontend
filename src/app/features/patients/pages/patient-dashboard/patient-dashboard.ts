@@ -92,7 +92,7 @@ export class PatientDashboard {
     const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
     if (!match) return 0;
     const hours = (Number(match[1]) % 12) + (match[3].toUpperCase() === 'PM' ? 12 : 0);
-    return Math.min(84, Math.max(0, ((hours * 60 + Number(match[2])) / 1440) * 100));
+    return Math.min(100, Math.max(0, ((hours * 60 + Number(match[2])) / 1440) * 100));
   }
 
   setPreviewState(state: DashboardState): void {
