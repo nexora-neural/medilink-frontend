@@ -154,10 +154,22 @@ export class AuthService {
   }): Promise<void> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
-    const credential =
-      auth.currentUser?.email?.toLowerCase() === input.email.toLowerCase()
-        ? await signInWithEmailAndPassword(auth, input.email, input.password)
-        : await createUserWithEmailAndPassword(auth, input.email, input.password);
+    const email = input.email.trim();
+
+    const credential = await (async () => {
+      try {
+        return await createUserWithEmailAndPassword(auth, email, input.password);
+      } catch (error) {
+        const code =
+          typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+
+        if (code !== 'auth/email-already-in-use') {
+          throw error;
+        }
+
+        return signInWithEmailAndPassword(auth, email, input.password);
+      }
+    })();
     try {
       const token = await credential.user.getIdToken();
       await firstValueFrom(

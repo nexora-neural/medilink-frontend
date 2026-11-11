@@ -26,7 +26,13 @@ describe('AppShell', () => {
 
     expect(element.querySelector('.workspace-label')?.textContent).toContain('Patient workspace');
     expect(element.querySelector('.role-chip')?.textContent).toContain('Patient');
-    expect(element.querySelectorAll('.primary-navigation a').length).toBe(8);
+    expect(element.querySelectorAll('.primary-navigation a').length).toBe(9);
+
+    const profileLink = element.querySelector(
+      '.primary-navigation a[href="/workspace/patient/profile"]',
+    );
+
+    expect(profileLink?.textContent).toContain('My profile');
   });
 
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
