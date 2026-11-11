@@ -56,5 +56,10 @@
     @if (emergencyContact(); as contact) {
       <app-emergency-contact-card [contact]="contact" />
     }
+    @if (notificationPreferences(); as preferences) {
+      <app-notification-preferences-card
+        [preferences]="preferences"
+      />
+    }
 }
 </section>

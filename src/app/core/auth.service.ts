@@ -143,6 +143,40 @@ export class AuthService {
     );
   }
 
+  async updateNotificationPreferences(input: {
+    medication_in_app: boolean;
+    vaccination_in_app: boolean;
+  }): Promise<NonNullable<MeResponse['patient_profile']>> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your preferences.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<NonNullable<MeResponse['patient_profile']>>(
+          `${config.apiBaseUrl}/me/patient-profile`,
+          {
+            notification_preferences: {
+              medication_in_app: input.medication_in_app,
+              vaccination_in_app: input.vaccination_in_app,
+            },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+  }
+
   async restoreSession(): Promise<boolean> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();

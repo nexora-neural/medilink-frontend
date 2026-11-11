@@ -6,6 +6,10 @@ import {
   EmergencyContact,
   EmergencyContactCard,
 } from './components/emergency-contact-card/emergency-contact-card';
+import {
+  NotificationPreferences,
+  NotificationPreferencesCard,
+} from './components/notification-preferences-card/notification-preferences-card';
 
 export interface PatientDetails {
   name: string;
@@ -15,7 +19,12 @@ export interface PatientDetails {
 
 @Component({
   selector: 'app-patient-profile',
-  imports: [ProfileSummaryCard, PersonalInformationCard, EmergencyContactCard],
+  imports: [
+    ProfileSummaryCard,
+    PersonalInformationCard,
+    EmergencyContactCard,
+    NotificationPreferencesCard,
+  ],
   templateUrl: './patient-profile.html',
   styleUrl: './patient-profile.scss',
 })
@@ -24,6 +33,7 @@ export class PatientProfile implements OnInit {
 
   readonly patient = signal<PatientDetails | null>(null);
   readonly emergencyContact = signal<EmergencyContact | null>(null);
+  readonly notificationPreferences = signal<NotificationPreferences | null>(null);
   readonly loading = signal(true);
   readonly loadError = signal('');
   readonly saving = signal(false);
@@ -54,6 +64,14 @@ export class PatientProfile implements OnInit {
           ? {
               name: profile.emergency_contact_name ?? '',
               phone: profile.emergency_contact_phone ?? '',
+            }
+          : null,
+      );
+      this.notificationPreferences.set(
+        profile
+          ? {
+              medication_in_app: profile.notification_preferences['medication_in_app'] ?? false,
+              vaccination_in_app: profile.notification_preferences['vaccination_in_app'] ?? false,
             }
           : null,
       );
