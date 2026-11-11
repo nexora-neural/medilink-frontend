@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { WorkspacePage } from './workspace-page';
+import { ActiveRoleService } from '../../../../core/context/active-role.service';
 
 describe('WorkspacePage', () => {
   it('renders its content and controls', async () => {
@@ -23,6 +24,7 @@ describe('WorkspacePage', () => {
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(WorkspacePage);
+    TestBed.inject(ActiveRoleService).setActiveRole('Doctor');
     fixture.detectChanges();
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;

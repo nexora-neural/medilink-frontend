@@ -3,15 +3,19 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const firebaseMocks = vi.hoisted(() => ({
-  getApps: vi.fn(),
-  initializeApp: vi.fn(),
-  getAuth: vi.fn(),
-  setPersistence: vi.fn(),
-  createUserWithEmailAndPassword: vi.fn(),
-  signInWithEmailAndPassword: vi.fn(),
-  signOut: vi.fn(),
-}));
+const firebaseMocks = vi.hoisted(() => {
+  vi.resetModules();
+
+  return {
+    getApps: vi.fn(),
+    initializeApp: vi.fn(),
+    getAuth: vi.fn(),
+    setPersistence: vi.fn(),
+    createUserWithEmailAndPassword: vi.fn(),
+    signInWithEmailAndPassword: vi.fn(),
+    signOut: vi.fn(),
+  };
+});
 
 vi.mock('firebase/app', () => ({
   getApps: firebaseMocks.getApps,
