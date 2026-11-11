@@ -1,0 +1,43 @@
+<form class="measurement-form" (ngSubmit)="submit()" #measurementForm="ngForm" novalidate>
+  <h2>{{ correcting() ? 'Correct measurement' : 'Add measurement' }}</h2>
+  <p>Enter the measured values, time, and source. This screen does not interpret results.</p>
+  <div class="form-grid">
+    <label>Type
+      <select name="kind" [(ngModel)]="kind" [disabled]="!!correcting()" required>
+        <option value="weight">Weight</option>
+        <option value="blood_pressure">Blood pressure</option>
+        <option value="glucose">Blood glucose</option>
+      </select>
+    </label>
+    <label>Measured at
+      <input name="recordedAt" type="datetime-local" [(ngModel)]="recordedAt" [max]="today()" required />
+    </label>
+    @if (kind === 'blood_pressure') {
+      <label>Systolic (mmHg)
+        <input name="systolic" type="number" [(ngModel)]="systolic" min="1" max="400" step="1" required />
+      </label>
+      <label>Diastolic (mmHg)
+        <input name="diastolic" type="number" [(ngModel)]="diastolic" min="1" max="400" step="1" required />
+      </label>
+    } @else {
+      <label>{{ kind === 'weight' ? 'Weight (kg)' : 'Glucose (mg/dL)' }}
+        <input name="value" type="number" [(ngModel)]="value" min="0.01" max="10000" step="any" required />
+      </label>
+    }
+    <label>Source
+      <select name="source" [ngModel]="'patient'" disabled>
+        <option value="patient">Patient-added</option>
+      </select>
+    </label>
+    @if (correcting()) {
+      <label class="wide">Reason for correction
+        <textarea name="reason" [(ngModel)]="reason" required maxlength="500" rows="3" placeholder="Explain what needs correcting"></textarea>
+      </label>
+    }
+  </div>
+  @if (error()) { <p class="form-error" role="alert">{{ error() }}</p> }
+  <div class="form-actions">
+    <button class="secondary" type="button" (click)="cancelled.emit()">Cancel</button>
+    <button class="primary" type="submit">{{ correcting() ? 'Save correction' : 'Save measurement' }}</button>
+  </div>
+</form>

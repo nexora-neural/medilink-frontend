@@ -1,0 +1,132 @@
+<section
+  class="measurements-page"
+  aria-labelledby="measurements-title"
+>
+  <header class="page-heading">
+    <div>
+      <h1 id="measurements-title">
+        Health measurements
+      </h1>
+
+      <p class="subtitle">
+        Review values, units, dates and recorded source.
+      </p>
+    </div>
+
+    <button
+      class="primary-button"
+      type="button"
+      (click)="add()"
+    >
+      <span
+        class="material-symbols-outlined"
+        aria-hidden="true"
+      >
+        add
+      </span>
+      Add measurement
+    </button>
+  </header>
+
+  <div class="summary-grid" aria-label="Measurement summary">
+    <div class="summary-card">
+      <span>Total measurements</span>
+      <strong>{{ total() }}</strong>
+      <small>Recorded entries</small>
+    </div>
+
+    <div class="summary-card">
+      <span>Patient-added</span>
+      <strong>{{ patientAdded() }}</strong>
+      <small>Source shown per entry</small>
+    </div>
+
+    <div class="summary-card info-card">
+      <span>Understanding values</span>
+      <p>Measurements are not a diagnosis.</p>
+    </div>
+  </div>
+
+  @if (message()) {
+    <p class="success" role="status">
+      {{ message() }}
+    </p>
+  }
+
+  @if (error()) {
+    <p class="error" role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (formMode()) {
+    <app-measurement-form
+      [correcting]="correcting()"
+      (saved)="save($event)"
+      (cancelled)="closeForm()"
+    />
+  }
+
+  <section
+    class="records-panel"
+    aria-labelledby="records-title"
+  >
+    <div class="records-heading">
+      <div>
+        <h2 id="records-title">
+          Recorded measurements
+        </h2>
+
+        <p>Values, units and dates from your records.</p>
+      </div>
+
+      <button
+        type="button"
+        class="history-link"
+        [attr.aria-expanded]="showHistory()"
+        (click)="toggleHistory()"
+      >
+        {{ showHistory() ? 'Hide history' : 'View history ↗' }}
+      </button>
+    </div>
+
+    @if (pageState() === 'loading') {
+      <app-ui-state
+        kind="loading"
+        title="Loading measurements"
+        description="Getting the recorded measurements."
+      />
+    } @else if (pageState() === 'error') {
+      <app-ui-state
+        kind="error"
+        title="Measurements unavailable"
+        description="We could not load the measurements preview."
+        actionLabel="Try again"
+        (action)="retry()"
+      />
+    } @else if (
+      pageState() === 'empty' ||
+      measurements().length === 0
+      ) {
+      <app-ui-state
+        kind="empty"
+        title="No measurements yet"
+        description="Add a weight, blood pressure or glucose measurement to begin."
+        actionLabel="Add measurement"
+        (action)="add()"
+      />
+    } @else {
+      <app-measurement-list
+        [measurements]="measurements()"
+        (correctionRequested)="correct($event)"
+      />
+    }
+
+    @if (showHistory() && pageState() === 'ready') {
+      <app-correction-history
+        [records]="allHistory()"
+        (closeRequested)="clearHistory()"
+      />
+    }
+  </section>
+</section>

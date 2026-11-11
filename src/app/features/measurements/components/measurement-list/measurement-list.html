@@ -1,0 +1,45 @@
+<div class="measurement-list" aria-label="Recorded measurements">
+  @for (record of measurements(); track record.id) {
+    <article class="measurement-row">
+      <div class="row-left">
+        <div class="row-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">
+            monitoring
+          </span>
+        </div>
+
+        <div class="row-main">
+          <strong>{{ label(record.reading.kind) }}</strong>
+
+          <span class="record-date">
+            {{ record.recordedAt | date: 'yyyy-MM-dd · HH:mm' }}
+          </span>
+
+          @if (record.correctsId) {
+            <small class="corrected-label">Corrected entry</small>
+          }
+        </div>
+      </div>
+
+      <div class="row-right">
+        <span class="source-badge">Patient-added</span>
+
+        <strong class="reading">
+          {{ reading(record.reading) }}
+        </strong>
+
+        <button
+          type="button"
+          class="correct-btn"
+          (click)="correctionRequested.emit(record)"
+          [attr.aria-label]="'Correct ' + label(record.reading.kind)"
+          title="Correct measurement"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">
+            edit
+          </span>
+        </button>
+      </div>
+    </article>
+  }
+</div>

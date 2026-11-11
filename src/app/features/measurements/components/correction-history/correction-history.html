@@ -1,0 +1,20 @@
+<section class="history" aria-labelledby="revision-heading">
+  <div class="history-heading">
+    <h3 id="revision-heading">Measurement history</h3>
+    <button type="button" (click)="closeRequested.emit()">Close history</button>
+  </div>
+  <p>All versions are retained. Corrections do not overwrite the original record.</p>
+  <ol>
+    @for (record of records(); track record.id) {
+      <li>
+        <strong>{{ reading(record.reading) }}</strong>
+        <div>Measured: {{ record.recordedAt | date:'medium' }}</div>
+        <div>Entered: {{ record.createdAt | date:'medium' }} · Source: Patient-added</div>
+        @if (record.correctsId) {
+          <div>Correction to record {{ record.correctsId }}</div>
+          <div>Reason: {{ record.correctionReason }}</div>
+        } @else { <div>Original record</div> }
+      </li>
+    }
+  </ol>
+</section>
