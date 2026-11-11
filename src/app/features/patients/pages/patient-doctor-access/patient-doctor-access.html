@@ -2,167 +2,234 @@
 <main class="access-page">
   <header class="page-header">
     <div>
-      <a class="back-link" routerLink="/workspace">
-        <span class="material-symbols-outlined">arrow_back</span>
-        Back to workspace
-      </a>
-
-      <p class="eyebrow">PATIENT ACCESS</p>
-      <h1>Connect with a doctor</h1>
-      <p class="subtitle">
-        Scan your doctor's identity QR code or enter the reference manually
-        to review their details.
+      <p class="eyebrow">PATIENT WORKSPACE</p>
+      <h1>Doctor access</h1>
+      <p class="page-description">
+        Scan a doctor's QR code or enter the reference manually to review
+        their identity.
       </p>
     </div>
+
+    <a routerLink="/workspace/patient" class="back-link">
+      Back to dashboard
+    </a>
   </header>
 
   <section class="access-grid">
-    <article class="scan-card">
-      <div class="card-heading">
-        <div>
-          <h2>Scan doctor QR code</h2>
-          <p>Use your device camera to scan the doctor's QR code.</p>
-        </div>
-        <span class="material-symbols-outlined heading-icon">qr_code_scanner</span>
+    <article class="scanner-card">
+      <div class="section-heading">
+        <h2>Scan doctor QR code</h2>
+        <p>Use your device camera to scan the doctor's QR code.</p>
       </div>
 
       <div class="camera-area">
+        <video
+          #cameraVideo
+          class="camera-video"
+          [class.visible]="cameraStatus === 'scanning'"
+          autoplay
+          muted
+          playsinline
+          aria-label="Camera preview for scanning a doctor QR code"
+        ></video>
 
-        <div class="camera-area">
-          <video
-            #cameraVideo
-            class="camera-video"
-            [class.visible]="cameraStatus === 'scanning'"
-            autoplay
-            muted
-            playsinline
-          ></video>
+        @if (cameraStatus === 'idle' || cameraStatus === 'unsupported') {
+          <div class="camera-placeholder">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            <p>Camera is not active</p>
+          </div>
+        }
 
-          @if (cameraStatus === 'scanning') {
-            <div class="scan-frame" aria-hidden="true"></div>
-            <p class="camera-caption">Position the QR code inside the frame</p>
-          } @else if (cameraStatus === 'found') {
-            <div class="camera-placeholder success-placeholder">
-              <span class="material-symbols-outlined">check_circle</span>
-              <strong>QR code detected</strong>
-              <p>The code has been captured.</p>
-            </div>
-          } @else {
-            <div class="camera-placeholder">
-              <span class="material-symbols-outlined">photo_camera</span>
-              <strong>Camera scanner</strong>
-              <p>Your camera will start after you give permission.</p>
-            </div>
-          }
-        </div>
+        @if (cameraStatus === 'requesting') {
+          <div class="camera-placeholder" role="status" aria-live="polite">
+            <span class="material-symbols-outlined">progress_activity</span>
+            <p>Requesting camera permission...</p>
+          </div>
+        }
 
-      </div>
+        @if (cameraStatus === 'found') {
+          <div class="camera-placeholder" role="status">
+            <span class="material-symbols-outlined">check_circle</span>
+            <p>QR reference captured</p>
+          </div>
+        }
 
-      @if (cameraMessage) {
-        <p class="camera-message" role="alert">{{ cameraMessage }}</p>
-      }
-
-      <div class="camera-actions">
-        @if (cameraStatus === 'scanning') {
-          <button class="secondary-button" type="button" (click)="stopCamera(); cameraStatus = 'idle'">
-            Stop camera
-          </button>
-        } @else {
-          <button class="primary-button" type="button" (click)="startCamera()">
-            <span class="material-symbols-outlined">photo_camera</span>
-            Start camera
-          </button>
+        @if (cameraStatus === 'error') {
+          <div class="camera-placeholder error-state" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <p>Camera could not be started</p>
+          </div>
         }
       </div>
 
-      <div class="divider-text"><span>OR</span></div>
+      @if (cameraMessage) {
+        <p
+          class="status-message"
+          [class.error-message]="cameraStatus === 'error'"
+          role="status"
+          aria-live="polite"
+        >
+          {{ cameraMessage }}
+        </p>
+      }
 
-      <form [formGroup]="codeForm" (ngSubmit)="reviewCode()" novalidate>
-        <label for="doctorCode">Enter doctor reference manually</label>
+      <div class="camera-actions">
+        @if (cameraStatus === 'idle' ||
+        cameraStatus === 'error' ||
+        cameraStatus === 'unsupported') {
+          <button
+            type="button"
+            class="primary-button"
+            (click)="startCamera()"
+            [disabled]="cameraStartInProgress"
+          >
+            <span class="material-symbols-outlined">photo_camera</span>
+            Scan QR code
+          </button>
+        }
+
+        @if (cameraStatus === 'requesting') {
+          <button type="button" class="primary-button" disabled>
+            Requesting camera...
+          </button>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="stopCamera()"
+          >
+            Cancel
+          </button>
+        }
+
+        @if (cameraStatus === 'scanning') {
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="stopCamera()"
+          >
+            Stop scanning
+          </button>
+        }
+
+        @if (cameraStatus === 'found') {
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="clearCode()"
+          >
+            Clear captured code
+          </button>
+        }
+      </div>
+    </article>
+
+    <article class="manual-card">
+      <div class="section-heading">
+        <h2>Enter doctor reference</h2>
+        <p>You can enter the reference manually if scanning is unavailable.</p>
+      </div>
+
+      <form [formGroup]="codeForm" (ngSubmit)="reviewCode()">
+        <label for="doctorCode">Doctor QR reference</label>
+
         <input
           id="doctorCode"
           type="text"
           formControlName="doctorCode"
-          placeholder="Enter QR reference"
+          placeholder="Enter doctor reference"
           autocomplete="off"
+          aria-describedby="code-help code-error"
         />
 
+        <p id="code-help" class="field-help">
+          Enter the reference provided by the doctor.
+        </p>
+
         @if (
-          codeForm.controls.doctorCode.touched &&
-          codeForm.controls.doctorCode.hasError('required')
+          codeForm.controls.doctorCode.invalid &&
+          codeForm.controls.doctorCode.touched
           ) {
-          <p class="field-error" role="alert">Please enter a doctor reference.</p>
+          <p id="code-error" class="error-message" role="alert">
+            Please enter a doctor QR reference.
+          </p>
         }
 
-        <button class="primary-button manual-button" type="submit">
-          Continue
-          <span class="material-symbols-outlined">arrow_forward</span>
+        <button type="submit" class="primary-button">
+          Review reference
         </button>
       </form>
     </article>
+  </section>
 
-    <article class="review-card">
-      <div class="card-heading">
-        <div>
-          <h2>Doctor identity review</h2>
-          <p>Review the doctor's details before granting access.</p>
-        </div>
-        <span class="material-symbols-outlined heading-icon">verified_user</span>
+  <section class="review-card" aria-labelledby="review-heading">
+    <div class="section-heading">
+      <h2 id="review-heading">Doctor identity review</h2>
+      <p>Review the identity information before any access decision.</p>
+    </div>
+
+    @if (reviewStatus === 'empty') {
+      <div class="review-state empty-state" role="status">
+        <span class="material-symbols-outlined">person_search</span>
+        <h3>No doctor reference entered</h3>
+        <p>Scan a QR code or enter a reference to begin the review.</p>
       </div>
+    }
 
-      @if (!enteredCode) {
-        <div class="review-empty">
-          <span class="material-symbols-outlined">person_search</span>
-          <h3>Doctor details will appear here</h3>
-          <p>
-            Scan a QR code or enter a doctor reference to continue.
-          </p>
-        </div>
-      } @else {
-        <div class="review-preview">
-          <span class="preview-label">Captured reference</span>
-          <strong class="reference-value">{{ enteredCode }}</strong>
+    @if (reviewStatus === 'loading') {
+      <div class="review-state loading-state" role="status" aria-live="polite">
+        <span class="material-symbols-outlined">progress_activity</span>
+        <h3>Loading sample review</h3>
+        <p>{{ reviewMessage }}</p>
+      </div>
+    }
 
-          <div class="review-status">
-            <span class="material-symbols-outlined">info</span>
-            <div>
-              <strong>Verification unavailable</strong>
-              <p>
-                The reference has been captured, but the doctor's identity
-                has not been verified by the server.
-              </p>
-            </div>
+    @if (reviewStatus === 'ready') {
+      <div class="review-state ready-state" role="status">
+        <span class="material-symbols-outlined">info</span>
+        <h3>Sample review ready</h3>
+        <p>{{ reviewMessage }}</p>
+
+        <div class="review-details">
+          <div>
+            <span>Entered reference</span>
+            <strong>{{ enteredCode }}</strong>
           </div>
 
-          <div class="identity-field">
-            <span>Doctor name</span>
+          <div>
+            <span>Doctor identity</span>
             <strong>Awaiting server verification</strong>
           </div>
 
-          <div class="identity-field">
-            <span>Professional status</span>
+          <div>
+            <span>Verification status</span>
             <strong>Not verified</strong>
           </div>
-
-          <div class="identity-field">
-            <span>Clinic / Organization</span>
-            <strong>Awaiting server verification</strong>
-          </div>
-
-          <p class="review-warning">
-            Access cannot be granted from this preview. Verify the doctor's
-            identity and details through the connected service first.
-          </p>
         </div>
-      }
+      </div>
+    }
 
-      @if (reviewMessage) {
-        <p class="review-message" role="status">{{ reviewMessage }}</p>
-      }
+    @if (reviewStatus === 'error') {
+      <div class="review-state error-state" role="alert">
+        <span class="material-symbols-outlined">error</span>
+        <h3>Unable to review reference</h3>
+        <p>{{ reviewMessage }}</p>
+      </div>
+    }
 
-      <button class="clear-button" type="button" (click)="clearCode()">
+    @if (reviewStatus !== 'empty') {
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="clearCode()"
+      >
         Clear and start again
       </button>
-    </article>
+    }
+
+    <p class="verification-notice">
+      This is a frontend sample preview. Doctor identity verification and
+      access granting require the backend API and are not available here.
+    </p>
   </section>
 </main>
