@@ -1,0 +1,101 @@
+
+<main class="qr-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" routerLink="/workspace/doctor/dashboard">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back to dashboard
+      </a>
+
+      <p class="eyebrow">DOCTOR IDENTITY</p>
+      <h1>My QR code</h1>
+      <p class="subtitle">
+        Let patients scan your QR code to review your doctor identity
+        before requesting access.
+      </p>
+    </div>
+
+    <button class="print-button" type="button" (click)="printQr()">
+      <span class="material-symbols-outlined">print</span>
+      Print QR code
+    </button>
+  </header>
+
+  <section class="content-grid">
+    <article class="qr-card">
+      <div class="card-heading">
+        <div>
+          <h2>Your identity QR</h2>
+          <p>Personal doctor identification</p>
+        </div>
+        <span class="demo-badge">Preview</span>
+      </div>
+
+      <div class="qr-frame">
+        <img
+          src="/doctor-qr-placeholder.svg"
+          alt="Non-functional demonstration QR placeholder"
+        />
+      </div>
+
+      <h3>Doctor QR preview</h3>
+      <p class="qr-description">
+        Your scannable identity QR will appear here after backend integration.
+      </p>
+
+      <div class="reference-box">
+        <span>Doctor reference</span>
+        <strong>Not available yet</strong>
+      </div>
+
+      <p class="demo-notice">
+        <span class="material-symbols-outlined">info</span>
+        Preview only. This QR is not scannable and cannot grant access.
+      </p>
+    </article>
+
+    <aside class="details-card">
+      <div class="details-heading">
+        <span class="material-symbols-outlined">medical_information</span>
+        <div>
+          <h2>Doctor information</h2>
+          <p>Your professional identity details</p>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <span>Full name</span>
+        <strong>Will be loaded</strong>
+      </div>
+
+      <div class="info-row">
+        <span>Professional registration</span>
+        <strong>Will be loaded</strong>
+      </div>
+
+      <div class="info-row">
+        <span>Clinic / Organization</span>
+        <strong>Will be loaded</strong>
+      </div>
+
+      <div class="info-row">
+        <span>Verification status</span>
+        <strong class="status-pending">
+          <span class="status-dot"></span>
+          Not available
+        </strong>
+      </div>
+
+      <div class="security-note">
+        <span class="material-symbols-outlined">shield_lock</span>
+        <div>
+          <strong>Your identity is protected</strong>
+          <p>
+            The QR code is intended to contain an opaque doctor reference.
+            It should not expose patient information.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
