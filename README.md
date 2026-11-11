@@ -1,6 +1,6 @@
 # MediLink Frontend
 
-Responsive healthcare web application frontend built with Angular 21 and SCSS. Public pages and a workspace preview are available; clinical features and backend integration are not implemented yet.
+Responsive healthcare web application frontend built with Angular 21 and SCSS. Patient registration, sign-in, and profile account details connect to the configured Firebase and local backend. Other workspace features may still use preview data.
 
 ## Requirements
 
@@ -36,7 +36,7 @@ After installing dependencies with npm ci, run these checks from the frontend re
 
 The lint command checks TypeScript formatting and type-checks application and test code. The unit tests use the configured Vitest runner and do not require a live backend.
 
-The workspace role selector and route guard are for frontend navigation only. The current backend is a development scaffold and does not yet implement authentication or authorization for clinical data. Enforce identity, role, and patient-consent permissions on the server before connecting real data. Registration, sign-in, and verification remain demonstration flows; `/verification-documents` is not currently configured as a route.
+The workspace role selector is a frontend preview control and does not grant backend permissions. Connected APIs authenticate requests using Firebase ID tokens. Patient profile account details are loaded and updated through `/api/v1/me`. Other preview screens should not be treated as completed API integrations.
 
 ## Project structure
 
@@ -64,7 +64,7 @@ The empty feature folders are planned placeholders, not implemented clinical fea
 
 Create a feature branch for each piece of work and merge through a reviewed pull request. Avoid committing generated output, local environment files, or patient data.
 
-## Account support and Admin accounts — ML-38
+## Account support and Admin accounts ML-38
 
 These screens use fictional, in-memory accounts. Changes reset when
 the page reloads. Real API integration is tracked separately in ML-42.
@@ -103,3 +103,61 @@ selected preview role to Patient.
 - Tab and Shift+Tab keep focus within the confirmation panel.
 - Escape closes the confirmation panel.
 - Cancel and Confirm return focus to the original action button.
+
+
+## Onboarding and patient profile integration ML-33
+
+### Local setup
+
+1. Install dependencies using `npm ci`.
+2. Copy `public/medilink-config.example.js` to
+   `public/medilink-config.js`.
+3. Configure the Firebase web app settings and backend API base URL
+   in the local config file.
+4. Configure and start the backend using its setup instructions.
+   Apply the required migrations and configure the required roles.
+5. Run `npm start`.
+
+The frontend and backend must use the same Firebase project.
+Keep local configuration files, backend credentials, and service-account
+JSON files out of Git. Never put service-account credentials in frontend
+code or public assets.
+
+### Connected behavior
+
+- Patient registration submits onboarding data to `/api/v1/me/onboard`.
+- If Firebase account creation succeeds but backend onboarding fails,
+  registration can be retried using the same email and correct password.
+- Existing Firebase accounts require successful password authentication
+  before an onboarding retry.
+- Backend onboarding reconciles accounts by verified Firebase UID,
+  rather than merging accounts by email.
+- The Patient sidebar includes My profile at
+  `/workspace/patient/profile`.
+- Profile account details load through `GET /api/v1/me`.
+- Name and mobile number updates use `PATCH /api/v1/me`.
+- Email is read-only in the profile form.
+- Failed saves retain the edit form and draft for retry.
+- Save and Cancel are disabled while saving.
+
+### Verification
+
+- 86 automated tests passed across 43 test files.
+- Formatting and TypeScript checks passed.
+- Production build passed with an initial bundle-size warning:
+  713.35 kB against a 500 kB budget.
+- Manually checked profile updates after refresh and cancellation.
+- Manually checked failed saves and successful retries.
+- Manually checked registration recovery after backend unavailability.
+- Database checks found no duplicate Firebase UIDs, patient profiles,
+  or user-role assignments.
+- An unauthenticated `GET /api/v1/me` returned
+  `401 AUTHENTICATION_REQUIRED`.
+- Two separate patient sessions displayed their respective account
+  details; updating one did not change the other.
+
+### Verification limits
+
+The checks above do not constitute a complete authorization test.
+Authenticated denied-access cases and the referenced profile scope
+still require verification before marking ML-33 complete.
