@@ -53,5 +53,8 @@
       (cancelRequested)="cancelEdit()"
     />
   </div>
+    @if (emergencyContact(); as contact) {
+      <app-emergency-contact-card [contact]="contact" />
+    }
 }
 </section>

@@ -1,0 +1,50 @@
+<section class="contact-card" aria-labelledby="emergency-contact-title">
+  <h2 id="emergency-contact-title">Emergency contact</h2>
+  <p>Both fields are optional. Clear them and save to remove the contact.</p>
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <label for="emergency-name">Contact name</label>
+    <input
+      id="emergency-name"
+      type="text"
+      formControlName="name"
+      [readOnly]="saving()"
+      [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+      aria-describedby="emergency-name-error"
+    />
+
+    <div id="emergency-name-error">
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <small role="alert">Use no more than 150 characters.</small>
+      }
+    </div>
+
+    <label for="emergency-phone">Contact phone number</label>
+    <input
+      id="emergency-phone"
+      type="tel"
+      formControlName="phone"
+      [readOnly]="saving()"
+      [attr.aria-invalid]="form.controls.phone.touched && form.controls.phone.invalid"
+      aria-describedby="emergency-phone-error"
+    />
+
+    <div id="emergency-phone-error">
+      @if (form.controls.phone.touched && form.controls.phone.invalid) {
+        <small role="alert">Use no more than 32 characters.</small>
+      }
+    </div>
+
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+    }
+
+    <div role="status">
+      {{ message() }}
+    </div>
+
+    <button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save emergency contact' }}
+    </button>
+  </form>
+</section>

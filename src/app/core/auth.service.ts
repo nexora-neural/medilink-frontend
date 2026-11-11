@@ -111,6 +111,38 @@ export class AuthService {
     );
   }
 
+  async updateEmergencyContact(input: {
+    name: string;
+    phone: string;
+  }): Promise<NonNullable<MeResponse['patient_profile']>> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your emergency contact.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<NonNullable<MeResponse['patient_profile']>>(
+          `${config.apiBaseUrl}/me/patient-profile`,
+          {
+            emergency_contact_name: input.name.trim() || null,
+            emergency_contact_phone: input.phone.trim() || null,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+  }
+
   async restoreSession(): Promise<boolean> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();

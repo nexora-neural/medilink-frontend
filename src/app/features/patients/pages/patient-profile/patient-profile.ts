@@ -2,6 +2,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { AuthService } from '../../../../core/auth.service';
 import { ProfileSummaryCard } from './components/profile-summary-card/profile-summary-card';
 import { PersonalInformationCard } from './components/personal-information-card/personal-information-card';
+import {
+  EmergencyContact,
+  EmergencyContactCard,
+} from './components/emergency-contact-card/emergency-contact-card';
 
 export interface PatientDetails {
   name: string;
@@ -11,7 +15,7 @@ export interface PatientDetails {
 
 @Component({
   selector: 'app-patient-profile',
-  imports: [ProfileSummaryCard, PersonalInformationCard],
+  imports: [ProfileSummaryCard, PersonalInformationCard, EmergencyContactCard],
   templateUrl: './patient-profile.html',
   styleUrl: './patient-profile.scss',
 })
@@ -19,6 +23,7 @@ export class PatientProfile implements OnInit {
   private readonly auth = inject(AuthService);
 
   readonly patient = signal<PatientDetails | null>(null);
+  readonly emergencyContact = signal<EmergencyContact | null>(null);
   readonly loading = signal(true);
   readonly loadError = signal('');
   readonly saving = signal(false);
@@ -42,6 +47,16 @@ export class PatientProfile implements OnInit {
         email: response.user.email ?? '',
         phone: response.user.phone ?? '',
       });
+      const profile = response.patient_profile;
+
+      this.emergencyContact.set(
+        profile
+          ? {
+              name: profile.emergency_contact_name ?? '',
+              phone: profile.emergency_contact_phone ?? '',
+            }
+          : null,
+      );
     } catch {
       this.loadError.set('Your profile could not be loaded. Check your connection and try again.');
     } finally {
