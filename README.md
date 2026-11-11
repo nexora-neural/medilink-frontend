@@ -158,7 +158,7 @@ code or public assets.
 - Missing sessions and failed session checks clear the role context.
 - Protected role routes redirect unauthorized role selections to `/access-denied`.
 - Organization options load from memberships returned by `GET /api/v1/me`.
-- Options include only the account's active memberships matching the selected role.
+- Options include only the account's approved memberships matching the selected role.
 - The selector displays organization IDs and is hidden when no matching memberships exist.
 - Organization selection is held in memory and resets after a full refresh.
 - Selecting an organization does not grant backend permissions.
@@ -189,10 +189,12 @@ code or public assets.
   authenticated denied-access tests use mocked identities and sessions.
 - A signed-in Doctor account without the Patient role received
   `403 Forbidden` when calling `PATCH /api/v1/me/patient-profile`.
+- Verified organization selection against the local backend using a
+  Doctor test account with an approved membership.
+- Automated tests exclude pending, rejected, and suspended memberships.
+
 
 ### Verification limits
 
 These checks cover the documented local scenarios, not the complete
-authorization matrix. Organization selection has automated service
-coverage; manual verification with an active organization membership
-remains outstanding.
+authorization matrix.

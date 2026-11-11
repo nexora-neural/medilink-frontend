@@ -40,7 +40,7 @@ export class ActiveOrganizationService {
     this.accountId = accountId;
     this.memberships.set(
       memberships.filter(
-        (membership) => membership.user_id === accountId && membership.status === 'active',
+        (membership) => membership.user_id === accountId && membership.status === 'approved',
       ),
     );
   }

@@ -13,7 +13,7 @@ describe('ActiveOrganizationService', () => {
       organization_id: 'organization-1',
       user_id: 'account-1',
       role: 'doctor',
-      status: 'active',
+      status: 'approved',
       verified_at: null,
       created_at: '2026-01-01T00:00:00Z',
       ...changes,
@@ -28,10 +28,12 @@ describe('ActiveOrganizationService', () => {
     roles.setAccountRoles('account-1', ['doctor', 'pharmacist']);
   });
 
-  it('includes only active memberships owned by the account and matching its role', () => {
+  it('includes only approved memberships owned by the account and matching its role', () => {
     service.setAccountMemberships('account-1', [
       membership(),
       membership({ id: 'pending', status: 'pending' }),
+      membership({ id: 'rejected', status: 'rejected' }),
+      membership({ id: 'suspended', status: 'suspended' }),
       membership({ id: 'other-account', user_id: 'account-2' }),
       membership({ id: 'other-role', role: 'pharmacist' }),
     ]);
