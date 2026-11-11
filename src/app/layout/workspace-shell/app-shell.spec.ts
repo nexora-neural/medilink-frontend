@@ -16,6 +16,7 @@ describe('AppShell', () => {
 
     fixture = TestBed.createComponent(AppShell);
     roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('demo-patient', ['patient']);
     router = TestBed.inject(Router);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -36,6 +37,8 @@ describe('AppShell', () => {
   });
 
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
+    roles.setAccountRoles('demo-multi-role', ['patient', 'doctor']);
+    fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     (element.querySelector('.menu-button') as HTMLButtonElement).click();

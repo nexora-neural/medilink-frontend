@@ -12,6 +12,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { firstValueFrom, timeout } from 'rxjs';
+import { ActiveRoleService } from './context/active-role.service';
 
 export interface MediLinkConfig {
   firebase: FirebaseOptions;
@@ -47,6 +48,7 @@ declare global {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly platform = inject(PLATFORM_ID);
+  private readonly roleContext = inject(ActiveRoleService);
 
   private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
@@ -178,18 +180,35 @@ export class AuthService {
   }
 
   async restoreSession(): Promise<boolean> {
-    const { auth, config } = await this.firebase();
-    await auth.authStateReady();
-    if (!auth.currentUser) return false;
-    const token = await auth.currentUser.getIdToken();
-    await firstValueFrom(
-      this.http
-        .get(`${config.apiBaseUrl}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .pipe(timeout(10000)),
-    );
-    return true;
+    try {
+      const { auth, config } = await this.firebase();
+
+      await auth.authStateReady();
+
+      if (!auth.currentUser) {
+        this.roleContext.clear();
+        return false;
+      }
+
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await firstValueFrom(
+        this.http
+          .get<MeResponse>(`${config.apiBaseUrl}/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .pipe(timeout(10000)),
+      );
+
+      this.roleContext.setAccountRoles(response.user.id, response.roles);
+
+      return true;
+    } catch (error) {
+      this.roleContext.clear();
+      throw error;
+    }
   }
 
   async signIn(email: string, password: string): Promise<void> {

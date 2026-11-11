@@ -14,6 +14,7 @@ describe('workspace routing', () => {
         { provide: AuthService, useValue: { restoreSession: vi.fn().mockResolvedValue(true) } },
       ],
     });
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
   });
 
   it('redirects an unauthenticated session to login', async () => {
@@ -37,7 +38,7 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/patient/medications');
     expect(harness.routeNativeElement?.textContent).toContain('Medications');
 
-    TestBed.inject(ActiveRoleService).setActiveRole('Doctor');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-doctor', ['doctor']);
     await harness.navigateByUrl('/workspace/patient/reports');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
     expect(harness.routeNativeElement?.textContent).toContain('Access denied');
@@ -53,7 +54,7 @@ describe('workspace routing', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/super-admin/organizations');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     await harness.navigateByUrl('/super-admin/organizations');
     expect(harness.routeNativeElement?.textContent).toContain('Organizations and memberships');
   });
@@ -63,7 +64,7 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/super-admin/applications');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
 
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     await harness.navigateByUrl('/super-admin/applications');
     expect(harness.routeNativeElement?.textContent).toContain('Loading applications');
     await vi.waitFor(() => {
@@ -120,7 +121,7 @@ describe('workspace routing', () => {
   });
 
   it('shows the detail error and a return link for an unknown application', async () => {
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/super-admin/applications/missing');
     await vi.waitFor(() => {

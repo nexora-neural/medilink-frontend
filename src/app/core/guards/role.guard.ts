@@ -1,9 +1,19 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { ActiveRole, ActiveRoleService } from '../context/active-role.service';
+
 export const roleGuard: CanActivateFn = (route) => {
-  const activeRole = inject(ActiveRoleService).activeRole();
+  const context = inject(ActiveRoleService);
+  const router = inject(Router);
+
   const allowedRoles = route.data['allowedRoles'] as ActiveRole[] | undefined;
-  if (!allowedRoles || allowedRoles.includes(activeRole)) return true;
-  return inject(Router).createUrlTree(['/access-denied']);
+
+  const activeRole = context.activeRole();
+  const hasRole = context.roles().includes(activeRole);
+
+  if (hasRole && (!allowedRoles || allowedRoles.includes(activeRole))) {
+    return true;
+  }
+
+  return router.createUrlTree(['/access-denied']);
 };
