@@ -187,9 +187,12 @@ code or public assets.
   navigation through its fields and buttons.
 - Eight backend profile validation and authorization tests passed;
   authenticated denied-access tests use mocked identities and sessions.
+- A signed-in Doctor account without the Patient role received
+  `403 Forbidden` when calling `PATCH /api/v1/me/patient-profile`.
 
 ### Verification limits
 
-The checks above do not constitute a complete authorization test.
-Authenticated denied-access cases and the referenced profile scope
-still require verification before marking ML-33 complete.
+These checks cover the documented local scenarios, not the complete
+authorization matrix. Organization selection has automated service
+coverage; manual verification with an active organization membership
+remains outstanding.
