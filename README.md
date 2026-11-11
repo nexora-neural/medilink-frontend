@@ -157,13 +157,19 @@ code or public assets.
 - The role selector cannot select roles absent from that account.
 - Missing sessions and failed session checks clear the role context.
 - Protected role routes redirect unauthorized role selections to `/access-denied`.
+- Organization options load from memberships returned by `GET /api/v1/me`.
+- Options include only the account's active memberships matching the selected role.
+- The selector displays organization IDs and is hidden when no matching memberships exist.
+- Organization selection is held in memory and resets after a full refresh.
+- Selecting an organization does not grant backend permissions.
+
 
 ### Verification
 
-- 98 automated tests passed across 45 test files.
+- 104 automated tests passed across 46 test files.
 - Formatting and TypeScript checks passed.
 - Production build passed with an initial bundle-size warning:
-  722.92 kB against a 500 kB budget.
+  724.87 kB against a 500 kB budget.
 - Manually checked profile updates after refresh and cancellation.
 - Manually checked failed saves and successful retries.
 - Manually checked registration recovery after backend unavailability.
