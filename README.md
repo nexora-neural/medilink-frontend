@@ -139,13 +139,19 @@ code or public assets.
 - Email is read-only in the profile form.
 - Failed saves retain the edit form and draft for retry.
 - Save and Cancel are disabled while saving.
+- Emergency contacts load from the patient profile and save through
+    `PATCH /api/v1/me/patient-profile`.
+- Emergency contacts can be cleared by saving both fields empty.
+- Medication and vaccination in-app notification preferences can be
+  saved, including setting both to false.
+- Failed contact and preference saves retain drafts for retry.
 
 ### Verification
 
-- 86 automated tests passed across 43 test files.
+- 96 automated tests passed across 45 test files.
 - Formatting and TypeScript checks passed.
 - Production build passed with an initial bundle-size warning:
-  713.35 kB against a 500 kB budget.
+  722.29 kB against a 500 kB budget.
 - Manually checked profile updates after refresh and cancellation.
 - Manually checked failed saves and successful retries.
 - Manually checked registration recovery after backend unavailability.
@@ -155,6 +161,14 @@ code or public assets.
   `401 AUTHENTICATION_REQUIRED`.
 - Two separate patient sessions displayed their respective account
   details; updating one did not change the other.
+- Manually verified emergency contact saving, clearing, refresh
+    persistence, and failure/retry.
+- Manually verified notification preference persistence, both settings
+  disabled, and failure/retry.
+- Manually checked the profile page at 375px width and keyboard
+  navigation through its fields and buttons.
+- Eight backend profile validation and authorization tests passed;
+  authenticated denied-access tests use mocked identities and sessions.
 
 ### Verification limits
 
