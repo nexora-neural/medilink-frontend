@@ -36,7 +36,11 @@ After installing dependencies with npm ci, run these checks from the frontend re
 
 The lint command checks TypeScript formatting and type-checks application and test code. The unit tests use the configured Vitest runner and do not require a live backend.
 
-The workspace role selector is a frontend preview control and does not grant backend permissions. Connected APIs authenticate requests using Firebase ID tokens. Patient profile account details are loaded and updated through `/api/v1/me`. Other preview screens should not be treated as completed API integrations.
+The workspace role selector lists roles returned by the authenticated
+`GET /api/v1/me` response. Route guards check that the selected role
+belongs to the account and is allowed for the route. Connected APIs
+authenticate requests using Firebase ID tokens and enforce permissions
+on the server. Other preview screens are not completed API integrations.
 
 ## Project structure
 
@@ -71,23 +75,27 @@ the page reloads. Real API integration is tracked separately in ML-42.
 
 ### Preview steps
 
-1. Start the application with `npm start`.
-2. Open `/workspace`.
-3. Select Admin and use the Account support sidebar link.
-4. Search accounts and preview suspend/reactivate actions.
-5. Select Super Admin, open Organizations, then use the Admin accounts
-   sidebar link to preview granting and removing delegated Admin access.
+1. Configure and start the frontend and backend.
+2. Sign in with a development account assigned the required backend roles.
+3. Open `/workspace`.
+4. With Admin or Super Admin selected, use Account support to preview
+   searching accounts and suspend/reactivate actions.
+5. With Super Admin selected, open Organizations, then use Admin accounts
+   to preview granting and removing delegated Admin access.
 
-Use sidebar links during preview. A full page reload resets the
-selected preview role to Patient.
+Only roles assigned to the authenticated account appear in the selector.
+Selecting a role does not grant additional permissions. After a full
+reload, roles are loaded again and the initial role is selected from
+the account's assigned roles.
 
 ### Access rules
 
-- Admin can open Account support.
+- Admin and Super Admin can open Account support.
 - Only Super Admin can open Admin accounts and change Admin access.
 - Delegated Admin access does not grant clinical access.
-- The role selector and route guards are frontend preview controls.
-  Server-side authorization must be enforced during API integration.
+- Workspace navigation uses roles returned by the backend.
+  Account support and Admin account changes still use fictional,
+  in-memory data; their API integration requires server-side authorization.
 
 ### Validation
 
@@ -145,13 +153,17 @@ code or public assets.
 - Medication and vaccination in-app notification preferences can be
   saved, including setting both to false.
 - Failed contact and preference saves retain drafts for retry.
+- Session restoration loads the account's assigned roles from `GET /api/v1/me`.
+- The role selector cannot select roles absent from that account.
+- Missing sessions and failed session checks clear the role context.
+- Protected role routes redirect unauthorized role selections to `/access-denied`.
 
 ### Verification
 
-- 96 automated tests passed across 45 test files.
+- 98 automated tests passed across 45 test files.
 - Formatting and TypeScript checks passed.
 - Production build passed with an initial bundle-size warning:
-  722.29 kB against a 500 kB budget.
+  722.92 kB against a 500 kB budget.
 - Manually checked profile updates after refresh and cancellation.
 - Manually checked failed saves and successful retries.
 - Manually checked registration recovery after backend unavailability.
