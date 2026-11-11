@@ -19,6 +19,8 @@ import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/docto
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
+import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
+import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
 
 const rolePage = (
   path: string,
@@ -69,12 +71,14 @@ const rolePages: Route[] = [
     'Vaccinations',
     'A protected patient route for the vaccinations workspace.',
   ),
-  rolePage(
-    'patient/access',
-    ['Patient'],
-    'Doctor access',
-    'A protected patient route for the doctor access workspace.',
-  ),
+  {
+    path: 'patient/access',
+    component: PatientDoctorAccess,
+    canActivate: [roleGuard],
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
   rolePage(
     'doctor/records',
     ['Doctor'],
@@ -168,12 +172,14 @@ export const routes: Routes = [
         'Patient details',
         'Patient-specific records will be available after integration.',
       ),
-      doctorPreview(
-        'doctor/qr',
-        'My QR code',
-        'Your doctor QR code will be available after integration.',
-        true,
-      ),
+      {
+        path: 'doctor/qr',
+        component: DoctorQrPage,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
       {
         path: 'doctor/verification',
         pathMatch: 'full',
