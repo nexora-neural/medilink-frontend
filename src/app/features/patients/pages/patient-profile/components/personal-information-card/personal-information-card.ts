@@ -13,6 +13,7 @@ export class PersonalInformationCard {
 
   readonly profile = input.required<PatientDetails>();
   readonly isEditing = input(false);
+  readonly saving = input(false);
 
   readonly editRequested = output<void>();
   readonly saveRequested = output<PatientDetails>();
@@ -22,8 +23,8 @@ export class PersonalInformationCard {
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(150)]],
-    email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, Validators.pattern(/\S/)]],
+    email: [''],
+    phone: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(32)]],
   });
 
   constructor() {
@@ -37,6 +38,10 @@ export class PersonalInformationCard {
   }
 
   save(): void {
+    if (this.saving()) {
+      return;
+    }
+
     this.submitted = true;
 
     if (this.form.invalid) {
@@ -54,6 +59,10 @@ export class PersonalInformationCard {
   }
 
   cancel(): void {
+    if (this.saving()) {
+      return;
+    }
+
     this.form.reset(this.profile());
     this.submitted = false;
     this.cancelRequested.emit();

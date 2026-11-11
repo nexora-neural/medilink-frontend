@@ -1,4 +1,3 @@
-
 <section class="patient-profile-page">
   <header class="profile-heading">
     <div class="heading-text">
@@ -6,38 +5,53 @@
 
       <h1>{{ isEditing ? 'Edit profile' : 'My profile' }}</h1>
 
-      <p>
-        {{
-          isEditing
-            ? 'Update your personal and contact details.'
-            : 'Your personal and contact information.'
-        }}
-      </p>
+      <p>Your personal and contact information.</p>
     </div>
 
-    @if (!isEditing) {
+    @if (patient() && !loading() && !loadError() && !isEditing) {
       <button
         class="edit-profile-btn"
         type="button"
         (click)="editProfile()"
       >
-        <span class="material-symbols-outlined">edit</span>
+        <span class="material-symbols-outlined" aria-hidden="true">
+          edit
+        </span>
         Edit profile
       </button>
     }
   </header>
 
+  @if (loading()) {
+    <p role="status">Loading your profile...</p>
+  } @else if (loadError()) {
+    <section role="alert">
+      <p>{{ loadError() }}</p>
+
+      <button type="button" (click)="loadProfile()">
+        Try again
+      </button>
+    </section>
+  } @else if (patient(); as details) {
+  @if (saveError()) {
+    <p role="alert">{{ saveError() }}</p>
+  }
+
+  @if (saving()) {
+    <p role="status">Saving your changes...</p>
+  }
+
   <div class="profile-layout">
-    <app-profile-summary-card
-      [profile]="patient"
-    />
+    <app-profile-summary-card [profile]="details" />
 
     <app-personal-information-card
-      [profile]="patient"
+      [profile]="details"
       [isEditing]="isEditing"
       (editRequested)="editProfile()"
       (saveRequested)="saveProfile($event)"
+      [saving]="saving()"
       (cancelRequested)="cancelEdit()"
     />
   </div>
+}
 </section>

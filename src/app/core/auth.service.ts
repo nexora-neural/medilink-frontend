@@ -18,6 +18,25 @@ export interface MediLinkConfig {
   apiBaseUrl: string;
 }
 
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string | null;
+    display_name: string;
+    phone: string | null;
+    status: string;
+  };
+  roles: string[];
+  patient_profile: {
+    user_id: string;
+    date_of_birth: string;
+    sex: string;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    notification_preferences: Record<string, boolean>;
+  } | null;
+}
+
 declare global {
   interface Window {
     medilinkConfig?: MediLinkConfig;
@@ -40,6 +59,56 @@ export class AuthService {
     const auth = getAuth(app);
     await setPersistence(auth, browserLocalPersistence);
     return { auth, config };
+  }
+
+  async getOwnProfile(): Promise<MeResponse> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to view your profile.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .get<MeResponse>(`${config.apiBaseUrl}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .pipe(timeout(10000)),
+    );
+  }
+  async updateOwnAccount(input: { name: string; phone: string }): Promise<MeResponse> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your profile.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<MeResponse>(
+          `${config.apiBaseUrl}/me`,
+          {
+            display_name: input.name.trim(),
+            phone: input.phone.trim() || null,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
   }
 
   async restoreSession(): Promise<boolean> {
