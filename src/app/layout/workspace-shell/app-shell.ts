@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ActiveRole, ActiveRoleService } from '../../core/context/active-role.service';
 import { WorkspaceHeader } from './components/workspace-header/workspace-header';
 import { WorkspaceSidebar } from './components/workspace-sidebar/workspace-sidebar';
@@ -59,7 +59,7 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [WorkspaceHeader, WorkspaceSidebar, RouterOutlet],
+  imports: [WorkspaceHeader, WorkspaceSidebar, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
 })

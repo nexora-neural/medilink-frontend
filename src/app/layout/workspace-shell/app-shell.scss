@@ -21,16 +21,62 @@
   padding: 2.25rem 2.4rem 4rem;
 }
 
+.patient-bottom-nav {
+  display: none;
+}
+
 @media (max-width: 700px) {
   .main-shell {
     margin-left: 0;
   }
 
   .content {
-    padding: 1.5rem 1rem 3rem;
+    padding: 1.5rem 1rem 6rem;
+  }
+
+  .patient-bottom-nav {
+    position: fixed;
+    z-index: 30;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    min-height: 4.25rem;
+    padding: 0.4rem 0.25rem max(0.4rem, env(safe-area-inset-bottom));
+    border-top: 1px solid #e7eef3;
+    background: #fff;
+    box-shadow: 0 -4px 18px #193c5510;
+  }
+
+  .patient-bottom-nav a,
+  .patient-bottom-nav button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.2rem;
+    border: 0;
+    background: transparent;
+    color: #8799a7;
+    font: inherit;
+    font-size: 0.66rem;
+    text-decoration: none;
+  }
+
+  .patient-bottom-nav .material-symbols-outlined {
+    font-size: 1.3rem;
+  }
+  .patient-bottom-nav .active {
+    color: #1684b4;
+    font-weight: 700;
+  }
+  .patient-bottom-nav a:focus-visible,
+  .patient-bottom-nav button:focus-visible {
+    outline: 3px solid #165f87;
+    outline-offset: -3px;
   }
 }
-
 
 /* Match main content offset to Doctor sidebar */
 

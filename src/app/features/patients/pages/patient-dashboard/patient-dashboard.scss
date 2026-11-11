@@ -1,0 +1,585 @@
+:host {
+  display: block;
+  color: #17324d;
+}
+.patient-dashboard {
+  width: 100%;
+}
+.dashboard-heading,
+.dash-card-title,
+.dash-card-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dashboard-heading {
+  margin: 0 0 20px;
+}
+.eyebrow {
+  color: #4587ae;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 0 0 8px;
+}
+h1 {
+  font-size: clamp(24px, 2.3vw, 31px);
+  line-height: 1.2;
+  margin: 0;
+  color: #17324d;
+}
+h2 {
+  font-size: 13px;
+  color: #28485f;
+  margin: 0;
+  font-weight: 700;
+}
+.dashboard-heading p:not(.eyebrow),
+.dash-muted {
+  font-size: 11px;
+  color: #93a7b5;
+  margin: 7px 0 0;
+}
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #122d50;
+  border-radius: 30px;
+  color: white;
+  padding: 11px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.preview-note {
+  display: flex;
+  gap: 7px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #d9eaf3;
+  border-radius: 8px;
+  background: #f2f8fb;
+  color: #55758b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.preview-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  color: #8194a5;
+  font-size: 11px;
+}
+.preview-tools button {
+  border: 1px solid #d7e6f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #386f93;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(270px, 1.1fr) minmax(240px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+.dash-stack {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+}
+.dose-summary,
+.dash-card {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e8eff4;
+  border-radius: 12px;
+  padding: 16px;
+}
+.dose-summary {
+  color: white;
+  background: linear-gradient(135deg, #2aa2d5, #125988);
+  border: 0;
+}
+.dash-card-label {
+  justify-content: flex-start;
+  color: #d3eefb;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dash-card-label h2 {
+  color: inherit;
+  font-size: 11px;
+}
+.dash-card-label a {
+  margin-left: auto;
+  color: #e5f5fb;
+}
+.dose-summary-main {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 20px 0 12px;
+}
+.dose-summary-main strong {
+  font-size: 35px;
+  line-height: 1;
+  font-weight: 650;
+}
+.dose-summary-main strong span {
+  font-size: 18px;
+  color: #c6e8f6;
+}
+.dose-summary-main small {
+  display: block;
+  color: #d3edf7;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.dose-label {
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: #d5eef9;
+}
+.dose-progress {
+  height: 6px;
+  background: #ffffff40;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dose-progress span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 8px;
+}
+.dose-summary > p {
+  font-size: 9px;
+  color: #c7e8f7;
+  margin: 9px 0 0;
+}
+.dash-card-title > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.dash-card-title > div > span {
+  font-size: 17px;
+  color: #819aaa;
+}
+.dash-card-title > a {
+  font-size: 10px;
+  font-weight: 700;
+  color: #2085b1;
+  text-decoration: none;
+}
+.activity-card {
+  min-height: 175px;
+}
+.dash-muted {
+  font-size: 10px;
+}
+.week-bars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  align-items: end;
+  min-height: 96px;
+  margin: 12px 0 0;
+}
+.week-bars > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.week-bar-track {
+  height: 64px;
+  width: 100%;
+  max-width: 28px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  background: #f3f6f8;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.week-bar-track span {
+  display: block;
+  width: 100%;
+  border-radius: 20px;
+  background: #278dbc;
+  min-height: 6px;
+}
+.week-bar-track i {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg, #e7edf1 0, #e7edf1 2px, #f8fafb 2px, #f8fafb 5px);
+}
+.week-bars small {
+  font-size: 9px;
+  color: #8ea2b0;
+}
+.activity-note {
+  font-size: 9px;
+  color: #99aab5;
+  margin: 8px 0 0;
+}
+.schedule-card,
+.updates-card {
+  min-height: 330px;
+}
+.schedule-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0 7px;
+  padding: 9px;
+  background: #f3f8fb;
+  border-radius: 7px;
+  font-size: 11px;
+  color: #5f7e90;
+}
+.schedule-date span:first-child {
+  font-size: 16px;
+  color: #168bbd;
+}
+.schedule-date span:last-child {
+  margin-left: auto;
+  font-size: 10px;
+  color: #94a6b3;
+}
+.schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 0;
+  border-bottom: 1px solid #eef3f6;
+}
+.schedule-time {
+  font-size: 9px;
+  color: #6e899a;
+  white-space: nowrap;
+}
+.schedule-line {
+  height: 38px;
+  width: 2px;
+  background: #a1d8ee;
+  border-radius: 2px;
+}
+.schedule-info {
+  flex: 1;
+  min-width: 0;
+}
+.schedule-info strong,
+.schedule-info small,
+.schedule-info span {
+  display: block;
+}
+.schedule-info strong {
+  font-size: 11px;
+  color: #274a61;
+}
+.schedule-info small {
+  font-size: 9px;
+  color: #8299a9;
+  margin-top: 3px;
+}
+.source-badge {
+  font-size: 8px;
+  color: #6d92a4;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.source-doctor {
+  color: #367f6b;
+}
+.source-patient {
+  color: #9a711d;
+}
+.round-action {
+  display: grid;
+  place-items: center;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #f1f7fa;
+  color: #257fa7;
+  text-decoration: none;
+}
+.update-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 0;
+  border-bottom: 1px solid #edf3f6;
+  text-decoration: none;
+}
+.update-icon {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 8px;
+  background: #eaf6fb;
+  color: #278cb6;
+  font-size: 18px;
+}
+.update-row > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.update-row strong,
+.update-row small,
+.access-summary strong,
+.access-summary small {
+  display: block;
+}
+.update-row strong,
+.access-summary strong {
+  font-size: 10px;
+  color: #34556a;
+}
+.update-row small,
+.access-summary small {
+  font-size: 9px;
+  color: #93a7b3;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.access-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #eff8fc;
+  border-radius: 8px;
+  padding: 11px;
+  margin-top: 14px;
+  text-decoration: none;
+}
+.access-summary > span:first-child {
+  font-size: 19px;
+  color: #298db7;
+}
+.access-summary > span:nth-child(2) {
+  flex: 1;
+}
+.access-summary > span:last-child {
+  font-size: 15px;
+  color: #65a3c0;
+}
+.prescription-link {
+  margin-top: 5px;
+}
+.timeline-card {
+  margin-top: 14px;
+}
+.timeline-card .dash-card-title > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #f6f9fb;
+  border-radius: 30px;
+  padding: 7px 10px;
+  text-decoration: none;
+}
+.timeline-scroll {
+  overflow-x: auto;
+  margin-top: 14px;
+}
+.timeline-canvas {
+  position: relative;
+  min-width: 690px;
+}
+.timeline-grid {
+  position: absolute;
+  inset: 0 0 28px;
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  pointer-events: none;
+}
+.timeline-grid span {
+  border-left: 1px solid #edf3f6;
+}
+.timeline-event {
+  position: absolute;
+  z-index: 1;
+  width: 0;
+}
+.timeline-time-marker {
+  position: absolute;
+  top: 17px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #238cb8;
+  border-radius: 50%;
+  background: #fff;
+}
+.time-med {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px;
+  border-radius: 25px;
+  background: #f2f6f9;
+  max-width: 210px;
+  text-decoration: none;
+}
+.timeline-event.card-before-marker .time-med {
+  left: -10px;
+  transform: translateX(-100%);
+}
+.time-med-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  color: #238cb8;
+  font-size: 17px;
+}
+.time-med-copy {
+  min-width: 0;
+}
+.time-med-copy strong,
+.time-med-copy small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.time-med-copy strong {
+  font-size: 9px;
+  color: #26495f;
+}
+.time-med-copy small {
+  font-size: 8px;
+  color: #8da3b0;
+  margin-top: 2px;
+}
+.timeline-axis {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 3px;
+  color: #9baebb;
+  font-size: 8px;
+}
+.dash-footnote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 13px;
+  color: #899daa;
+  font-size: 9px;
+}
+.dash-empty {
+  margin: 0;
+  padding: 18px 0;
+  text-align: center;
+  color: #8397a5;
+  font-size: 11px;
+}
+.text-link {
+  display: inline-block;
+  color: #2085b1;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid #165f87;
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .dashboard-columns {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.1fr);
+  }
+  .updates-card {
+    grid-column: 1/-1;
+    min-height: auto;
+  }
+}
+@media (max-width: 680px) {
+  .dashboard-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .primary-link {
+    width: 100%;
+    justify-content: center;
+  }
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .dash-stack {
+    grid-row: auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    gap: 10px;
+  }
+  .dose-summary,
+  .activity-card {
+    min-height: 165px;
+    padding: 13px;
+  }
+  .dose-summary-main {
+    margin: 16px 0 11px;
+  }
+  .dose-summary-main strong {
+    font-size: 30px;
+  }
+  .dose-summary-main strong span {
+    font-size: 16px;
+  }
+  .dose-label {
+    display: none;
+  }
+  .schedule-card,
+  .updates-card {
+    min-height: auto;
+  }
+  .updates-card {
+    grid-column: auto;
+  }
+  .dash-card {
+    padding: 14px;
+  }
+  .timeline-card {
+    margin-top: 10px;
+  }
+}
+@media (max-width: 380px) {
+  .dash-stack {
+    grid-template-columns: 1fr;
+  }
+  .dose-summary,
+  .activity-card {
+    min-height: 150px;
+  }
+  .dose-label {
+    display: block;
+  }
+  .schedule-row {
+    gap: 6px;
+  }
+}
