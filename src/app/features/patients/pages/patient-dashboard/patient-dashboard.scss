@@ -409,9 +409,25 @@ h2 {
 .timeline-grid span {
   border-left: 1px solid #edf3f6;
 }
-.time-med {
+.timeline-event {
   position: absolute;
   z-index: 1;
+  width: 0;
+}
+.timeline-time-marker {
+  position: absolute;
+  top: 17px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #238cb8;
+  border-radius: 50%;
+  background: #fff;
+}
+.time-med {
+  position: absolute;
+  top: 0;
+  left: 10px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -419,9 +435,11 @@ h2 {
   border-radius: 25px;
   background: #f2f6f9;
   max-width: 210px;
-  left: clamp(105px, var(--timeline-position), calc(100% - 105px));
-  transform: translateX(-50%);
   text-decoration: none;
+}
+.timeline-event.card-before-marker .time-med {
+  left: -10px;
+  transform: translateX(-100%);
 }
 .time-med-icon {
   display: grid;

@@ -95,6 +95,10 @@ export class PatientDashboard {
     return Math.min(100, Math.max(0, ((hours * 60 + Number(match[2])) / 1440) * 100));
   }
 
+  cardBeforeMarker(time: string): boolean {
+    return this.timelinePosition(time) > 70;
+  }
+
   setPreviewState(state: DashboardState): void {
     this.state.set(state);
   }

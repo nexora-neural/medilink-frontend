@@ -36,9 +36,18 @@ describe('PatientDashboard', () => {
   it('positions late evening doses at their actual time on the full-day timeline', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
 
     expect(dashboard.timelinePosition('9:00 PM')).toBe(87.5);
     expect(dashboard.timelinePosition('8:00 PM')).toBeCloseTo(83.333, 2);
+    expect(dashboard.cardBeforeMarker('9:00 PM')).toBe(true);
+
+    const event = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '.timeline-event',
+    )[2] as HTMLElement;
+    expect(event.style.left).toBe('87.5%');
+    expect(event.classList.contains('card-before-marker')).toBe(true);
+    expect(event.querySelector('.timeline-time-marker')).not.toBeNull();
   });
 
   it('shows empty messages when there are no dashboard records', () => {

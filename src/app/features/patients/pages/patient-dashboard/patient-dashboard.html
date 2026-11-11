@@ -200,20 +200,26 @@
               <span *ngFor="let tick of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"></span>
             </div>
             @for (medicine of visibleMedicines; track medicine.name; let i = $index) {
-              <a
-                class="time-med"
-                routerLink="/workspace/patient/medications"
-                [style.--timeline-position]="timelinePosition(medicine.time) + '%'"
+              <div
+                class="timeline-event"
+                [class.card-before-marker]="cardBeforeMarker(medicine.time)"
+                [style.left.%]="timelinePosition(medicine.time)"
                 [style.top.px]="medicines.length > 4 ? 24 + (i % 5) * 54 : i % 2 === 0 ? 24 : 86"
-                [attr.aria-label]="medicine.name + ', ' + medicine.dose + ', ' + medicine.time"
               >
-                <span class="time-med-icon material-symbols-outlined" aria-hidden="true"
-                  >medication</span
-                ><span class="time-med-copy"
-                  ><strong>{{ medicine.name }}</strong
-                  ><small>{{ medicine.dose }}</small></span
+                <span class="timeline-time-marker" aria-hidden="true"></span>
+                <a
+                  class="time-med"
+                  routerLink="/workspace/patient/medications"
+                  [attr.aria-label]="medicine.name + ', ' + medicine.dose + ', ' + medicine.time"
                 >
-              </a>
+                  <span class="time-med-icon material-symbols-outlined" aria-hidden="true"
+                    >medication</span
+                  ><span class="time-med-copy"
+                    ><strong>{{ medicine.name }}</strong
+                    ><small>{{ medicine.dose }}</small></span
+                  >
+                </a>
+              </div>
             }
             <div class="timeline-axis" aria-hidden="true">
               <span
