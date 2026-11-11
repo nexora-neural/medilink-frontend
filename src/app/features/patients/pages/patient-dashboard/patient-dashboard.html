@@ -1,0 +1,251 @@
+<section class="patient-dashboard" aria-labelledby="dashboard-heading">
+  <header class="dashboard-heading">
+    <div>
+      <p class="eyebrow">PATIENT WORKSPACE</p>
+      <h1 id="dashboard-heading">Your care overview</h1>
+      <p>Here’s your care overview for today.</p>
+    </div>
+    <a class="primary-link" routerLink="/workspace/patient/prescriptions">
+      <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      Add prescription
+    </a>
+  </header>
+  <p class="preview-note" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    Sample preview only. No personal health data is loaded here. Authorized API connection belongs
+    to ML-240.
+  </p>
+  @if (showPreviewTools()) {
+    <div class="preview-tools" aria-label="Dashboard preview states">
+      <span>Preview states:</span>
+      <button type="button" (click)="setPreviewState('ready')">Ready</button>
+      <button type="button" (click)="setPreviewState('loading')">Loading</button>
+      <button type="button" (click)="setPreviewState('empty')">Empty</button>
+      <button type="button" (click)="setPreviewState('error')">Error</button>
+    </div>
+  }
+  @if (state() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading your dashboard"
+      description="Your authorized dashboard information will appear here when it is available."
+    />
+  } @else if (state() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Dashboard information is unavailable"
+      description="Try again. If the issue continues, return later."
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else {
+    <div class="dashboard-columns">
+      <div class="dash-stack">
+        <section class="dose-summary" aria-labelledby="doses-heading">
+          <div class="dash-card-label">
+            <span class="material-symbols-outlined" aria-hidden="true">medication</span>
+            <h2 id="doses-heading">Today’s doses</h2>
+            <a routerLink="/workspace/patient/medications" aria-label="Open medication schedule"
+              >↗</a
+            >
+          </div>
+          <div class="dose-summary-main">
+            <div>
+              <strong
+                >{{ hasData ? takenCount : 0
+                }}<span> / {{ hasData ? medicines.length : 0 }}</span></strong
+              ><small>reported as taken</small>
+            </div>
+            <span class="dose-label">PATIENT-REPORTED</span>
+          </div>
+          <div
+            class="dose-progress"
+            role="progressbar"
+            aria-label="Patient-reported doses"
+            [attr.aria-valuenow]="responsePercent"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <span [style.width.%]="responsePercent"></span>
+          </div>
+          <p>Responses reflect what you recorded.</p>
+        </section>
+        <section class="dash-card activity-card" aria-labelledby="activity-heading">
+          <div class="dash-card-title">
+            <div>
+              <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+              <h2 id="activity-heading">Weekly activity</h2>
+            </div>
+            <a routerLink="/workspace/patient/medications" aria-label="View medication activity"
+              >···</a
+            >
+          </div>
+          <p class="dash-muted">Patient-reported doses</p>
+          <div class="week-bars">
+            @for (day of weekActivity; track day.date) {
+              <div
+                [attr.aria-label]="
+                  day.date + ': ' + day.taken + ' of ' + day.total + ' reported taken'
+                "
+              >
+                <div class="week-bar-track">
+                  <span *ngIf="day.total" [style.height.%]="day.height"></span
+                  ><i *ngIf="!day.total"></i>
+                </div>
+                <small>{{ day.label }}</small>
+              </div>
+            }
+          </div>
+          <p class="activity-note">Taken and skipped responses recorded in this preview.</p>
+        </section>
+      </div>
+      <section class="dash-card schedule-card" aria-labelledby="schedule-heading">
+        <div class="dash-card-title">
+          <div>
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+            <h2 id="schedule-heading">Today’s schedule</h2>
+          </div>
+          <a routerLink="/workspace/patient/medications">View all</a>
+        </div>
+        <p class="dash-muted">Your upcoming medication reminders</p>
+        <div class="schedule-date">
+          <span class="material-symbols-outlined" aria-hidden="true">today</span
+          ><strong>Today</strong><span>Local time</span>
+        </div>
+        @if (visibleMedicines.length === 0) {
+          <p class="dash-empty" role="status">No medicines are scheduled for today.</p>
+        }
+        @for (medicine of visibleMedicines; track medicine.name) {
+          <div class="schedule-row">
+            <div class="schedule-time">{{ medicine.time }}</div>
+            <div class="schedule-line" aria-hidden="true"></div>
+            <div class="schedule-info">
+              <strong>{{ medicine.name }}</strong
+              ><small>{{ medicine.dose }}</small
+              ><span
+                class="source-badge"
+                [class.source-doctor]="medicine.source === 'Doctor-issued'"
+                [class.source-patient]="medicine.source.includes('Patient-added')"
+                >{{ medicine.source }}</span
+              >
+            </div>
+            <a
+              class="round-action"
+              routerLink="/workspace/patient/medications"
+              [attr.aria-label]="'Open schedule for ' + medicine.name"
+              ><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a
+            >
+          </div>
+        }
+      </section>
+      <section class="dash-card updates-card" aria-labelledby="updates-heading">
+        <div class="dash-card-title">
+          <div>
+            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+            <h2 id="updates-heading">Recent updates</h2>
+          </div>
+          <a routerLink="/workspace/patient/history">View all</a>
+        </div>
+        <p class="dash-muted">Your latest health information</p>
+        @if (visibleNotices.length === 0) {
+          <p class="dash-empty" role="status">You do not have any recent notifications.</p>
+        }
+        @for (notice of visibleNotices; track notice.title) {
+          <a class="update-row" routerLink="/workspace/patient/history">
+            <span class="update-icon material-symbols-outlined" aria-hidden="true"
+              >description</span
+            >
+            <span
+              ><strong>{{ notice.title }}</strong
+              ><small>{{ notice.source }} · {{ notice.date }}</small></span
+            >
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+          </a>
+        }
+        <a class="access-summary" routerLink="/workspace/patient/access">
+          <span class="material-symbols-outlined" aria-hidden="true">shield_person</span>
+          <span
+            ><strong>Doctor access</strong
+            ><small
+              >{{ hasData ? activeAccess : 0 }} active
+              {{ hasData && activeAccess === 1 ? 'grant' : 'grants' }}</small
+            ></span
+          >
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+        </a>
+        <a class="text-link prescription-link" routerLink="/workspace/patient/prescriptions"
+          >Open prescriptions</a
+        >
+      </section>
+    </div>
+    <section class="dash-card timeline-card" aria-labelledby="timeline-heading">
+      <div class="dash-card-title">
+        <div>
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          <h2 id="timeline-heading">{{ todayLabel }}</h2>
+        </div>
+        <a routerLink="/workspace/patient/medications"
+          ><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> Daily</a
+        >
+      </div>
+      @if (visibleMedicines.length) {
+        <div class="timeline-scroll">
+          <div
+            class="timeline-canvas"
+            [style.height.px]="medicines.length > 4 ? 340 : 190"
+            role="img"
+            aria-label="Today’s medication schedule timeline"
+          >
+            <div class="timeline-grid" aria-hidden="true">
+              <span *ngFor="let tick of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"></span>
+            </div>
+            @for (medicine of visibleMedicines; track medicine.name; let i = $index) {
+              <a
+                class="time-med"
+                routerLink="/workspace/patient/medications"
+                [style.left.%]="timelinePosition(medicine.time)"
+                [style.top.px]="medicines.length > 4 ? 24 + (i % 5) * 54 : i % 2 === 0 ? 24 : 86"
+                [attr.aria-label]="medicine.name + ', ' + medicine.dose + ', ' + medicine.time"
+              >
+                <span class="time-med-icon material-symbols-outlined" aria-hidden="true"
+                  >medication</span
+                ><span class="time-med-copy"
+                  ><strong>{{ medicine.name }}</strong
+                  ><small>{{ medicine.dose }}</small></span
+                >
+              </a>
+            }
+            <div class="timeline-axis" aria-hidden="true">
+              <span
+                *ngFor="
+                  let tick of [
+                    '00:00',
+                    '02:00',
+                    '04:00',
+                    '06:00',
+                    '08:00',
+                    '10:00',
+                    '12:00',
+                    '14:00',
+                    '16:00',
+                    '18:00',
+                    '20:00',
+                    '22:00',
+                    '24:00',
+                  ]
+                "
+                >{{ tick }}</span
+              >
+            </div>
+          </div>
+        </div>
+      } @else {
+        <p class="dash-empty" role="status">No medicines are scheduled today.</p>
+      }
+    </section>
+    <p class="dash-footnote">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span> Taken and skipped are
+      patient-reported responses, not confirmation of ingestion.
+    </p>
+  }
+</section>

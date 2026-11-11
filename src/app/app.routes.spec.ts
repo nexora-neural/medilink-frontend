@@ -34,6 +34,10 @@ describe('workspace routing', () => {
 
   it('opens an allowed role page and redirects a different role', async () => {
     const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace');
+    expect(harness.routeNativeElement?.textContent).toContain('Your care overview');
+    expect(harness.routeNativeElement?.textContent).toContain('Sample preview only');
+
     await harness.navigateByUrl('/workspace/patient/medications');
     expect(harness.routeNativeElement?.textContent).toContain('Medications');
 

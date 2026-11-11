@@ -1,4 +1,3 @@
-
 <div class="app-layout">
   <app-workspace-sidebar
     [activeRole]="activeRole()"
@@ -9,13 +8,8 @@
     (closeMenu)="closeMenu()"
   />
 
-
-  <div
-    class="main-shell"
-    [class.doctor-dashboard-main]="activeRole() === 'Doctor'"
-  >
-
-  <app-workspace-header
+  <div class="main-shell" [class.doctor-dashboard-main]="activeRole() === 'Doctor'">
+    <app-workspace-header
       [activeRole]="activeRole()"
       [menuOpen]="menuOpen"
       (menuToggle)="toggleMenu()"
@@ -24,5 +18,32 @@
     <main class="content">
       <router-outlet />
     </main>
+    @if (activeRole() === 'Patient') {
+      <nav class="patient-bottom-nav" aria-label="Patient navigation">
+        <a
+          routerLink="/workspace"
+          [routerLinkActiveOptions]="{ exact: true }"
+          routerLinkActive="active"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">dashboard</span
+          ><span>Home</span>
+        </a>
+        <a routerLink="/workspace/patient/medications" routerLinkActive="active">
+          <span class="material-symbols-outlined" aria-hidden="true">medication</span
+          ><span>Medicines</span>
+        </a>
+        <a routerLink="/workspace/patient/history" routerLinkActive="active">
+          <span class="material-symbols-outlined" aria-hidden="true">clinical_notes</span
+          ><span>Records</span>
+        </a>
+        <a routerLink="/workspace/patient/access" routerLinkActive="active">
+          <span class="material-symbols-outlined" aria-hidden="true">shield_person</span
+          ><span>Access</span>
+        </a>
+        <button type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen">
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span><span>More</span>
+        </button>
+      </nav>
+    }
   </div>
 </div>

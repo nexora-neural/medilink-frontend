@@ -5,10 +5,11 @@ import { ActivatedRoute } from '@angular/router';
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { FormField } from '../../../../shared/components/form-field/form-field';
 import { UiState, UiStateKind } from '../../../../shared/components/ui-state/ui-state';
+import { PatientDashboard } from '../../../patients/pages/patient-dashboard/patient-dashboard';
 @Component({
   selector: 'app-workspace-page',
   standalone: true,
-  imports: [ReactiveFormsModule, FormField, UiState],
+  imports: [ReactiveFormsModule, FormField, UiState, PatientDashboard],
   templateUrl: './workspace-page.html',
   styleUrl: './workspace-page.scss',
 })
