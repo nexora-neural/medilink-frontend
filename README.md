@@ -205,3 +205,30 @@ Keep credentials and local configuration files out of Git.
 
 These checks cover the documented local scenarios, not the complete
 authorization matrix.
+
+
+
+## Admin dashboard ML-238
+
+### Scope
+
+- Admin dashboard is available at `/workspace/admin/dashboard`.
+- The Admin sidebar includes an Overview link.
+- Pending professional application counts use fictional sample data.
+- Loading, empty, error, and retry states can be previewed.
+- Account support links to the delegated support workspace.
+- Operational status is labelled Not connected.
+- No clinical records or Super Admin review actions are exposed.
+- API integration is tracked separately in ML-244.
+
+### Verification
+
+- Lint and TypeScript checks passed.
+- All 144 tests passed across 50 test files.
+- Production build passed with bundle and component-style budget warnings.
+- Initial bundle size was 823.01 kB against a 500 kB warning budget.
+- Manually checked direct dashboard navigation and repeated refresh.
+- Manually checked preview states, retry, and account support navigation.
+- Checked the mobile layout at 375px width.
+- Automated routing tests cover Admin session restoration,
+  signed-out access, and denial for other roles.

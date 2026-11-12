@@ -9,6 +9,11 @@ import { NavigationItem } from './models/navigation-item';
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Admin: [
     {
+      label: 'Overview',
+      icon: 'dashboard',
+      path: '/workspace/admin/dashboard',
+    },
+    {
       label: 'Account support',
       icon: 'support_agent',
       path: '/workspace/admin/account-support',

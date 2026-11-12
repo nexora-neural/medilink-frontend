@@ -198,4 +198,59 @@ describe('workspace routing', () => {
 
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
+  it('restores an Admin session before opening the dashboard directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    roleContext.clear();
+
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      await Promise.resolve();
+      roleContext.setAccountRoles('demo-admin', ['admin']);
+      return true;
+    });
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/admin/dashboard');
+
+    expect(auth.restoreSession).toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/workspace/admin/dashboard');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
+      'Admin dashboard',
+    );
+
+    const supportLink = harness.routeNativeElement?.querySelector(
+      '.admin-dashboard a[href="/workspace/admin/account-support"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(supportLink).not.toBeNull();
+    supportLink!.click();
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/admin/account-support');
+    expect(harness.routeNativeElement?.textContent).toContain('Account support');
+  });
+
+  it.each(['patient', 'doctor', 'pharmacist', 'lab_staff', 'super_admin'])(
+    'denies the Admin dashboard to an account with only the %s role',
+    async (role) => {
+      TestBed.inject(ActiveRoleService).setAccountRoles('demo-other-account', [role]);
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/workspace/admin/dashboard');
+
+      expect(TestBed.inject(Router).url).toBe('/access-denied');
+      expect(harness.routeNativeElement?.textContent).toContain('Access denied');
+    },
+  );
+
+  it('redirects a signed-out dashboard visitor to login', async () => {
+    TestBed.inject(ActiveRoleService).clear();
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/admin/dashboard');
+
+    expect(TestBed.inject(Router).url).toBe('/login');
+  });
 });
