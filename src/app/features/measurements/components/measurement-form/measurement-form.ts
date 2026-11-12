@@ -39,13 +39,25 @@ export class MeasurementForm {
   }
 
   configure(record: MeasurementRecord | null): void {
+    this.kind = 'weight';
+    this.value = null;
+    this.systolic = null;
+    this.diastolic = null;
+    this.recordedAt = localDateTime(new Date());
+    this.reason = '';
+    this.error.set('');
+
     if (!record) return;
+
     this.kind = record.reading.kind;
     this.recordedAt = localDateTime(new Date(record.recordedAt));
+
     if (record.reading.kind === 'blood_pressure') {
       this.systolic = record.reading.systolic;
       this.diastolic = record.reading.diastolic;
-    } else this.value = record.reading.value;
+    } else {
+      this.value = record.reading.value;
+    }
   }
 
   submit(): void {

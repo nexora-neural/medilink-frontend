@@ -16,6 +16,7 @@ type PageState = 'ready' | 'loading' | 'empty' | 'error';
   selector: 'app-patient-measurements',
   standalone: true,
   imports: [UiState, CorrectionHistory, MeasurementForm, MeasurementList],
+  providers: [MeasurementStore],
   templateUrl: './patient-measurements.html',
   styleUrl: './patient-measurements.scss',
 })

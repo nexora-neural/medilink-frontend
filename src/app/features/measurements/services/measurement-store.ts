@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { MeasurementDraft, MeasurementRecord, validateDraft } from '../models/measurement.model';
 
 /** ML-97 demo-only store. ML-102 must replace this with authenticated API calls. */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class MeasurementStore {
   private readonly recordsState = signal<MeasurementRecord[]>([
     {
