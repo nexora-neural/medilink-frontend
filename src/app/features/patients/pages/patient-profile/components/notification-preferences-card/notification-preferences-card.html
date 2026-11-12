@@ -1,0 +1,32 @@
+<section class="preferences-card" aria-labelledby="preferences-title">
+  <h2 id="preferences-title">Notification preferences</h2>
+  <p>
+    Choose your in-app notification preferences.
+    Preferences without a saved value appear unchecked.
+    Click Save preferences to apply your choices.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <label class="preference">
+      <input type="checkbox" formControlName="medication_in_app" />
+      <span>Medication notifications</span>
+    </label>
+
+    <label class="preference">
+      <input type="checkbox" formControlName="vaccination_in_app" />
+      <span>Vaccination notifications</span>
+    </label>
+
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+    }
+
+    <div role="status">
+      {{ message() }}
+    </div>
+
+    <button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save preferences' }}
+    </button>
+  </form>
+</section>

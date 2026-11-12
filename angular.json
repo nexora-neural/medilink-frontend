@@ -69,6 +69,9 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "unit-test": {
+              "externalDependencies": ["firebase/app", "firebase/auth"]
             }
           },
           "defaultConfiguration": "production"
@@ -86,7 +89,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "medilink-frontend:build:development,unit-test"
+          }
         }
       }
     }

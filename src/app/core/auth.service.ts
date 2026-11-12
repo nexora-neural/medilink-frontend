@@ -12,10 +12,42 @@ import {
   signOut,
 } from 'firebase/auth';
 import { firstValueFrom, timeout } from 'rxjs';
+import { ActiveRoleService } from './context/active-role.service';
+import { ActiveOrganizationService } from './context/active-organization.service';
 
 export interface MediLinkConfig {
   firebase: FirebaseOptions;
   apiBaseUrl: string;
+}
+
+export interface MembershipResponse {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: string;
+  status: string;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string | null;
+    display_name: string;
+    phone: string | null;
+    status: string;
+  };
+  roles: string[];
+  memberships: MembershipResponse[];
+  patient_profile: {
+    user_id: string;
+    date_of_birth: string;
+    sex: string;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    notification_preferences: Record<string, boolean>;
+  } | null;
 }
 
 declare global {
@@ -28,6 +60,8 @@ declare global {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly platform = inject(PLATFORM_ID);
+  private readonly roleContext = inject(ActiveRoleService);
+  private readonly organizationContext = inject(ActiveOrganizationService);
 
   private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
@@ -42,19 +76,155 @@ export class AuthService {
     return { auth, config };
   }
 
-  async restoreSession(): Promise<boolean> {
+  async getOwnProfile(): Promise<MeResponse> {
     const { auth, config } = await this.firebase();
+
     await auth.authStateReady();
-    if (!auth.currentUser) return false;
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to view your profile.');
+    }
+
     const token = await auth.currentUser.getIdToken();
-    await firstValueFrom(
+
+    return firstValueFrom(
       this.http
-        .get(`${config.apiBaseUrl}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
+        .get<MeResponse>(`${config.apiBaseUrl}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
         .pipe(timeout(10000)),
     );
-    return true;
+  }
+  async updateOwnAccount(input: { name: string; phone: string }): Promise<MeResponse> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your profile.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<MeResponse>(
+          `${config.apiBaseUrl}/me`,
+          {
+            display_name: input.name.trim(),
+            phone: input.phone.trim() || null,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+  }
+
+  async updateEmergencyContact(input: {
+    name: string;
+    phone: string;
+  }): Promise<NonNullable<MeResponse['patient_profile']>> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your emergency contact.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<NonNullable<MeResponse['patient_profile']>>(
+          `${config.apiBaseUrl}/me/patient-profile`,
+          {
+            emergency_contact_name: input.name.trim() || null,
+            emergency_contact_phone: input.phone.trim() || null,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+  }
+
+  async updateNotificationPreferences(input: {
+    medication_in_app: boolean;
+    vaccination_in_app: boolean;
+  }): Promise<NonNullable<MeResponse['patient_profile']>> {
+    const { auth, config } = await this.firebase();
+
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to update your preferences.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+
+    return firstValueFrom(
+      this.http
+        .patch<NonNullable<MeResponse['patient_profile']>>(
+          `${config.apiBaseUrl}/me/patient-profile`,
+          {
+            notification_preferences: {
+              medication_in_app: input.medication_in_app,
+              vaccination_in_app: input.vaccination_in_app,
+            },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+  }
+
+  async restoreSession(): Promise<boolean> {
+    try {
+      const { auth, config } = await this.firebase();
+
+      await auth.authStateReady();
+
+      if (!auth.currentUser) {
+        this.roleContext.clear();
+        this.organizationContext.clear();
+        return false;
+      }
+
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await firstValueFrom(
+        this.http
+          .get<MeResponse>(`${config.apiBaseUrl}/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .pipe(timeout(10000)),
+      );
+
+      this.roleContext.setAccountRoles(response.user.id, response.roles);
+      this.organizationContext.setAccountMemberships(response.user.id, response.memberships);
+
+      return true;
+    } catch (error) {
+      this.roleContext.clear();
+      this.organizationContext.clear();
+      throw error;
+    }
   }
 
   async signIn(email: string, password: string): Promise<void> {
@@ -85,10 +255,22 @@ export class AuthService {
   }): Promise<void> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
-    const credential =
-      auth.currentUser?.email?.toLowerCase() === input.email.toLowerCase()
-        ? await signInWithEmailAndPassword(auth, input.email, input.password)
-        : await createUserWithEmailAndPassword(auth, input.email, input.password);
+    const email = input.email.trim();
+
+    const credential = await (async () => {
+      try {
+        return await createUserWithEmailAndPassword(auth, email, input.password);
+      } catch (error) {
+        const code =
+          typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+
+        if (code !== 'auth/email-already-in-use') {
+          throw error;
+        }
+
+        return signInWithEmailAndPassword(auth, email, input.password);
+      }
+    })();
     try {
       const token = await credential.user.getIdToken();
       await firstValueFrom(

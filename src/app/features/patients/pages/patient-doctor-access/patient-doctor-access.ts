@@ -225,7 +225,6 @@ export class PatientDoctorAccess implements OnDestroy {
     }
   }
 
-
   stopCamera(): void {
     // Invalidate pending permission and scan operations.
     this.cameraSession++;
@@ -251,7 +250,6 @@ export class PatientDoctorAccess implements OnDestroy {
       this.cameraStatus.set('idle');
     }
   }
-
 
   reviewCode(): void {
     const code = this.codeForm.controls.doctorCode.value.trim();

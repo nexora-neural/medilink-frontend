@@ -15,7 +15,7 @@ describe('AdminAccounts', () => {
     }).compileComponents();
 
     roleContext = TestBed.inject(ActiveRoleService);
-    roleContext.setActiveRole('Super Admin');
+    roleContext.setAccountRoles('demo-account', ['super_admin']);
 
     fixture = TestBed.createComponent(AdminAccounts);
     component = fixture.componentInstance;
@@ -28,7 +28,7 @@ describe('AdminAccounts', () => {
   });
 
   it('hides account controls from delegated Admin', () => {
-    roleContext.setActiveRole('Admin');
+    roleContext.setAccountRoles('demo-account', ['admin']);
     fixture.detectChanges();
 
     expect(component.canManage()).toBe(false);
@@ -37,7 +37,7 @@ describe('AdminAccounts', () => {
   });
 
   it('prevents delegated Admin from requesting a role change', () => {
-    roleContext.setActiveRole('Admin');
+    roleContext.setAccountRoles('demo-account', ['admin']);
 
     component.requestChange(component.accounts()[1]);
 
@@ -48,7 +48,7 @@ describe('AdminAccounts', () => {
   it('blocks confirmation if Super Admin permission is lost', () => {
     component.requestChange(component.accounts()[1]);
 
-    roleContext.setActiveRole('Admin');
+    roleContext.setAccountRoles('demo-account', ['admin']);
     component.confirmChange();
 
     expect(component.accounts()[1].isAdmin).toBe(false);
@@ -103,7 +103,7 @@ describe('AdminAccounts', () => {
     component.permissionsControl.setValue('Account support');
     component.permissionsReasonControl.setValue('Role review');
     component.reviewPermissions();
-    roleContext.setActiveRole('Admin');
+    roleContext.setAccountRoles('demo-account', ['admin']);
     component.savePermissions();
     expect(component.accounts()[0].permissions).toBe('Verification review, account support');
   });

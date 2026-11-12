@@ -16,6 +16,7 @@ describe('AppShell', () => {
 
     fixture = TestBed.createComponent(AppShell);
     roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('demo-patient', ['patient']);
     router = TestBed.inject(Router);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -26,6 +27,9 @@ describe('AppShell', () => {
 
     expect(element.querySelector('.workspace-label')?.textContent).toContain('Patient workspace');
     expect(element.querySelector('.role-chip')?.textContent).toContain('Patient');
+    const profileLink = element.querySelector('a[href="/workspace/patient/profile"]');
+
+    expect(profileLink?.textContent).toContain('My profile');
     expect(element.querySelector('a[href="/workspace/professional-verification"]')).not.toBeNull();
     expect(element.querySelector('nav[aria-label="Patient navigation"]')).not.toBeNull();
     expect(element.querySelector('nav a[href="/workspace/patient/medications"]')).not.toBeNull();
@@ -35,7 +39,13 @@ describe('AppShell', () => {
   it.each(['Doctor', 'Pharmacist', 'Lab Staff'] as const)(
     'links %s to the professional verification application',
     async (role) => {
-      roles.setActiveRole(role);
+      const roleCodes = {
+        Doctor: 'doctor',
+        Pharmacist: 'pharmacist',
+        'Lab Staff': 'lab_staff',
+      };
+
+      roles.setAccountRoles('demo-professional', [roleCodes[role]]);
       fixture.detectChanges();
       await fixture.whenStable();
       const link = fixture.nativeElement.querySelector(
@@ -53,6 +63,8 @@ describe('AppShell', () => {
   );
 
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
+    roles.setAccountRoles('demo-multi-role', ['patient', 'doctor']);
+    fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     (element.querySelector('.menu-button') as HTMLButtonElement).click();

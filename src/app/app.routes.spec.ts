@@ -11,9 +11,16 @@ describe('workspace routing', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
-        { provide: AuthService, useValue: { restoreSession: vi.fn().mockResolvedValue(true) } },
+        {
+          provide: AuthService,
+          useValue: {
+            restoreSession: vi.fn().mockResolvedValue(true),
+            getOwnProfile: vi.fn(),
+          },
+        },
       ],
     });
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
   });
 
   it('redirects an unauthenticated session to login', async () => {
@@ -55,7 +62,7 @@ describe('workspace routing', () => {
       expect(harness.routeNativeElement?.textContent).not.toContain('Your care overview');
     }
 
-    TestBed.inject(ActiveRoleService).setActiveRole('Doctor');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-doctor', ['doctor']);
     await harness.navigateByUrl('/workspace/patient/reports');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
     expect(harness.routeNativeElement?.textContent).toContain('Access denied');
@@ -71,7 +78,7 @@ describe('workspace routing', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/super-admin/organizations');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     await harness.navigateByUrl('/super-admin/organizations');
     expect(harness.routeNativeElement?.textContent).toContain('Organizations and memberships');
   });
@@ -81,7 +88,7 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/super-admin/applications');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
 
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     await harness.navigateByUrl('/super-admin/applications');
     expect(harness.routeNativeElement?.textContent).toContain('Loading applications');
     await vi.waitFor(() => {
@@ -138,7 +145,7 @@ describe('workspace routing', () => {
   });
 
   it('shows the detail error and a return link for an unknown application', async () => {
-    TestBed.inject(ActiveRoleService).setActiveRole('Super Admin');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-super-admin', ['super_admin']);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/super-admin/applications/missing');
     await vi.waitFor(() => {
@@ -148,5 +155,47 @@ describe('workspace routing', () => {
     expect(harness.routeNativeElement?.querySelector('a.back')?.getAttribute('href')).toBe(
       '/super-admin/applications',
     );
+  });
+  it('restores a Patient session before opening the profile directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    // Start with no roles, as on a fresh browser load.
+    roleContext.clear();
+
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+      roleContext.setAccountRoles('demo-patient', ['patient']);
+      return true;
+    });
+
+    vi.mocked(auth.getOwnProfile).mockResolvedValue({
+      user: {
+        id: 'demo-patient',
+        email: 'patient@example.com',
+        display_name: 'Demo Patient',
+        phone: null,
+        status: 'active',
+      },
+      roles: ['patient'],
+      memberships: [],
+      patient_profile: null,
+    });
+
+    const harness = await RouterTestingHarness.create();
+
+    // Navigate directly without visiting /workspace first.
+    await harness.navigateByUrl('/workspace/patient/profile');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/patient/profile');
+    expect(auth.restoreSession).toHaveBeenCalled();
+
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.textContent).toContain('Demo Patient');
+    });
+
+    expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
 });
