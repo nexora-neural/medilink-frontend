@@ -131,6 +131,11 @@ Keep local configuration files, backend credentials, and service-account
 JSON files out of Git. Never put service-account credentials in frontend
 code or public assets.
 
+For local production-server testing at http://localhost:4000,
+include that origin in the backend's local CORS_ORIGINS configuration.
+Start the backend with its required Firebase Admin credentials configured.
+Keep credentials and local configuration files out of Git.
+
 ### Connected behavior
 
 - Patient registration submits onboarding data to `/api/v1/me/onboard`.
@@ -166,10 +171,10 @@ code or public assets.
 
 ### Verification
 
-- 104 automated tests passed across 46 test files.
+- 132 automated tests passed across 49 test files.
 - Formatting and TypeScript checks passed.
-- Production build passed with an initial bundle-size warning:
-  724.87 kB against a 500 kB budget.
+- Production build passed with exit code 0 using Node.js 24.16.0
+  and npm 11.13.0, with bundle and component-style budget warnings.
 - Manually checked profile updates after refresh and cancellation.
 - Manually checked failed saves and successful retries.
 - Manually checked registration recovery after backend unavailability.
@@ -192,7 +197,9 @@ code or public assets.
 - Verified organization selection against the local backend using a
   Doctor test account with an approved membership.
 - Automated tests exclude pending, rejected, and suspended memberships.
-
+- Initial bundle size: 813.50 kB against a 500 kB warning budget.
+- Verified direct patient-profile navigation, repeated refresh,
+    and opening the route in a new tab on the production server.
 
 ### Verification limits
 

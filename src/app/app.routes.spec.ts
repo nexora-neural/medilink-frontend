@@ -11,7 +11,13 @@ describe('workspace routing', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
-        { provide: AuthService, useValue: { restoreSession: vi.fn().mockResolvedValue(true) } },
+        {
+          provide: AuthService,
+          useValue: {
+            restoreSession: vi.fn().mockResolvedValue(true),
+            getOwnProfile: vi.fn(),
+          },
+        },
       ],
     });
     TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
@@ -149,5 +155,47 @@ describe('workspace routing', () => {
     expect(harness.routeNativeElement?.querySelector('a.back')?.getAttribute('href')).toBe(
       '/super-admin/applications',
     );
+  });
+  it('restores a Patient session before opening the profile directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    // Start with no roles, as on a fresh browser load.
+    roleContext.clear();
+
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+      roleContext.setAccountRoles('demo-patient', ['patient']);
+      return true;
+    });
+
+    vi.mocked(auth.getOwnProfile).mockResolvedValue({
+      user: {
+        id: 'demo-patient',
+        email: 'patient@example.com',
+        display_name: 'Demo Patient',
+        phone: null,
+        status: 'active',
+      },
+      roles: ['patient'],
+      memberships: [],
+      patient_profile: null,
+    });
+
+    const harness = await RouterTestingHarness.create();
+
+    // Navigate directly without visiting /workspace first.
+    await harness.navigateByUrl('/workspace/patient/profile');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/patient/profile');
+    expect(auth.restoreSession).toHaveBeenCalled();
+
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.textContent).toContain('Demo Patient');
+    });
+
+    expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
 });
