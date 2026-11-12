@@ -10,8 +10,6 @@ import { MeasurementList } from '../../components/measurement-list/measurement-l
 import { MeasurementDraft, MeasurementRecord } from '../../models/measurement.model';
 import { MeasurementStore } from '../../services/measurement-store';
 
-
-
 type PageState = 'ready' | 'loading' | 'empty' | 'error';
 
 @Component({

@@ -27,6 +27,9 @@ describe('AppShell', () => {
     expect(element.querySelector('.workspace-label')?.textContent).toContain('Patient workspace');
     expect(element.querySelector('.role-chip')?.textContent).toContain('Patient');
     expect(element.querySelector('a[href="/workspace/professional-verification"]')).not.toBeNull();
+    expect(element.querySelector('nav[aria-label="Patient navigation"]')).not.toBeNull();
+    expect(element.querySelector('nav a[href="/workspace/patient/medications"]')).not.toBeNull();
+    expect(element.querySelector('nav a[href="/workspace/patient/history"]')).not.toBeNull();
   });
 
   it.each(['Doctor', 'Pharmacist', 'Lab Staff'] as const)(
@@ -40,6 +43,9 @@ describe('AppShell', () => {
       ) as HTMLAnchorElement | null;
       expect(link).not.toBeNull();
       expect(link?.textContent).toContain('Verification');
+      expect(
+        fixture.nativeElement.querySelector('nav[aria-label="Patient navigation"]'),
+      ).toBeNull();
       expect(
         fixture.nativeElement.querySelector('a[href="/workspace/doctor/verification"]'),
       ).toBeNull();

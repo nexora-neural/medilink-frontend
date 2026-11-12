@@ -34,8 +34,26 @@ describe('workspace routing', () => {
 
   it('opens an allowed role page and redirects a different role', async () => {
     const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace');
+    expect(harness.routeNativeElement?.textContent).toContain('Your care overview');
+    expect(harness.routeNativeElement?.textContent).toContain('Sample preview only');
+
     await harness.navigateByUrl('/workspace/patient/medications');
     expect(harness.routeNativeElement?.textContent).toContain('Medications');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Your care overview');
+
+    for (const [path, heading] of [
+      ['/workspace/patient/prescriptions', 'Prescriptions'],
+      ['/workspace/patient/history', 'Medical history'],
+      ['/workspace/patient/reports', 'Reports'],
+      ['/workspace/patient/measurements', 'Measurements'],
+      ['/workspace/patient/vaccinations', 'Vaccinations'],
+      ['/workspace/patient/access', 'Doctor access'],
+    ]) {
+      await harness.navigateByUrl(path);
+      expect(harness.routeNativeElement?.textContent).toContain(heading);
+      expect(harness.routeNativeElement?.textContent).not.toContain('Your care overview');
+    }
 
     TestBed.inject(ActiveRoleService).setActiveRole('Doctor');
     await harness.navigateByUrl('/workspace/patient/reports');
