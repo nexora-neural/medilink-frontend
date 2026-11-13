@@ -1,0 +1,164 @@
+<section class="admin-dashboard" aria-labelledby="admin-dashboard-title">
+  <header class="dashboard-heading">
+    <p class="eyebrow">ADMIN WORKSPACE</p>
+    <h1 id="admin-dashboard-title">Admin dashboard</h1>
+    <p>View delegated administrative summaries and access account support.</p>
+  </header>
+
+  <aside class="preview-notice" aria-label="Preview information">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      Sample preview only. Counts are fictional and services are not monitored.
+      No clinical records are displayed.
+    </p>
+  </aside>
+
+  <section class="preview-controls" aria-labelledby="preview-controls-title">
+    <h2 id="preview-controls-title">Preview display state</h2>
+
+    <div class="state-buttons" role="group" aria-label="Dashboard preview state">
+      <button
+        type="button"
+        [attr.aria-pressed]="previewState() === 'ready'"
+        (click)="setPreviewState('ready')"
+      >
+        Sample data
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="previewState() === 'loading'"
+        (click)="setPreviewState('loading')"
+      >
+        Loading
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="previewState() === 'empty'"
+        (click)="setPreviewState('empty')"
+      >
+        Empty
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="previewState() === 'error'"
+        (click)="setPreviewState('error')"
+      >
+        Error
+      </button>
+    </div>
+  </section>
+
+  <div class="dashboard-grid">
+    <section
+      class="dashboard-card review-card"
+      aria-labelledby="pending-reviews-title"
+      [attr.aria-busy]="previewState() === 'loading'"
+    >
+      <header class="card-heading">
+        <span class="card-icon material-symbols-outlined" aria-hidden="true">
+          fact_check
+        </span>
+        <div>
+          <h2 id="pending-reviews-title">Pending professional applications</h2>
+          <p>Aggregate sample counts for the delegated review summary.</p>
+        </div>
+      </header>
+
+      @switch (previewState()) {
+        @case ('loading') {
+          <div class="dashboard-state" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">
+              hourglass_top
+            </span>
+            <h3>Loading application summary</h3>
+            <p>Please wait while the summary loads.</p>
+          </div>
+        }
+
+        @case ('error') {
+          <div class="dashboard-state">
+            <div role="alert">
+              <h3>Application summary unavailable</h3>
+              <p>Try again to return to the sample summary.</p>
+            </div>
+            <button class="primary-button" type="button" (click)="retry()">
+              Try again
+            </button>
+          </div>
+        }
+
+        @case ('empty') {
+          <div class="dashboard-state" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">
+              inbox
+            </span>
+            <h3>No pending applications</h3>
+            <p>This preview represents an empty review queue.</p>
+          </div>
+        }
+
+        @case ('ready') {
+          <div class="pending-total">
+            <span class="count">{{ pendingCount() }}</span>
+            <span>Pending applications · sample</span>
+          </div>
+
+          <ul class="review-list">
+            @for (summary of reviewSummaries(); track summary.role) {
+              <li>
+                <span>{{ summary.role }}</span>
+                <strong>{{ summary.pendingCount }}</strong>
+              </li>
+            }
+          </ul>
+
+          <p class="card-note">
+            Review decisions require the appropriate delegated permissions.
+          </p>
+        }
+      }
+    </section>
+
+    <section class="dashboard-card" aria-labelledby="account-support-title">
+      <header class="card-heading">
+        <span class="card-icon material-symbols-outlined" aria-hidden="true">
+          support_agent
+        </span>
+        <div>
+          <h2 id="account-support-title">Account support</h2>
+          <p>Open the delegated account support workspace.</p>
+        </div>
+      </header>
+
+      <p>
+        Search fictional accounts and preview permitted support actions.
+        Account support does not grant access to clinical records.
+      </p>
+
+      <a class="primary-button" routerLink="/workspace/admin/account-support">
+        Open account support
+        <span class="material-symbols-outlined" aria-hidden="true">
+          arrow_forward
+        </span>
+      </a>
+    </section>
+
+    <section class="dashboard-card" aria-labelledby="operational-status-title">
+      <header class="card-heading">
+        <span class="card-icon material-symbols-outlined" aria-hidden="true">
+          monitor_heart
+        </span>
+        <div>
+          <h2 id="operational-status-title">Operational status</h2>
+          <p>Administrative service information.</p>
+        </div>
+      </header>
+
+      <span class="status-label">Not connected</span>
+      <p>
+        Live operational status is unavailable in this preview.
+        No service-health or availability claims are made.
+      </p>
+    </section>
+  </div>
+</section>
