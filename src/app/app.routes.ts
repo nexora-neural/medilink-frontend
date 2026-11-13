@@ -21,6 +21,7 @@ import { AccountSupport } from './features/administration/account-support/accoun
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
 import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
+import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 
 const rolePage = (
   path: string,
@@ -213,6 +214,17 @@ export const routes: Routes = [
         path: 'professional-verification',
         component: ProfessionalVerification,
       },
+
+      {
+        path: 'admin/dashboard',
+        component: AdminDashboard,
+        canActivate: [roleGuard],
+        title: 'Admin dashboard | MediLink',
+        data: {
+          allowedRoles: ['Admin'],
+        },
+      },
+
       {
         path: 'admin/account-support',
         component: AccountSupport,

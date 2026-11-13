@@ -6,6 +6,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/admin/dashboard',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'workspace/patient/profile',
     renderMode: RenderMode.Client,
   },
