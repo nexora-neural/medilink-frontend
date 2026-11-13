@@ -1,13 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-type OrganizationStatus = 'Approved' | 'Pending' | 'Rejected' | 'Suspended';
-interface Organization {
-  id: number;
-  name: string;
-  type: string;
-  status: OrganizationStatus;
-}
+import { Organization, OrganizationStatus, OrganizationsService } from './organizations.service';
 
 @Component({
   selector: 'app-admin-organizations',
@@ -16,12 +9,31 @@ interface Organization {
   templateUrl: './organizations.html',
   styleUrl: './organizations.scss',
 })
-export class Organizations {
-  readonly organizations: Organization[] = [
-    { id: 1, name: 'Lakeside Clinic', type: 'Clinic', status: 'Approved' },
-    { id: 2, name: 'Central Laboratory', type: 'Laboratory', status: 'Pending' },
-    { id: 3, name: 'Lakeside Pharmacy', type: 'Pharmacy', status: 'Approved' },
-  ];
-  loading = false;
-  showError = false;
+export class Organizations implements OnInit {
+  private readonly organizationsApi = inject(OrganizationsService);
+  readonly organizations = signal<Organization[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
+
+  ngOnInit(): void {
+    void this.loadOrganizations();
+  }
+
+  async loadOrganizations(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+
+    try {
+      this.organizations.set(await this.organizationsApi.listOrganizations());
+    } catch {
+      this.error.set('Organizations could not be loaded. Please try again.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  statusLabel(status: OrganizationStatus): string {
+    if (status === 'active') return 'Approved';
+    return status.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+  }
 }

@@ -76,6 +76,37 @@ export class AuthService {
     return { auth, config };
   }
 
+  private async authorizedRequest<T>(
+    method: 'GET' | 'POST',
+    path: string,
+    body?: unknown,
+  ): Promise<T> {
+    const { auth, config } = await this.firebase();
+    await auth.authStateReady();
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to continue.');
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    const url = `${config.apiBaseUrl}/${path.replace(/^\//, '')}`;
+    const options = { headers: { Authorization: `Bearer ${token}` } };
+    const request =
+      method === 'GET'
+        ? this.http.get<T>(url, options)
+        : this.http.post<T>(url, body ?? {}, options);
+
+    return firstValueFrom(request.pipe(timeout(10000)));
+  }
+
+  getAuthorized<T>(path: string): Promise<T> {
+    return this.authorizedRequest<T>('GET', path);
+  }
+
+  postAuthorized<T>(path: string, body: unknown): Promise<T> {
+    return this.authorizedRequest<T>('POST', path, body);
+  }
+
   async getOwnProfile(): Promise<MeResponse> {
     const { auth, config } = await this.firebase();
 

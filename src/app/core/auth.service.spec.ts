@@ -173,4 +173,42 @@ describe('AuthService onboarding recovery', () => {
 
     expect(firebaseMocks.signOut).not.toHaveBeenCalled();
   });
+
+  it('sends authenticated organization API GET requests', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const result = service.getAuthorized<{ items: unknown[] }>('/admin/organizations');
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/admin/organizations');
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    request.flush({ items: [] });
+    await expect(result).resolves.toEqual({ items: [] });
+  });
+
+  it('sends authenticated organization decision POST requests', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const result = service.postAuthorized<{ status: string }>(
+      'admin/organizations/org-1/decision',
+      { status: 'active', reason: 'Verified' },
+    );
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne(
+      'http://localhost:8000/api/v1/admin/organizations/org-1/decision',
+    );
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    expect(request.request.body).toEqual({ status: 'active', reason: 'Verified' });
+    request.flush({ status: 'active' });
+    await expect(result).resolves.toEqual({ status: 'active' });
+  });
 });

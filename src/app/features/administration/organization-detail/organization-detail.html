@@ -1,31 +1,129 @@
-<section class="detail-page">
+<section class="detail-page" aria-labelledby="organization-title">
   <a routerLink="/super-admin/organizations" class="back">← Back to organizations</a>
-  @if (loading) {
-    <div class="panel" role="status">Loading organization…</div>
-  } @else if (organization; as org) {
-    <div class="heading"><h1>{{ org.name }}</h1><p>{{ org.type }} · {{ org.status }}</p></div>
-    <div class="panel">
-      <div class="section-head"><h2>Organization information</h2><span class="pill">{{ org.status }}</span></div>
-      <div class="info-grid"><div><small>Organization</small><strong>{{ org.name }}</strong></div><div><small>Type</small><strong>{{ org.type }}</strong></div></div>
-      <h2>Membership review</h2>
-      @for (member of org.members; track member.id) {
-        <div class="member-row">
-          <div><strong>{{ member.name }}</strong><small>{{ member.role }} · {{ member.status }}</small></div>
-          <div class="member-actions">
-            <button type="button" (click)="prepareMemberDecision(member.id, 'Approved')" [disabled]="member.status === 'Approved'">Approve</button>
-            <button type="button" class="outline" (click)="prepareMemberDecision(member.id, 'Rejected')" [disabled]="member.status === 'Rejected'">Reject</button>
-          </div>
-        </div>
-      } @empty { <p class="muted">No memberships for this organization.</p> }
-      <h2 class="decision-title">Organization decision</h2>
-      <label for="reason">Decision reason <span aria-hidden="true">*</span></label>
-      <textarea id="reason" [(ngModel)]="reason" rows="3" placeholder="Enter a reason for the decision"></textarea>
-      @if (error) { <p class="error" role="alert">{{ error }}</p> }
-      <div class="actions"><button type="button" (click)="prepareOrganizationDecision('Approved')">Approve</button><button type="button" class="outline" (click)="prepareOrganizationDecision('Rejected')">Reject</button><button type="button" class="outline" (click)="prepareOrganizationDecision('Suspended')">Suspend</button></div>
-      @if (pendingDecision || memberDecision) {
-        <div class="confirmation" role="group" aria-label="Confirm UI preview decision"><strong>Confirm local decision?</strong><p>{{ pendingDecision ? 'Organization: ' + pendingDecision : 'Membership: ' + memberDecision?.status }}. This will only change the screen temporarily.</p><div class="actions"><button type="button" class="outline" (click)="cancelDecision()">Cancel</button><button type="button" (click)="pendingDecision ? confirmOrganizationDecision() : confirmMemberDecision()">Confirm</button></div></div>
-      }
-      @if (feedback) { <p class="feedback" role="status">{{ feedback }}</p> }
+
+  @if (loading()) {
+    <div class="panel loading" role="status">Loading organization and membership records…</div>
+  } @else if (loadError()) {
+    <div class="panel" role="alert">
+      <h1>Organization details unavailable</h1>
+      <p class="error">{{ loadError() }}</p>
+      <button type="button" (click)="loadOrganization()">Try again</button>
     </div>
-  } @else { <div class="panel" role="alert"><h2>Organization not found</h2><a routerLink="/super-admin/organizations">Return to organization list</a></div> }
+  } @else if (organization(); as org) {
+    <header class="heading">
+      <div>
+        <h1 id="organization-title">{{ org.name }}</h1>
+        <p>{{ org.type }} · {{ organizationStatusLabel(org.status) }}</p>
+      </div>
+      <span
+        class="pill"
+        [class.pending]="org.status === 'pending'"
+        [class.rejected]="org.status === 'rejected'"
+        [class.suspended]="org.status === 'suspended'"
+        [class.approved]="org.status === 'active'"
+      >
+        {{ organizationStatusLabel(org.status) }}
+      </span>
+    </header>
+
+    <div class="panel">
+      <section aria-labelledby="organization-information-heading">
+        <h2 id="organization-information-heading">Organization information</h2>
+        <div class="info-grid">
+          <div><small>Organization</small><strong>{{ org.name }}</strong></div>
+          <div><small>Type</small><strong>{{ org.type }}</strong></div>
+          <div><small>Registration reference</small><strong>{{ org.registration_ref || 'Not provided' }}</strong></div>
+          <div><small>Organization ID</small><strong class="identifier">{{ org.id }}</strong></div>
+          <div><small>Submitted</small><strong>{{ org.created_at | date: 'mediumDate' }}</strong></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="membership-review-heading">
+        <div class="section-head">
+          <h2 id="membership-review-heading">Membership review</h2>
+          <span class="count">{{ memberships().length }} records</span>
+        </div>
+
+        @for (member of memberships(); track member.id) {
+          <article class="member-row">
+            <div class="member-details">
+              <strong>{{ member.role.replace('_', ' ') | titlecase }}</strong>
+              <small>Account ID: <span class="identifier">{{ member.user_id }}</span></small>
+              <small>Membership ID: <span class="identifier">{{ member.id }}</span></small>
+              <small>Status: {{ membershipStatusLabel(member.status) }}</small>
+            </div>
+            @if (canReviewMembership(member.status)) {
+              <div class="member-actions">
+                @if (member.status !== 'approved') {
+                  <button type="button" (click)="prepareMembershipDecision(member.id, 'approved')">
+                    Approve
+                  </button>
+                }
+                @if (member.status !== 'rejected') {
+                  <button type="button" class="outline" (click)="prepareMembershipDecision(member.id, 'rejected')">
+                    Reject
+                  </button>
+                }
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="muted">No membership requests are recorded for this organization.</p>
+        }
+      </section>
+
+      <section class="organization-decision" aria-labelledby="organization-decision-heading">
+        <h2 id="organization-decision-heading">Organization decision</h2>
+        <div class="actions">
+          @if (canApproveOrganization(org.status)) {
+            <button type="button" (click)="prepareOrganizationDecision('active')">Approve</button>
+          }
+          @if (canRejectOrganization(org.status)) {
+            <button type="button" class="outline" (click)="prepareOrganizationDecision('rejected')">Reject</button>
+          }
+          @if (canSuspendOrganization(org.status)) {
+            <button type="button" class="outline" (click)="prepareOrganizationDecision('suspended')">Suspend</button>
+          }
+          @if (!canApproveOrganization(org.status) && !canRejectOrganization(org.status) && !canSuspendOrganization(org.status)) {
+            <p class="muted">No further decision is available for this status.</p>
+          }
+        </div>
+      </section>
+
+      @if (pendingDecision(); as decision) {
+        <section class="confirmation" aria-labelledby="confirm-decision-heading">
+          <h2 id="confirm-decision-heading">Confirm decision</h2>
+          <p>
+            {{ decision.target === 'organization' ? 'Organization' : 'Membership' }} will be marked
+            {{ decision.status.replace('_', ' ') | titlecase }}. A reason is required and the decision will be recorded.
+          </p>
+          <label for="decision-reason">Decision reason <span aria-hidden="true">*</span></label>
+          <textarea
+            id="decision-reason"
+            [formControl]="reason"
+            rows="3"
+            maxlength="1000"
+            placeholder="Enter a reason for the decision"
+            [attr.aria-invalid]="reason.invalid && reason.touched"
+          ></textarea>
+          @if (reason.invalid && reason.touched) {
+            <p class="error" role="alert">Enter a reason of up to 1000 characters.</p>
+          }
+          @if (decisionError()) {
+            <p class="error" role="alert">{{ decisionError() }}</p>
+          }
+          <div class="actions">
+            <button type="button" class="outline" (click)="cancelDecision()" [disabled]="saving()">Cancel</button>
+            <button type="button" (click)="confirmDecision()" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Confirm decision' }}
+            </button>
+          </div>
+        </section>
+      }
+
+      @if (feedback()) {
+        <p class="feedback" role="status">{{ feedback() }}</p>
+      }
+    </div>
+  }
 </section>
