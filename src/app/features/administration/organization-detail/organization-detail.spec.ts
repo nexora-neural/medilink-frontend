@@ -61,6 +61,35 @@ describe('OrganizationDetail', () => {
     expect(element.querySelector('.confirmation')).toBeNull();
   });
 
+  it('shows a useful message when the detail API denies access', async () => {
+    organizationsApi.getOrganization.mockRejectedValue({ status: 403 });
+    const fixture = TestBed.createComponent(OrganizationDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+        'Your account is not permitted to manage this organization workflow.',
+      );
+    });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('shows a retryable error when the organization service is unavailable', async () => {
+    organizationsApi.getOrganization.mockRejectedValue({ status: 503 });
+    const fixture = TestBed.createComponent(OrganizationDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+        'Organization details could not be loaded.',
+      );
+    });
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('button')).not.toBeNull();
+  });
+
   it('requires a reason and persists a Super Admin decision', async () => {
     organizationsApi.decideOrganization.mockResolvedValue({ ...organization, status: 'active' });
     const fixture = TestBed.createComponent(OrganizationDetail);

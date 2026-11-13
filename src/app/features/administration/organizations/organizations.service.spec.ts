@@ -40,6 +40,16 @@ describe('OrganizationsService', () => {
     );
   });
 
+  it('loads one organization by id for the detail view', async () => {
+    auth.getAuthorized.mockResolvedValue({ id: 'org-1', name: 'Central Clinic' });
+
+    await expect(service.getOrganization('org-1')).resolves.toEqual({
+      id: 'org-1',
+      name: 'Central Clinic',
+    });
+    expect(auth.getAuthorized).toHaveBeenCalledWith('admin/organizations/org-1');
+  });
+
   it('filters memberships by organization and loads every result page', async () => {
     auth.getAuthorized.mockResolvedValueOnce({
       items: [{ id: 'membership-1' }],
