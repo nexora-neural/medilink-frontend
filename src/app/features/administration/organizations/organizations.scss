@@ -114,6 +114,11 @@ h1 {
   color: #9a6a17;
 }
 
+.status.approved {
+  background: #e8f5ee;
+  color: #28784b;
+}
+
 .status.rejected {
   background: #ffeded;
   color: #a63838;
@@ -142,6 +147,15 @@ h1 {
 
 .error {
   color: #b33131;
+}
+
+.retry {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: #347eb6;
+  color: #fff;
+  cursor: pointer;
 }
 
 /* Tablet */
