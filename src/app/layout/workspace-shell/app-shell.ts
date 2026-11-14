@@ -14,6 +14,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
       path: '/workspace/admin/dashboard',
     },
     {
+      label: 'Medicine catalogue',
+      icon: 'medication',
+      path: '/workspace/admin/medicine-catalogue',
+    },
+    {
       label: 'Account support',
       icon: 'support_agent',
       path: '/workspace/admin/account-support',
@@ -42,6 +47,7 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
 
   Doctor: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace/doctor/dashboard' },
+    { label: 'Medicine catalogue', icon: 'medication', path: '/workspace/doctor/medicines' },
     { label: 'Patients', icon: 'group', path: '/workspace/doctor/patients' },
     { label: 'My QR code', icon: 'qr_code_2', path: '/workspace/doctor/qr' },
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },

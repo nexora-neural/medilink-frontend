@@ -22,6 +22,8 @@ import { AdminAccounts } from './features/administration/admin-accounts/admin-ac
 import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
 import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
+import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
+import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 
 const rolePage = (
   path: string,
@@ -163,6 +165,15 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
+      {
+        path: 'doctor/medicines',
+        component: DoctorMedicineSearch,
+        canActivate: [roleGuard],
+        title: 'Medicine catalogue | MediLink',
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
       doctorPreview(
         'doctor/patients',
         'Patient queue',
@@ -220,6 +231,15 @@ export const routes: Routes = [
         component: AdminDashboard,
         canActivate: [roleGuard],
         title: 'Admin dashboard | MediLink',
+        data: {
+          allowedRoles: ['Admin'],
+        },
+      },
+      {
+        path: 'admin/medicine-catalogue',
+        component: MedicineCatalogue,
+        canActivate: [roleGuard],
+        title: 'Medicine catalogue | MediLink',
         data: {
           allowedRoles: ['Admin'],
         },
