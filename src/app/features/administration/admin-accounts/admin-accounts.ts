@@ -3,13 +3,15 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActiveRoleService } from '../../../core/context/active-role.service';
 import { UiState } from '../../../shared/components/ui-state/ui-state';
 import { A11yModule } from '@angular/cdk/a11y';
-import { AccountSupportApiService } from '../account-support-api.service';
+import { AccountSupportApiService, SupportAccountStatus } from '../account-support-api.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface AdminAccount {
   id: string;
   name: string;
   email: string;
+  status: SupportAccountStatus;
+  isAdmin: boolean | null;
 }
 
 @Component({
@@ -97,11 +99,25 @@ export class AdminAccounts {
       id: user.id,
       name: user.display_name,
       email: user.email ?? 'Email not provided',
+      status: user.status,
+      isAdmin: typeof user.is_admin === 'boolean' ? user.is_admin : null,
     }));
   }
 
+  canChange(account: AdminAccount, action: 'appoint' | 'revoke'): boolean {
+    return action === 'revoke'
+      ? account.isAdmin === true
+      : account.isAdmin === false && account.status === 'active';
+  }
+
   requestChange(account: AdminAccount, action: 'appoint' | 'revoke' = 'appoint'): void {
-    if (!this.canManage() || this.loading() || this.saving() || this.pendingAccount()) {
+    if (
+      !this.canManage() ||
+      this.loading() ||
+      this.saving() ||
+      this.pendingAccount() ||
+      !this.canChange(account, action)
+    ) {
       return;
     }
 
@@ -126,6 +142,13 @@ export class AdminAccounts {
     const action = this.pendingAction();
 
     if (!this.canManage() || !account || !action || this.saving()) return;
+
+    const current = this.accounts().find((item) => item.id === account.id);
+
+    if (!current || !this.canChange(current, action)) {
+      this.actionError.set('The account role or status has changed. Cancel and search again.');
+      return;
+    }
 
     this.reasonControl.markAsTouched();
 
@@ -169,6 +192,17 @@ export class AdminAccounts {
       this.pendingAccount.set(null);
       this.pendingAction.set(null);
       this.reasonControl.reset('');
+      this.accounts.set([]);
+      this.totalAccounts.set(0);
+
+      try {
+        const accounts = await this.loadAccounts();
+        this.accounts.set(accounts);
+      } catch {
+        this.searchError.set(
+          'The change was saved, but account roles could not be refreshed. Search again to see the current state.',
+        );
+      }
     } catch (error: unknown) {
       if (error instanceof HttpErrorResponse) {
         const backendMessage =

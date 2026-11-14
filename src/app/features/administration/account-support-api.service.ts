@@ -10,6 +10,7 @@ export interface SupportUser {
   display_name: string;
   phone: string | null;
   status: SupportAccountStatus;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

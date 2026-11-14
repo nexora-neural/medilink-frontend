@@ -14,6 +14,7 @@ describe('AccountSupport API integration', () => {
     email: 'patient@example.com',
     phone: null,
     status: 'active',
+    is_admin: false,
     created_at: '2026-11-01T00:00:00Z',
     updated_at: '2026-11-01T00:00:00Z',
   };
@@ -214,5 +215,73 @@ describe('AccountSupport API integration', () => {
     expect(component.accounts()[0].status).toBe('active');
     expect(component.message()).toBe('');
     expect(component.actionError()).toContain('result could not be confirmed');
+  });
+  for (const status of ['pending', 'disabled'] as const) {
+    it(`does not offer or request a status change for ${status} accounts`, async () => {
+      api.searchUsers.mockResolvedValue({
+        items: [{ ...user, status }],
+        page: 1,
+        page_size: 20,
+        total: 1,
+      });
+
+      await component.search();
+      fixture.detectChanges();
+
+      const card: HTMLElement = fixture.nativeElement.querySelector('.account-card');
+
+      expect(card.textContent).toContain(status);
+      expect(card.querySelector('button')).toBeNull();
+
+      component.requestChange(component.accounts()[0]);
+      component.reasonControl.setValue('Status change test');
+      await component.confirmChange();
+
+      expect(component.pendingAccount()).toBeNull();
+      expect(api.updateStatus).not.toHaveBeenCalled();
+      expect(component.accounts()[0].status).toBe(status);
+    });
+
+    it(`blocks submission if a pending confirmation becomes ${status}`, async () => {
+      await component.search();
+
+      component.requestChange(component.accounts()[0]);
+      component.reasonControl.setValue('Review required');
+
+      const account = component.pendingAccount()!;
+      component.pendingAccount.set({ ...account, status });
+
+      await component.confirmChange();
+
+      expect(api.updateStatus).not.toHaveBeenCalled();
+      expect(component.message()).toBe('');
+      expect(component.actionError()).toContain('Only active accounts can be suspended');
+      expect(component.saving()).toBe(false);
+    });
+  }
+
+  it('shows Suspend for active accounts and Reactivate for suspended accounts', async () => {
+    api.searchUsers.mockResolvedValue({
+      items: [
+        { ...user },
+        {
+          ...user,
+          id: 'suspended-user',
+          display_name: 'Suspended Patient',
+          status: 'suspended',
+        },
+      ],
+      page: 1,
+      page_size: 20,
+      total: 2,
+    });
+
+    await component.search();
+    fixture.detectChanges();
+
+    const cards: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.account-card');
+
+    expect(cards[0].querySelector('button')?.textContent?.trim()).toBe('Suspend');
+    expect(cards[1].querySelector('button')?.textContent?.trim()).toBe('Reactivate');
   });
 });

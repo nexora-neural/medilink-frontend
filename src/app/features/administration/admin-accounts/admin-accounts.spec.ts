@@ -20,6 +20,7 @@ describe('AdminAccounts API integration', () => {
     email: 'patient@example.com',
     phone: null,
     status: 'active',
+    is_admin: false,
     created_at: '2026-11-01T00:00:00Z',
     updated_at: '2026-11-01T00:00:00Z',
   };
@@ -65,18 +66,18 @@ describe('AdminAccounts API integration', () => {
     fixture.detectChanges();
   });
 
-  it('displays backend accounts without claiming their Admin role', async () => {
+  it('shows appointment only for an active non-Admin account', async () => {
     component.searchControl.setValue('  Sample  ');
     await component.search();
     fixture.detectChanges();
 
     expect(api.searchUsers).toHaveBeenCalledWith('Sample', 1);
     expect(fixture.nativeElement.textContent).toContain('Sample Patient');
-    expect(fixture.nativeElement.textContent).toContain(
-      'Admin role not available in search results',
-    );
-    expect(fixture.nativeElement.textContent).toContain('Appoint Admin');
-    expect(fixture.nativeElement.textContent).toContain('Revoke Admin');
+    expect(fixture.nativeElement.textContent).toContain('No Admin assignment');
+
+    const card: HTMLElement = fixture.nativeElement.querySelector('.account');
+    expect(card.textContent).toContain('Appoint Admin');
+    expect(card.textContent).not.toContain('Revoke Admin');
   });
 
   it('blocks delegated Admin search and hides controls', async () => {
@@ -127,31 +128,65 @@ describe('AdminAccounts API integration', () => {
     expect(api.appointAdmin).not.toHaveBeenCalled();
   });
 
-  it('calls appointment only after explicit confirmation', async () => {
+  it('appoints only after confirmation and reloads the Admin state', async () => {
     await component.search();
+
+    api.searchUsers.mockResolvedValue({
+      items: [{ ...user, is_admin: true }],
+      page: 1,
+      page_size: 20,
+      total: 1,
+    });
 
     component.requestChange(component.accounts()[0], 'appoint');
     expect(api.appointAdmin).not.toHaveBeenCalled();
 
     component.reasonControl.setValue('  Appointment approved  ');
     await component.confirmChange();
+    fixture.detectChanges();
 
-    expect(api.appointAdmin).toHaveBeenCalledWith(user.id, 'Appointment approved');
+    expect(api.appointAdmin).toHaveBeenCalledExactlyOnceWith(user.id, 'Appointment approved');
     expect(api.revokeAdmin).not.toHaveBeenCalled();
+    expect(api.searchUsers).toHaveBeenCalledTimes(2);
+    expect(component.accounts()[0].isAdmin).toBe(true);
     expect(component.message()).toContain('Admin appointment saved');
     expect(component.pendingAccount()).toBeNull();
+
+    const card: HTMLElement = fixture.nativeElement.querySelector('.account');
+    expect(card.textContent).toContain('Admin assigned');
+    expect(card.textContent).toContain('Revoke Admin');
+    expect(card.textContent).not.toContain('Appoint Admin');
   });
 
-  it('calls the revoke endpoint for an explicit revoke action', async () => {
+  it('revokes an existing Admin and reloads the assignment state', async () => {
+    api.searchUsers.mockResolvedValueOnce({
+      items: [{ ...user, is_admin: true }],
+      page: 1,
+      page_size: 20,
+      total: 1,
+    });
+
     await component.search();
+    fixture.detectChanges();
+
+    const initialCard: HTMLElement = fixture.nativeElement.querySelector('.account');
+    expect(initialCard.textContent).toContain('Revoke Admin');
+    expect(initialCard.textContent).not.toContain('Appoint Admin');
 
     component.requestChange(component.accounts()[0], 'revoke');
     component.reasonControl.setValue('Access no longer required');
     await component.confirmChange();
+    fixture.detectChanges();
 
-    expect(api.revokeAdmin).toHaveBeenCalledWith(user.id, 'Access no longer required');
+    expect(api.revokeAdmin).toHaveBeenCalledExactlyOnceWith(user.id, 'Access no longer required');
     expect(api.appointAdmin).not.toHaveBeenCalled();
+    expect(api.searchUsers).toHaveBeenCalledTimes(2);
+    expect(component.accounts()[0].isAdmin).toBe(false);
     expect(component.message()).toContain('Admin access revoked');
+
+    const card: HTMLElement = fixture.nativeElement.querySelector('.account');
+    expect(card.textContent).toContain('Appoint Admin');
+    expect(card.textContent).not.toContain('Revoke Admin');
   });
 
   it('shows MFA denial without reporting success', async () => {
@@ -252,5 +287,85 @@ describe('AdminAccounts API integration', () => {
 
     expect(component.searchError()).toBe('');
     expect(component.accounts()).toHaveLength(1);
+  });
+  it('blocks appointment of an existing Admin', async () => {
+    api.searchUsers.mockResolvedValue({
+      items: [{ ...user, is_admin: true }],
+      page: 1,
+      page_size: 20,
+      total: 1,
+    });
+
+    await component.search();
+    component.requestChange(component.accounts()[0], 'appoint');
+
+    expect(component.pendingAccount()).toBeNull();
+    expect(api.appointAdmin).not.toHaveBeenCalled();
+  });
+
+  it('blocks revocation of a non-Admin account', async () => {
+    await component.search();
+    component.requestChange(component.accounts()[0], 'revoke');
+
+    expect(component.pendingAccount()).toBeNull();
+    expect(api.revokeAdmin).not.toHaveBeenCalled();
+  });
+
+  for (const status of ['pending', 'disabled', 'suspended'] as const) {
+    it(`does not offer appointment for a ${status} non-Admin account`, async () => {
+      api.searchUsers.mockResolvedValue({
+        items: [{ ...user, status }],
+        page: 1,
+        page_size: 20,
+        total: 1,
+      });
+
+      await component.search();
+      fixture.detectChanges();
+
+      const card: HTMLElement = fixture.nativeElement.querySelector('.account');
+      expect(card.querySelector('button')).toBeNull();
+
+      component.requestChange(component.accounts()[0], 'appoint');
+
+      expect(component.pendingAccount()).toBeNull();
+      expect(api.appointAdmin).not.toHaveBeenCalled();
+    });
+  }
+
+  it('blocks confirmation if the displayed assignment has changed', async () => {
+    await component.search();
+
+    component.requestChange(component.accounts()[0], 'appoint');
+    component.reasonControl.setValue('Appointment approved');
+
+    component.accounts.update((accounts) =>
+      accounts.map((account) => ({ ...account, isAdmin: true })),
+    );
+
+    await component.confirmChange();
+
+    expect(api.appointAdmin).not.toHaveBeenCalled();
+    expect(api.revokeAdmin).not.toHaveBeenCalled();
+    expect(component.actionError()).toContain('role or status has changed');
+  });
+
+  it('clears stale actions when the change succeeds but refresh fails', async () => {
+    await component.search();
+    api.searchUsers.mockRejectedValueOnce(new Error('Refresh unavailable'));
+
+    component.requestChange(component.accounts()[0], 'appoint');
+    component.reasonControl.setValue('Appointment approved');
+    await component.confirmChange();
+
+    expect(api.appointAdmin).toHaveBeenCalledOnce();
+    expect(component.message()).toContain('Admin appointment saved');
+    expect(component.searchError()).toContain('could not be refreshed');
+    expect(component.accounts()).toEqual([]);
+    expect(component.pendingAccount()).toBeNull();
+    expect(component.saving()).toBe(false);
+
+    await component.confirmChange();
+    expect(api.appointAdmin).toHaveBeenCalledOnce();
   });
 });

@@ -91,9 +91,26 @@ export class AccountSupport {
       status: user.status,
     }));
   }
+  statusAction(status: AccountStatus): 'suspended' | 'active' | null {
+    switch (status) {
+      case 'active':
+        return 'suspended';
+      case 'suspended':
+        return 'active';
+      default:
+        return null;
+    }
+  }
 
   requestChange(account: SupportAccount): void {
-    if (this.loading() || this.saving() || this.pendingAccount()) return;
+    if (
+      this.loading() ||
+      this.saving() ||
+      this.pendingAccount() !== null ||
+      this.statusAction(account.status) === null
+    ) {
+      return;
+    }
 
     this.reasonControl.reset('');
     this.actionError.set('');
@@ -128,7 +145,14 @@ export class AccountSupport {
       return;
     }
 
-    const status = account.status === 'active' ? 'suspended' : 'active';
+    const status = this.statusAction(account.status);
+
+    if (status === null) {
+      this.actionError.set(
+        'Only active accounts can be suspended and suspended accounts can be reactivated. Cancel and search again.',
+      );
+      return;
+    }
 
     this.saving.set(true);
     this.actionError.set('');

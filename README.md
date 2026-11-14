@@ -244,7 +244,11 @@ Account support and Admin role management use the authenticated backend API.
 - Only Super Admin can appoint or revoke Admin access.
 - Backend permission and MFA requirements remain enforced.
 - Admin access does not grant clinical access.
-- Search results do not include Admin role assignments.
+- Search results include the current Admin assignment through the backend `is_admin` field.
+- Admin actions follow the assignment state; only active non-Admin accounts can be appointed.
+- Successful Admin changes reload the assignment state from the backend.
+- Account support offers suspension for active accounts and reactivation for suspended accounts.
+- Pending and disabled accounts have no suspend/reactivate action in this UI.
 
 ### Verification
 

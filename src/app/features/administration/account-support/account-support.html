@@ -170,17 +170,23 @@
           {{ account.status }}
         </span>
 
-        <button
-          class="secondary-button"
-          type="button"
-          [disabled]="loading() || saving() || pendingAccount() !== null"
-          [attr.aria-label]="
-            (account.status === 'active' ? 'Suspend ' : 'Reactivate ') + account.name
-          "
-          (click)="requestChange(account)"
-        >
-          {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
-        </button>
+        @if (statusAction(account.status) !== null) {
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="loading() || saving() || pendingAccount() !== null"
+            [attr.aria-label]="
+              (account.status === 'active' ? 'Suspend ' : 'Reactivate ') + account.name
+            "
+            (click)="requestChange(account)"
+          >
+            {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
+          </button>
+        } @else {
+          <span class="help-text">
+            No suspend/reactivate action is available for this status.
+          </span>
+        }
       </article>
     } @empty {
       <div class="empty-state" role="status">

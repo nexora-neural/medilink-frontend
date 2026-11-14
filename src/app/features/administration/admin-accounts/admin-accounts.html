@@ -159,25 +159,43 @@
             <p class="help-text">{{ account.id }}</p>
           </div>
 
-          <span class="badge">Admin role not available in search results</span>
+          <span class="badge">
+            {{
+              account.isAdmin === true
+                ? 'Admin assigned'
+                : account.isAdmin === false
+                  ? 'No Admin assignment'
+                  : 'Admin assignment unavailable'
+            }}
+          </span>
           <div class="actions">
-            <button
-              type="button"
-              [disabled]="loading() || saving() || pendingAccount() !== null"
-              [attr.aria-label]="'Appoint ' + account.name + ' as Admin'"
-              (click)="requestChange(account, 'appoint')"
-            >
-              Appoint Admin
-            </button>
-
-            <button
-              type="button"
-              [disabled]="loading() || saving() || pendingAccount() !== null"
-              [attr.aria-label]="'Revoke Admin access from ' + account.name"
-              (click)="requestChange(account, 'revoke')"
-            >
-              Revoke Admin
-            </button>
+            @if (canChange(account, 'appoint')) {
+              <button
+                type="button"
+                [disabled]="loading() || saving() || pendingAccount() !== null"
+                [attr.aria-label]="'Appoint ' + account.name + ' as Admin'"
+                (click)="requestChange(account, 'appoint')"
+              >
+                Appoint Admin
+              </button>
+            } @else if (canChange(account, 'revoke')) {
+              <button
+                type="button"
+                [disabled]="loading() || saving() || pendingAccount() !== null"
+                [attr.aria-label]="'Revoke Admin access from ' + account.name"
+                (click)="requestChange(account, 'revoke')"
+              >
+                Revoke Admin
+              </button>
+            } @else {
+              <span class="help-text">
+                {{
+                  account.isAdmin === null
+                    ? 'Search again after Admin assignment information is available.'
+                    : 'Only active accounts can be appointed as Admin.'
+                }}
+              </span>
+            }
           </div>
         </article>
       } @empty {
