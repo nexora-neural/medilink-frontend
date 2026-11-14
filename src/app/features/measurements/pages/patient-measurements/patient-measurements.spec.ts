@@ -43,4 +43,93 @@ describe('PatientMeasurements preview isolation', () => {
 
     secondPage.destroy();
   });
+  it('shows actual counts when ready', () => {
+    const fixture = TestBed.createComponent(PatientMeasurements);
+    const component = fixture.componentInstance;
+
+    fixture.detectChanges();
+
+    const counts = fixture.nativeElement.querySelectorAll(
+      '.summary-card strong',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(counts[0].textContent?.trim()).toBe(String(component.measurements().length));
+    expect(counts[1].textContent?.trim()).toBe(
+      String(component.measurements().filter((item) => item.source === 'patient').length),
+    );
+
+    fixture.destroy();
+  });
+
+  it('shows zero counts and no records in the empty preview', () => {
+    const fixture = TestBed.createComponent(PatientMeasurements);
+    const component = fixture.componentInstance;
+
+    component.pageState.set('empty');
+    fixture.detectChanges();
+
+    const counts = fixture.nativeElement.querySelectorAll(
+      '.summary-card strong',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(counts[0].textContent?.trim()).toBe('0');
+    expect(counts[1].textContent?.trim()).toBe('0');
+    expect(fixture.nativeElement.textContent).toContain('No measurements yet');
+    expect(fixture.nativeElement.querySelector('app-measurement-list')).toBeNull();
+
+    fixture.destroy();
+  });
+
+  it('marks counts unavailable while loading', () => {
+    const fixture = TestBed.createComponent(PatientMeasurements);
+    const component = fixture.componentInstance;
+
+    component.pageState.set('loading');
+    fixture.detectChanges();
+
+    const counts = fixture.nativeElement.querySelectorAll(
+      '.summary-card strong',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(counts[0].textContent?.trim()).toBe('Unavailable');
+    expect(counts[1].textContent?.trim()).toBe('Unavailable');
+    expect(fixture.nativeElement.textContent).toContain('Loading measurements');
+    expect(fixture.nativeElement.querySelector('app-measurement-list')).toBeNull();
+
+    fixture.destroy();
+  });
+
+  it('marks counts unavailable on error and restores them after retry', () => {
+    const fixture = TestBed.createComponent(PatientMeasurements);
+    const component = fixture.componentInstance;
+    const initialCount = component.measurements().length;
+
+    component.pageState.set('error');
+    fixture.detectChanges();
+
+    const counts = fixture.nativeElement.querySelectorAll(
+      '.summary-card strong',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(counts[0].textContent?.trim()).toBe('Unavailable');
+    expect(counts[1].textContent?.trim()).toBe('Unavailable');
+    expect(fixture.nativeElement.textContent).toContain('Measurements unavailable');
+
+    const retryButton = fixture.nativeElement.querySelector(
+      'app-ui-state button',
+    ) as HTMLButtonElement;
+
+    expect(retryButton).not.toBeNull();
+    retryButton.click();
+    fixture.detectChanges();
+
+    expect(component.pageState()).toBe('ready');
+    expect(counts[0].textContent?.trim()).toBe(String(initialCount));
+    expect(counts[1].textContent?.trim()).toBe(
+      String(component.measurements().filter((item) => item.source === 'patient').length),
+    );
+    expect(fixture.nativeElement.querySelector('app-measurement-list')).not.toBeNull();
+
+    fixture.destroy();
+  });
 });

@@ -1,49 +1,33 @@
-<section
-  class="measurements-page"
-  aria-labelledby="measurements-title"
->
+<section class="measurements-page" aria-labelledby="measurements-title">
   <header class="page-heading">
     <div>
-      <h1 id="measurements-title">
-        Health measurements
-      </h1>
+      <h1 id="measurements-title">Health measurements</h1>
 
-      <p class="subtitle">
-        Review values, units, dates and recorded source.
-      </p>
+      <p class="subtitle">Review values, units, dates and recorded source.</p>
     </div>
 
-    <button
-      class="primary-button"
-      type="button"
-      (click)="add()"
-    >
-      <span
-        class="material-symbols-outlined"
-        aria-hidden="true"
-      >
-        add
-      </span>
+    <button class="primary-button" type="button" (click)="add()">
+      <span class="material-symbols-outlined" aria-hidden="true"> add </span>
       Add measurement
     </button>
   </header>
 
   <p class="preview-notice">
-  <strong>Sample preview only.</strong>
-  These are fictional measurements. Any additions and corrections are
-  temporary and will be lost when you leave this page or refresh.
-</p>
+    <strong>Sample preview only.</strong>
+    These are fictional measurements. Any additions and corrections are temporary and will be lost
+    when you leave this page or refresh.
+  </p>
 
   <div class="summary-grid" aria-label="Measurement summary">
     <div class="summary-card">
       <span>Total measurements</span>
-      <strong>{{ total() }}</strong>
+      <strong>{{ total() ?? 'Unavailable' }}</strong>
       <small>Recorded entries</small>
     </div>
 
     <div class="summary-card">
       <span>Patient-added</span>
-      <strong>{{ patientAdded() }}</strong>
+      <strong>{{ patientAdded() ?? 'Unavailable' }}</strong>
       <small>Source shown per entry</small>
     </div>
 
@@ -73,15 +57,10 @@
     />
   }
 
-  <section
-    class="records-panel"
-    aria-labelledby="records-title"
-  >
+  <section class="records-panel" aria-labelledby="records-title">
     <div class="records-heading">
       <div>
-        <h2 id="records-title">
-          Recorded measurements
-        </h2>
+        <h2 id="records-title">Recorded measurements</h2>
 
         <p>Values, units and dates from your records.</p>
       </div>
@@ -110,10 +89,7 @@
         actionLabel="Try again"
         (action)="retry()"
       />
-    } @else if (
-      pageState() === 'empty' ||
-      measurements().length === 0
-      ) {
+    } @else if (pageState() === 'empty' || measurements().length === 0) {
       <app-ui-state
         kind="empty"
         title="No measurements yet"
@@ -129,10 +105,7 @@
     }
 
     @if (showHistory() && pageState() === 'ready') {
-      <app-correction-history
-        [records]="allHistory()"
-        (closeRequested)="clearHistory()"
-      />
+      <app-correction-history [records]="allHistory()" (closeRequested)="clearHistory()" />
     }
   </section>
 </section>

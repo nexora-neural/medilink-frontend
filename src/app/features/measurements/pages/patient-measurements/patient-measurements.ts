@@ -37,11 +37,23 @@ export class PatientMeasurements {
   readonly message = signal('');
   readonly error = signal('');
 
-  readonly total = computed(() => this.measurements().length);
+  readonly total = computed(() => {
+    const state = this.pageState();
 
-  readonly patientAdded = computed(
-    () => this.measurements().filter((item) => item.source === 'patient').length,
-  );
+    if (state === 'empty') return 0;
+    if (state !== 'ready') return null;
+
+    return this.measurements().length;
+  });
+
+  readonly patientAdded = computed(() => {
+    const state = this.pageState();
+
+    if (state === 'empty') return 0;
+    if (state !== 'ready') return null;
+
+    return this.measurements().filter((item) => item.source === 'patient').length;
+  });
 
   readonly allHistory = computed(() =>
     [...this.store.history()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
