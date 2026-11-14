@@ -1,0 +1,62 @@
+<div class="document-upload">
+  <label class="upload-label" [for]="inputId()">
+    {{ label() }}
+  </label>
+
+  <p class="hint" [id]="inputId() + '-hint'">
+    Choose PDF, JPEG or PNG files. Maximum size: 10 MiB per file. Selecting new files replaces the
+    current selection.
+  </p>
+
+  <input
+    class="file-input"
+    [id]="inputId()"
+    type="file"
+    multiple
+    accept=".pdf,.jpg,.jpeg,.png"
+    [disabled]="disabled()"
+    [attr.aria-invalid]="!!(validationError() || externalError())"
+    [attr.aria-describedby]="
+      inputId() + '-hint' + (validationError() || externalError() ? ' ' + inputId() + '-error' : '')
+    "
+    (change)="onFileSelected($event)"
+  />
+
+  @if (validationError() || externalError()) {
+    <p class="error" [id]="inputId() + '-error'" role="alert">
+      {{ validationError() || externalError() }}
+    </p>
+  }
+
+  <p class="selection-status" role="status" aria-atomic="true">
+    @if (files().length === 0) {
+      No documents selected.
+    } @else {
+      {{ files().length }} document(s) selected.
+    }
+  </p>
+
+  @if (files().length > 0) {
+    <ul class="file-list" aria-label="Selected documents">
+      @for (file of files(); track $index; let index = $index) {
+        <li class="file-row">
+          <span class="material-symbols-outlined" aria-hidden="true"> description </span>
+
+          <div class="file-details">
+            <strong>{{ file.name }}</strong>
+            <span>{{ formatSize(file.size) }}</span>
+          </div>
+
+          <button
+            type="button"
+            [disabled]="disabled()"
+            [attr.aria-label]="'Remove ' + file.name"
+            (click)="removeFile(index)"
+          >
+            Remove
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>

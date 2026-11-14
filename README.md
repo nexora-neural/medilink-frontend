@@ -265,3 +265,42 @@ revocation and grant-list contract behavior.
 - Production build passed with size warnings:
   initial bundle 859.04 kB and doctor access styles 7.93 kB.
 - Git whitespace checks passed.
+
+
+## Private document controls ML-24
+
+### Scope
+
+- Added reusable document upload and download UI controls.
+- Professional verification uses the shared upload control.
+- File selection checks extensions, browser-reported MIME types,
+  empty files, and the 10 MiB (10,485,760 bytes) per-file limit.
+- Invalid replacements preserve the previous valid selection.
+- Selected files can be removed and selected again.
+- Download controls support empty, loading, disabled, error,
+  retry, and status-message states.
+- Download requests emit a document record ID.
+- The Documents tab includes a clearly labelled fictional download preview.
+- No files are uploaded to or downloaded from the server by these controls.
+
+### Integration boundary
+
+ML-43 connects the controls to the real API. Detected content-type
+validation, readability checks, private storage, and authorization
+on every retrieval remain backend/integration responsibilities.
+Browser checks do not establish file safety or access permission.
+
+### Verification
+
+- Lint and TypeScript checks passed.
+- All 175 tests passed across 55 test files.
+- Upload tests cover the exact 10 MiB boundary, oversized and empty
+  files, unsupported extensions, MIME mismatch, selection preservation,
+  removal, and disabled controls.
+- Download tests cover request events, empty/loading/disabled states,
+  errors, retry, and status messages.
+- Manually checked selection/removal and download preview states.
+- Checked the layout at 375px width.
+- Production build passed with bundle and component-style warnings.
+- Initial bundle size: 848.90 kB against a 500 kB warning budget.
+- Professional verification styles: 7.71 kB against a 4 kB warning budget.

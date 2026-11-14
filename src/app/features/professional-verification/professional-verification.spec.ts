@@ -46,23 +46,68 @@ describe('ProfessionalVerification', () => {
     expect(component.submittedSnapshot?.documents).toEqual(['evidence.pdf']);
   });
 
-  it('rejects unsupported files', () => {
-    const input = document.createElement('input');
-    Object.defineProperty(input, 'files', { value: [new File(['x'], 'invalid.exe')] });
-    component.onFileSelected({ target: input } as unknown as Event);
+  it('shows an error when an unsupported document is selected', () => {
+    const documentsButton = Array.from(fixture.nativeElement.querySelectorAll('nav button')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Documents',
+    ) as HTMLButtonElement | undefined;
+
+    expect(documentsButton).toBeDefined();
+    documentsButton!.click();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#evidence-document') as HTMLInputElement;
+
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [new File(['x'], 'invalid.exe')],
+    });
+
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
     expect(component.selectedFiles).toHaveLength(0);
-    expect(component.fileError).toContain('PDF');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Choose PDF, JPEG or PNG files.',
+    );
   });
 
-  it('accepts multiple supported files and removes only the selected file', () => {
-    const input = document.createElement('input');
+  it('updates the application documents when files are selected and removed', () => {
+    const documentsButton = Array.from(fixture.nativeElement.querySelectorAll('nav button')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Documents',
+    ) as HTMLButtonElement | undefined;
+
+    expect(documentsButton).toBeDefined();
+    documentsButton!.click();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#evidence-document') as HTMLInputElement;
+
     Object.defineProperty(input, 'files', {
-      value: [new File(['a'], 'identity.pdf'), new File(['b'], 'registration.png')],
+      configurable: true,
+      value: [
+        new File(['a'], 'identity.pdf', { type: 'application/pdf' }),
+        new File(['b'], 'registration.png', { type: 'image/png' }),
+      ],
     });
-    component.onFileSelected({ target: input } as unknown as Event);
-    expect(component.selectedFiles).toHaveLength(2);
-    component.removeSelectedFile(0);
+
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.selectedFiles.map((file) => file.name)).toEqual([
+      'identity.pdf',
+      'registration.png',
+    ]);
+
+    const removeButton = fixture.nativeElement.querySelector(
+      'button[aria-label="Remove identity.pdf"]',
+    ) as HTMLButtonElement;
+
+    expect(removeButton).toBeTruthy();
+    removeButton.click();
+    fixture.detectChanges();
+
     expect(component.selectedFiles.map((file) => file.name)).toEqual(['registration.png']);
+    expect(fixture.nativeElement.querySelectorAll('.file-row')).toHaveLength(1);
   });
 
   it('reports failed preview submissions and permits retry', async () => {

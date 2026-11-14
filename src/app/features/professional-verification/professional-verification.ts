@@ -1,5 +1,7 @@
 import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DocumentUpload } from '../../shared/components/document-upload/document-upload';
+import { DocumentDownload } from '../../shared/components/document-download/document-download';
 
 const nonblank = (control: AbstractControl) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
@@ -7,7 +9,7 @@ const nonblank = (control: AbstractControl) =>
 @Component({
   selector: 'app-professional-verification',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DocumentUpload, DocumentDownload],
   templateUrl: './professional-verification.html',
   styleUrl: './professional-verification.scss',
 })
@@ -49,42 +51,31 @@ export class ProfessionalVerification {
   submitted = false;
   busy = false;
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
+  readonly sampleDocument = {
+    id: 'sample-evidence',
+    name: 'Sample supporting document.pdf',
+  };
 
-    this.fileError = '';
-    this.selectedFiles = [];
+  downloadPreviewState: 'ready' | 'loading' | 'empty' | 'error' = 'ready';
+  downloadPreviewMessage = '';
 
-    if (!files.length) return;
+  setDownloadPreviewState(state: 'ready' | 'loading' | 'empty' | 'error'): void {
+    this.downloadPreviewState = state;
+    this.downloadPreviewMessage = '';
+  }
 
-    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-    if (
-      files.some(
-        (file) => !allowedExtensions.includes(file.name.split('.').pop()?.toLowerCase() ?? ''),
-      )
-    ) {
-      this.fileError = 'Please upload a PDF, JPG or PNG file.';
-      input.value = '';
-      return;
-    }
+  previewDownload(_documentId: string): void {
+    this.downloadPreviewState = 'ready';
+    this.downloadPreviewMessage = 'Preview only. No server document was retrieved or downloaded.';
+  }
 
-    if (files.some((file) => file.size > 10 * 1024 * 1024)) {
-      this.fileError = 'File size must be 10 MB or less.';
-      input.value = '';
+  onDocumentsChanged(files: File[]): void {
+    if (this.busy) {
       return;
     }
 
     this.selectedFiles = files;
-  }
-
-  removeSelectedFile(index: number): void {
-    this.selectedFiles = this.selectedFiles.filter((_, itemIndex) => itemIndex !== index);
     this.fileError = '';
-
-    const input = document.getElementById('evidence-document') as HTMLInputElement | null;
-
-    if (input) input.value = '';
   }
 
   async submitApplication(): Promise<void> {
