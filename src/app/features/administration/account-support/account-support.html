@@ -6,9 +6,8 @@
   </header>
 
   <p class="demo-notice">
-    Preview with fictional accounts. Changes apply only to this page and reset when it reloads.
+    Account status changes are saved to the backend. Enter a reason and confirm each change.
   </p>
-
   <form class="search-panel" (submit)="$event.preventDefault(); search()">
     <label for="account-search">Search accounts</label>
 
@@ -23,7 +22,13 @@
         aria-describedby="search-help"
       />
 
-      <button class="primary-button" type="submit">Search</button>
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="loading() || saving() || pendingAccount() !== null"
+      >
+        Search
+      </button>
     </div>
 
     <p id="search-help" class="help-text">
@@ -55,9 +60,9 @@
       </h2>
 
       <p>
-        You are changing the demo account status for
+        You are changing the account status for
         <strong>{{ account.name }}</strong
-        >.
+        >. This change will be saved.
       </p>
 
       <label for="action-reason">Reason for action *</label>
@@ -66,6 +71,7 @@
         [formControl]="reasonControl"
         rows="3"
         maxlength="1000"
+        [readOnly]="saving()"
         [attr.aria-invalid]="reasonControl.invalid && reasonControl.touched"
         [attr.aria-describedby]="
           reasonControl.invalid && reasonControl.touched ? 'action-reason-error' : null
@@ -77,12 +83,29 @@
         </p>
       }
 
+      @if (actionError()) {
+        <p class="error-text" role="alert">{{ actionError() }}</p>
+      }
+
       <div class="confirmation-actions">
-        <button cdkFocusInitial class="secondary-button" type="button" (click)="cancelChange()">
+        <button
+          cdkFocusInitial
+          class="secondary-button"
+          type="button"
+          [disabled]="saving()"
+          (click)="cancelChange()"
+        >
           Cancel
         </button>
 
-        <button class="primary-button" type="button" (click)="confirmChange()">Confirm</button>
+        <button
+          class="primary-button"
+          type="button"
+          [disabled]="saving()"
+          (click)="confirmChange()"
+        >
+          {{ saving() ? 'Saving...' : 'Confirm' }}
+        </button>
       </div>
     </section>
   }
@@ -103,8 +126,37 @@
   <section class="results" aria-labelledby="results-title" [hidden]="loading() || !!searchError()">
     <div class="results-header">
       <h2 id="results-title">Accounts</h2>
-      <span>{{ filteredAccounts().length }} found</span>
+      <span> {{ filteredAccounts().length }} shown / {{ totalAccounts() }} matching accounts </span>
     </div>
+
+    @if (searched()) {
+      <nav class="confirmation-actions" aria-label="Account search pages">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="loading() || saving() || pendingAccount() !== null || currentPage() <= 1"
+          (click)="search(currentPage() - 1)"
+        >
+          Previous
+        </button>
+
+        <span aria-live="polite">Page {{ currentPage() }}</span>
+
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="
+            loading() ||
+            saving() ||
+            pendingAccount() !== null ||
+            currentPage() * pageSize >= totalAccounts()
+          "
+          (click)="search(currentPage() + 1)"
+        >
+          Next
+        </button>
+      </nav>
+    }
 
     @for (account of filteredAccounts(); track account.id) {
       <article class="account-card">
@@ -115,20 +167,26 @@
         </div>
 
         <span class="status" [class.suspended]="account.status === 'suspended'">
-          {{ account.status === 'active' ? 'Active' : 'Suspended' }}
+          {{ account.status }}
         </span>
 
-        <button
-          class="secondary-button"
-          type="button"
-          [attr.aria-disabled]="pendingAccount() !== null"
-          [attr.aria-label]="
-            (account.status === 'active' ? 'Suspend ' : 'Reactivate ') + account.name
-          "
-          (click)="requestChange(account)"
-        >
-          {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
-        </button>
+        @if (statusAction(account.status) !== null) {
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="loading() || saving() || pendingAccount() !== null"
+            [attr.aria-label]="
+              (account.status === 'active' ? 'Suspend ' : 'Reactivate ') + account.name
+            "
+            (click)="requestChange(account)"
+          >
+            {{ account.status === 'active' ? 'Suspend' : 'Reactivate' }}
+          </button>
+        } @else {
+          <span class="help-text">
+            No suspend/reactivate action is available for this status.
+          </span>
+        }
       </article>
     } @empty {
       <div class="empty-state" role="status">

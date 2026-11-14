@@ -1,15 +1,45 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccountSupportApiService, SupportUser } from '../account-support-api.service';
 import { AccountSupport } from './account-support';
 
-describe('AccountSupport', () => {
+describe('AccountSupport API integration', () => {
   let component: AccountSupport;
   let fixture: ComponentFixture<AccountSupport>;
 
+  const user: SupportUser = {
+    id: 'test-user-001',
+    display_name: 'Sample Patient',
+    email: 'patient@example.com',
+    phone: null,
+    status: 'active',
+    is_admin: false,
+    created_at: '2026-11-01T00:00:00Z',
+    updated_at: '2026-11-01T00:00:00Z',
+  };
+
+  let api: {
+    searchUsers: ReturnType<typeof vi.fn<AccountSupportApiService['searchUsers']>>;
+    updateStatus: ReturnType<typeof vi.fn<AccountSupportApiService['updateStatus']>>;
+  };
+
   beforeEach(async () => {
+    api = {
+      searchUsers: vi.fn<AccountSupportApiService['searchUsers']>(),
+      updateStatus: vi.fn<AccountSupportApiService['updateStatus']>(),
+    };
+
+    api.searchUsers.mockResolvedValue({
+      items: [{ ...user }],
+      page: 1,
+      page_size: 20,
+      total: 1,
+    });
+
     await TestBed.configureTestingModule({
       imports: [AccountSupport],
+      providers: [{ provide: AccountSupportApiService, useValue: api }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AccountSupport);
@@ -17,149 +47,241 @@ describe('AccountSupport', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('finds an account using a name with spaces and different casing', async () => {
-    component.searchControl.setValue('  ALEX  ');
+  it('sends a trimmed query and displays backend results', async () => {
+    component.searchControl.setValue('  Sample  ');
 
     await component.search();
     fixture.detectChanges();
 
-    const cards = fixture.nativeElement.querySelectorAll('.account-card');
-
-    expect(cards.length).toBe(1);
-    expect(cards[0].textContent).toContain('Alex Morgan');
+    expect(api.searchUsers).toHaveBeenCalledWith('Sample', 1);
+    expect(component.totalAccounts()).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('Sample Patient');
+    expect(fixture.nativeElement.querySelectorAll('.account-card').length).toBe(1);
   });
 
-  it('shows an empty message when no accounts match', async () => {
-    component.searchControl.setValue('zzzz');
+  it('uses the submitted query when loading another page', async () => {
+    component.searchControl.setValue('Sample');
+    await component.search();
+
+    component.searchControl.setValue('Unsubmitted edit');
+    await component.search(2);
+
+    expect(api.searchUsers).toHaveBeenLastCalledWith('Sample', 2);
+  });
+
+  it('shows an empty state for an empty API response', async () => {
+    api.searchUsers.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 20,
+      total: 0,
+    });
 
     await component.search();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No accounts found');
-    expect(fixture.nativeElement.querySelectorAll('.account-card').length).toBe(0);
+    expect(component.accounts()).toEqual([]);
   });
 
-  it('does not change account status when cancelled', () => {
-    const account = component.accounts()[0];
+  it('clears stale results on search failure and can retry', async () => {
+    await component.search();
+    api.searchUsers.mockRejectedValueOnce(new Error('Unavailable'));
 
-    component.requestChange(account);
-    component.cancelChange();
+    await component.search();
+    fixture.detectChanges();
 
-    expect(component.accounts()[0].status).toBe('active');
-    expect(component.pendingAccount()).toBeNull();
+    expect(component.accounts()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Unable to load accounts');
+
+    await component.search();
+
+    expect(component.searchError()).toBe('');
+    expect(component.accounts()).toHaveLength(1);
   });
 
-  it('suspends and then reactivates an account after confirmation', () => {
-    component.requestChange(component.accounts()[0]);
-    component.reasonControl.setValue('Review required');
-    component.confirmChange();
-
-    expect(component.accounts()[0].status).toBe('suspended');
-
-    component.requestChange(component.accounts()[0]);
-    component.reasonControl.setValue('Review complete');
-    component.confirmChange();
-
-    expect(component.accounts()[0].status).toBe('active');
-  });
-
-  it('requires a nonblank reason before changing an account status', () => {
-    component.requestChange(component.accounts()[0]);
-    component.reasonControl.setValue('   ');
-    component.confirmChange();
-    expect(component.accounts()[0].status).toBe('active');
-    expect(component.reasonControl.invalid).toBe(true);
-  });
-
-  it('rejects a search longer than 100 characters', async () => {
+  it('does not call the API for an invalid search', async () => {
     component.searchControl.setValue('a'.repeat(101));
 
     await component.search();
-    fixture.detectChanges();
 
     expect(component.searchControl.invalid).toBe(true);
-    expect(component.query()).toBe('');
-    expect(fixture.nativeElement.textContent).toContain('Use no more than 100 characters.');
+    expect(api.searchUsers).not.toHaveBeenCalled();
   });
 
-  it('shows loading while the account request is pending', async () => {
-    let finishRequest!: (accounts: ReturnType<AccountSupport['accounts']>) => void;
+  it('does not save when confirmation is cancelled', async () => {
+    await component.search();
 
-    const loader = vi
-      .spyOn(
-        component as unknown as {
-          loadAccounts: () => Promise<ReturnType<AccountSupport['accounts']>>;
-        },
-        'loadAccounts',
-      )
-      .mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            finishRequest = resolve;
-          }),
-      );
+    component.requestChange(component.accounts()[0]);
+    component.cancelChange();
+    await component.confirmChange();
 
-    const search = component.search();
-    fixture.detectChanges();
-
-    expect(component.loading()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Searching accounts');
-
-    finishRequest(component.accounts());
-    await search;
-    fixture.detectChanges();
-
-    expect(component.loading()).toBe(false);
-    expect(loader).toHaveBeenCalledOnce();
+    expect(api.updateStatus).not.toHaveBeenCalled();
+    expect(component.pendingAccount()).toBeNull();
+    expect(component.accounts()[0].status).toBe('active');
   });
 
-  it('shows an error and allows a successful retry', async () => {
-    const loader = vi
-      .spyOn(
-        component as unknown as {
-          loadAccounts: () => Promise<ReturnType<AccountSupport['accounts']>>;
+  it('requires a nonblank reason', async () => {
+    await component.search();
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('   ');
+    await component.confirmChange();
+
+    expect(api.updateStatus).not.toHaveBeenCalled();
+    expect(component.reasonControl.invalid).toBe(true);
+  });
+
+  it('suspends and reactivates using confirmed API responses', async () => {
+    await component.search();
+
+    api.updateStatus.mockResolvedValueOnce({ ...user, status: 'suspended' });
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('  Review required  ');
+    await component.confirmChange();
+
+    expect(api.updateStatus).toHaveBeenLastCalledWith(user.id, 'suspended', 'Review required');
+    expect(component.accounts()[0].status).toBe('suspended');
+    expect(component.pendingAccount()).toBeNull();
+
+    api.updateStatus.mockResolvedValueOnce({ ...user, status: 'active' });
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review complete');
+    await component.confirmChange();
+
+    expect(api.updateStatus).toHaveBeenLastCalledWith(user.id, 'active', 'Review complete');
+    expect(component.accounts()[0].status).toBe('active');
+  });
+
+  it('shows permission denial without changing account status', async () => {
+    await component.search();
+
+    api.updateStatus.mockRejectedValue(
+      new HttpErrorResponse({
+        status: 403,
+        error: {
+          message: 'Delegated Admins cannot modify privileged accounts.',
         },
-        'loadAccounts',
-      )
-      .mockRejectedValueOnce(new Error('Request failed'));
+      }),
+    );
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Permission test');
+    await component.confirmChange();
+    fixture.detectChanges();
+
+    expect(component.accounts()[0].status).toBe('active');
+    expect(component.message()).toBe('');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Delegated Admins cannot modify privileged accounts.',
+    );
+    expect(component.saving()).toBe(false);
+  });
+
+  it('prevents duplicate saves while a request is pending', async () => {
+    await component.search();
+
+    let finish!: (value: SupportUser) => void;
+    api.updateStatus.mockImplementation(
+      () => new Promise<SupportUser>((resolve) => (finish = resolve)),
+    );
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review required');
+
+    const saving = component.confirmChange();
+    await component.confirmChange();
+
+    expect(component.saving()).toBe(true);
+    expect(api.updateStatus).toHaveBeenCalledOnce();
+    expect(component.accounts()[0].status).toBe('active');
+
+    finish({ ...user, status: 'suspended' });
+    await saving;
+
+    expect(component.saving()).toBe(false);
+    expect(component.accounts()[0].status).toBe('suspended');
+  });
+
+  it('does not show success when a save result is uncertain', async () => {
+    await component.search();
+
+    api.updateStatus.mockRejectedValue(new HttpErrorResponse({ status: 0 }));
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review required');
+    await component.confirmChange();
+
+    expect(component.accounts()[0].status).toBe('active');
+    expect(component.message()).toBe('');
+    expect(component.actionError()).toContain('result could not be confirmed');
+  });
+  for (const status of ['pending', 'disabled'] as const) {
+    it(`does not offer or request a status change for ${status} accounts`, async () => {
+      api.searchUsers.mockResolvedValue({
+        items: [{ ...user, status }],
+        page: 1,
+        page_size: 20,
+        total: 1,
+      });
+
+      await component.search();
+      fixture.detectChanges();
+
+      const card: HTMLElement = fixture.nativeElement.querySelector('.account-card');
+
+      expect(card.textContent).toContain(status);
+      expect(card.querySelector('button')).toBeNull();
+
+      component.requestChange(component.accounts()[0]);
+      component.reasonControl.setValue('Status change test');
+      await component.confirmChange();
+
+      expect(component.pendingAccount()).toBeNull();
+      expect(api.updateStatus).not.toHaveBeenCalled();
+      expect(component.accounts()[0].status).toBe(status);
+    });
+
+    it(`blocks submission if a pending confirmation becomes ${status}`, async () => {
+      await component.search();
+
+      component.requestChange(component.accounts()[0]);
+      component.reasonControl.setValue('Review required');
+
+      const account = component.pendingAccount()!;
+      component.pendingAccount.set({ ...account, status });
+
+      await component.confirmChange();
+
+      expect(api.updateStatus).not.toHaveBeenCalled();
+      expect(component.message()).toBe('');
+      expect(component.actionError()).toContain('Only active accounts can be suspended');
+      expect(component.saving()).toBe(false);
+    });
+  }
+
+  it('shows Suspend for active accounts and Reactivate for suspended accounts', async () => {
+    api.searchUsers.mockResolvedValue({
+      items: [
+        { ...user },
+        {
+          ...user,
+          id: 'suspended-user',
+          display_name: 'Suspended Patient',
+          status: 'suspended',
+        },
+      ],
+      page: 1,
+      page_size: 20,
+      total: 2,
+    });
 
     await component.search();
     fixture.detectChanges();
 
-    expect(component.loading()).toBe(false);
-    expect(fixture.nativeElement.textContent).toContain('Unable to load accounts');
+    const cards: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.account-card');
 
-    loader.mockResolvedValue(component.accounts());
-
-    const retryButton = fixture.nativeElement.querySelector(
-      'app-ui-state button',
-    ) as HTMLButtonElement;
-
-    expect(retryButton).not.toBeNull();
-    retryButton.click();
-
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(component.searchError()).toBe('');
-    expect(fixture.nativeElement.querySelector('app-ui-state')).toBeNull();
-  });
-
-  it('prevents a normal browser form submission', async () => {
-    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
-    const event = new Event('submit', {
-      bubbles: true,
-      cancelable: true,
-    });
-
-    form.dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(true);
-
-    await fixture.whenStable();
+    expect(cards[0].querySelector('button')?.textContent?.trim()).toBe('Suspend');
+    expect(cards[1].querySelector('button')?.textContent?.trim()).toBe('Reactivate');
   });
 });

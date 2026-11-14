@@ -233,6 +233,34 @@ authorization matrix.
 - Automated routing tests cover Admin session restoration,
   signed-out access, and denial for other roles.
 
+## Account support integration (ML-42)
+
+Account support and Admin role management use the authenticated backend API.
+
+- Account support: `/workspace/admin/account-support`
+- Admin role management: `/super-admin/admin-accounts`
+- Search supports server pagination.
+- Status changes require a reason and explicit confirmation.
+- Only Super Admin can appoint or revoke Admin access.
+- Backend permission and MFA requirements remain enforced.
+- Admin access does not grant clinical access.
+- Search results include the current Admin assignment through the backend `is_admin` field.
+- Admin actions follow the assignment state; only active non-Admin accounts can be appointed.
+- Successful Admin changes reload the assignment state from the backend.
+- Account support offers suspension for active accounts and reactivation for suspended accounts.
+- Pending and disabled accounts have no suspend/reactivate action in this UI.
+
+### Verification
+
+Manually checked account search, status changes, status persistence after
+refresh, permission-denied responses, keyboard navigation, and mobile layouts.
+
+Component and service tests cover mocked success and failure responses.
+
+Live Admin appointment/revocation success testing remains pending because
+an MFA-authenticated Super Admin test session is unavailable.
+MFA enrollment and login implementation are outside this change.
+
 ## Doctor access grants preview — ML-49
 
 - Added record-category selection using the five existing consent categories.
