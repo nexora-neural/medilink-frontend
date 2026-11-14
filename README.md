@@ -232,3 +232,28 @@ authorization matrix.
 - Checked the mobile layout at 375px width.
 - Automated routing tests cover Admin session restoration,
   signed-out access, and denial for other roles.
+
+
+## Account support integration (ML-42)
+
+Account support and Admin role management use the authenticated backend API.
+
+- Account support: `/workspace/admin/account-support`
+- Admin role management: `/super-admin/admin-accounts`
+- Search supports server pagination.
+- Status changes require a reason and explicit confirmation.
+- Only Super Admin can appoint or revoke Admin access.
+- Backend permission and MFA requirements remain enforced.
+- Admin access does not grant clinical access.
+- Search results do not include Admin role assignments.
+
+### Verification
+
+Manually checked account search, status changes, status persistence after
+refresh, permission-denied responses, keyboard navigation, and mobile layouts.
+
+Component and service tests cover mocked success and failure responses.
+
+Live Admin appointment/revocation success testing remains pending because
+an MFA-authenticated Super Admin test session is unavailable.
+MFA enrollment and login implementation are outside this change.

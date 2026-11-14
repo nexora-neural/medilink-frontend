@@ -3,23 +3,12 @@
     <p class="eyebrow">Super Admin</p>
     <h1 id="page-title">Admin accounts and permissions</h1>
     <p>Manage delegated Admin access for account support.</p>
-    @if (canManage()) {
-      <button class="primary" type="button" (click)="appointing.set(!appointing())">
-        {{ appointing() ? 'Back to accounts' : '+ Appoint admin' }}
-      </button>
-    }
   </header>
 
   @if (canManage()) {
-    @if (appointing()) {
-      <section class="panel" aria-labelledby="appoint-title">
-        <h2 id="appoint-title">Appoint an admin</h2>
-        <p>Choose an existing account below, then provide a reason for the appointment.</p>
-      </section>
-    }
     <p class="notice">
-      Fictional preview accounts. Changes reset when this page reloads. Admin access does not grant
-      access to clinical records.
+      Only a Super Admin signed in with multi-factor authentication can appoint or revoke Admin
+      access. Admin access does not grant clinical access.
     </p>
 
     <form class="panel" (submit)="$event.preventDefault(); search()">
@@ -36,7 +25,13 @@
           [attr.aria-invalid]="searchControl.invalid && searchControl.touched"
         />
 
-        <button class="primary" type="submit">Search</button>
+        <button
+          class="primary"
+          type="submit"
+          [disabled]="loading() || saving() || pendingAccount() !== null"
+        >
+          Search
+        </button>
       </div>
 
       <p id="search-help" class="help-text">Only Super Admin can grant or revoke Admin access.</p>
@@ -61,7 +56,7 @@
         (keydown.escape)="cancelChange(); $event.stopPropagation()"
       >
         <h2 id="confirm-title">
-          {{ account.isAdmin ? 'Remove Admin access?' : 'Grant Admin access?' }}
+          {{ pendingAction() === 'revoke' ? 'Revoke Admin access?' : 'Appoint as Admin?' }}
         </h2>
 
         <p>
@@ -73,6 +68,7 @@
         <textarea
           id="admin-action-reason"
           [formControl]="reasonControl"
+          [readOnly]="saving()"
           rows="3"
           maxlength="1000"
           [attr.aria-invalid]="reasonControl.invalid && reasonControl.touched"
@@ -86,15 +82,24 @@
 
         <p>
           {{
-            account.isAdmin
+            pendingAction() === 'revoke'
               ? 'This removes delegated Admin access. The account remains.'
               : 'This grants delegated Admin access, without clinical access.'
           }}
         </p>
 
+        @if (actionError()) {
+          <p class="error" role="alert">{{ actionError() }}</p>
+        }
+
         <div class="actions">
-          <button type="button" cdkFocusInitial (click)="cancelChange()">Cancel</button>
-          <button class="primary" type="button" (click)="confirmChange()">Confirm</button>
+          <button type="button" cdkFocusInitial [disabled]="saving()" (click)="cancelChange()">
+            Cancel
+          </button>
+
+          <button class="primary" type="button" [disabled]="saving()" (click)="confirmChange()">
+            {{ saving() ? 'Saving...' : 'Confirm' }}
+          </button>
         </div>
       </section>
     }
@@ -115,8 +120,36 @@
     <section class="panel" aria-labelledby="accounts-title" [hidden]="loading() || !!searchError()">
       <div class="results-header">
         <h2 id="accounts-title">Accounts</h2>
-        <span>{{ filteredAccounts().length }} found</span>
+        <span>
+          {{ filteredAccounts().length }} shown / {{ totalAccounts() }} matching accounts
+        </span>
       </div>
+      @if (searched()) {
+        <nav class="actions" aria-label="Account search pages">
+          <button
+            type="button"
+            [disabled]="loading() || saving() || pendingAccount() !== null || currentPage() <= 1"
+            (click)="search(currentPage() - 1)"
+          >
+            Previous
+          </button>
+
+          <span aria-live="polite">Page {{ currentPage() }}</span>
+
+          <button
+            type="button"
+            [disabled]="
+              loading() ||
+              saving() ||
+              pendingAccount() !== null ||
+              currentPage() * pageSize >= totalAccounts()
+            "
+            (click)="search(currentPage() + 1)"
+          >
+            Next
+          </button>
+        </nav>
+      }
 
       @for (account of filteredAccounts(); track account.id) {
         <article class="account">
@@ -126,84 +159,27 @@
             <p class="help-text">{{ account.id }}</p>
           </div>
 
-          <button type="button" (click)="showDetails(account)">
-            {{ selectedDetails()?.id === account.id ? 'Hide details' : 'View details' }}
-          </button>
+          <span class="badge">Admin role not available in search results</span>
+          <div class="actions">
+            <button
+              type="button"
+              [disabled]="loading() || saving() || pendingAccount() !== null"
+              [attr.aria-label]="'Appoint ' + account.name + ' as Admin'"
+              (click)="requestChange(account, 'appoint')"
+            >
+              Appoint Admin
+            </button>
 
-          <span class="badge" [class.admin]="account.isAdmin">
-            {{ account.isAdmin ? 'Admin' : 'No Admin access' }}
-          </span>
-
-          <button
-            type="button"
-            [attr.aria-disabled]="pendingAccount() !== null"
-            [attr.aria-label]="
-              (account.isAdmin ? 'Remove Admin access from ' : 'Grant Admin access to ') +
-              account.name
-            "
-            (click)="requestChange(account)"
-          >
-            {{ account.isAdmin ? 'Remove access' : 'Grant access' }}
-          </button>
-        </article>
-        @if (selectedDetails()?.id === account.id) {
-          <div class="account-detail">
-            @if (account.isAdmin) {
-              <p>
-                Preview only: changes are kept on this page and are not enforced or sent to the
-                server.
-              </p>
-              <label [for]="'permissions-' + account.id">Delegated permissions</label>
-              <input
-                [id]="'permissions-' + account.id"
-                [formControl]="permissionsControl"
-                maxlength="500"
-              />
-              @if (permissionsControl.invalid && permissionsControl.touched) {
-                <p class="error" role="alert">Enter delegated permissions.</p>
-              }
-              <label [for]="'permissions-reason-' + account.id">Reason for action *</label>
-              <textarea
-                [id]="'permissions-reason-' + account.id"
-                [formControl]="permissionsReasonControl"
-                rows="3"
-                maxlength="1000"
-              ></textarea>
-              @if (permissionsReasonControl.invalid && permissionsReasonControl.touched) {
-                <p class="error" role="alert">Enter a reason for this change.</p>
-              }
-              <button class="primary" type="button" (click)="reviewPermissions()">
-                Review permissions
-              </button>
-              @if (confirmingPermissions()) {
-                <section
-                  class="confirmation"
-                  aria-labelledby="permissions-confirm-title"
-                  cdkTrapFocus
-                  [cdkTrapFocusAutoCapture]="true"
-                  (keydown.escape)="confirmingPermissions.set(false); $event.stopPropagation()"
-                >
-                  <h2 id="permissions-confirm-title">Confirm permission changes?</h2>
-                  <p>Update preview permissions for {{ account.name }}?</p>
-                  <div class="actions">
-                    <button
-                      cdkFocusInitial
-                      type="button"
-                      (click)="confirmingPermissions.set(false)"
-                    >
-                      Back
-                    </button>
-                    <button class="primary" type="button" (click)="savePermissions()">
-                      Confirm
-                    </button>
-                  </div>
-                </section>
-              }
-            } @else {
-              <p>This account does not have Admin access.</p>
-            }
+            <button
+              type="button"
+              [disabled]="loading() || saving() || pendingAccount() !== null"
+              [attr.aria-label]="'Revoke Admin access from ' + account.name"
+              (click)="requestChange(account, 'revoke')"
+            >
+              Revoke Admin
+            </button>
           </div>
-        }
+        </article>
       } @empty {
         <div class="empty" role="status">
           <h3>No accounts found</h3>
