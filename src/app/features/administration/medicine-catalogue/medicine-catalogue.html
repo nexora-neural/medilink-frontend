@@ -1,0 +1,266 @@
+
+<section class="catalogue-page" aria-labelledby="catalogue-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">ADMIN WORKSPACE</p>
+      <h1 id="catalogue-title">Medicine catalogue</h1>
+      <p class="subtitle">
+        Manage the sample medicine catalogue and maintain medicine information.
+      </p>
+    </div>
+
+    <div class="total-card">
+      <span class="material-symbols-outlined" aria-hidden="true">medication</span>
+      <div>
+        <strong>{{ totalMedicines() }}</strong>
+        <span>Catalogue items</span>
+      </div>
+    </div>
+  </header>
+
+  <aside class="preview-notice">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      Sample catalogue mode. Changes are held locally for this demonstration
+      and are not saved to the server.
+    </p>
+  </aside>
+
+  <section class="form-card" aria-labelledby="form-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="form-title">Add a medicine</h2>
+        <p>Enter the medicine information in the fields below.</p>
+      </div>
+      <span class="required-note">* Required fields</span>
+    </div>
+
+    @if (successMessage()) {
+      <div class="success-message" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+        {{ successMessage() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="addMedicine()" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label for="generic-name">Generic name <span>*</span></label>
+          <input
+            id="generic-name"
+            type="text"
+            formControlName="genericName"
+            placeholder="e.g. Paracetamol"
+            autocomplete="off"
+            [attr.aria-invalid]="hasError(genericNameControl)"
+            aria-describedby="generic-error"
+          />
+          @if (hasError(genericNameControl)) {
+            <small class="field-error" id="generic-error">
+              @if (genericNameControl.hasError('required')) {
+                Generic name is required.
+              } @else if (genericNameControl.hasError('minlength')) {
+                Enter at least 2 characters.
+              } @else {
+                Generic name must be 100 characters or fewer.
+              }
+            </small>
+          }
+        </div>
+
+        <div class="field">
+          <label for="brand-name">Brand name <span>*</span></label>
+          <input
+            id="brand-name"
+            type="text"
+            formControlName="brand"
+            placeholder="e.g. Panadol"
+            autocomplete="off"
+            [attr.aria-invalid]="hasError(brandControl)"
+            aria-describedby="brand-error"
+          />
+          @if (hasError(brandControl)) {
+            <small class="field-error" id="brand-error">
+              @if (brandControl.hasError('required')) {
+                Brand name is required.
+              } @else if (brandControl.hasError('minlength')) {
+                Enter at least 2 characters.
+              } @else {
+                Brand name must be 100 characters or fewer.
+              }
+            </small>
+          }
+        </div>
+
+        <div class="field">
+          <label for="strength">Strength <span>*</span></label>
+          <input
+            id="strength"
+            type="text"
+            formControlName="strength"
+            placeholder="e.g. 500 mg"
+            [attr.aria-invalid]="hasError(strengthControl)"
+            aria-describedby="strength-error"
+          />
+          @if (hasError(strengthControl)) {
+            <small class="field-error" id="strength-error">
+              @if (strengthControl.hasError('required')) {
+                Strength is required.
+              } @else {
+                Strength must be 50 characters or fewer.
+              }
+            </small>
+          }
+        </div>
+
+        <div class="field">
+          <label for="dosage-form">Dosage form <span>*</span></label>
+          <select
+            id="dosage-form"
+            formControlName="dosageForm"
+            [attr.aria-invalid]="hasError(dosageFormControl)"
+            aria-describedby="form-error"
+          >
+            <option value="">Select dosage form</option>
+            <option value="Tablet">Tablet</option>
+            <option value="Capsule">Capsule</option>
+            <option value="Syrup">Syrup</option>
+            <option value="Suspension">Suspension</option>
+            <option value="Injection">Injection</option>
+            <option value="Inhaler">Inhaler</option>
+            <option value="Cream">Cream</option>
+            <option value="Ointment">Ointment</option>
+            <option value="Drops">Drops</option>
+            <option value="Powder">Powder</option>
+          </select>
+          @if (hasError(dosageFormControl)) {
+            <small class="field-error" id="form-error">
+              Please select a dosage form.
+            </small>
+          }
+        </div>
+
+        <div class="field full-width">
+          <label for="category">Category <span>*</span></label>
+          <select
+            id="category"
+            formControlName="category"
+            [attr.aria-invalid]="hasError(categoryControl)"
+            aria-describedby="category-error"
+          >
+            <option value="">Select category</option>
+            <option value="Pain relief">Pain relief</option>
+            <option value="Antibiotic">Antibiotic</option>
+            <option value="Antihistamine">Antihistamine</option>
+            <option value="Antidiabetic">Antidiabetic</option>
+            <option value="Gastrointestinal">Gastrointestinal</option>
+            <option value="Respiratory">Respiratory</option>
+            <option value="Cardiovascular">Cardiovascular</option>
+            <option value="Other">Other</option>
+          </select>
+          @if (hasError(categoryControl)) {
+            <small class="field-error" id="category-error">
+              Please select a category.
+            </small>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="clearForm()">
+          Clear form
+        </button>
+        <button class="primary-button" type="submit">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          Add medicine
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="catalogue-section" aria-labelledby="list-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="list-title">Catalogue entries</h2>
+        <p>Medicine records currently available in this sample catalogue.</p>
+      </div>
+      <span class="entry-count">{{ totalMedicines() }} items</span>
+    </div>
+
+    <div class="preview-controls" aria-label="Preview state controls">
+      <span>Preview states</span>
+      <button type="button" (click)="setPreviewState('ready')">Ready</button>
+      <button type="button" (click)="setPreviewState('loading')">Loading</button>
+      <button type="button" (click)="setPreviewState('empty')">Empty</button>
+      <button type="button" (click)="setPreviewState('error')">Error</button>
+    </div>
+
+    @switch (state()) {
+      @case ('loading') {
+        <div class="state-panel" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+          <h3>Loading catalogue</h3>
+          <p>Please wait while the medicine records are loaded.</p>
+        </div>
+      }
+
+      @case ('empty') {
+        <div class="state-panel" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+          <h3>No medicines available</h3>
+          <p>There are currently no records to display in this preview.</p>
+        </div>
+      }
+
+      @case ('error') {
+        <div class="state-panel" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error_outline</span>
+          <h3>Unable to load catalogue</h3>
+          <p>Something went wrong in this sample preview.</p>
+          <button class="primary-button" type="button" (click)="retry()">
+            Try again
+          </button>
+        </div>
+      }
+
+      @case ('ready') {
+        @if (medicines().length > 0) {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+              <tr>
+                <th scope="col">Generic name</th>
+                <th scope="col">Brand</th>
+                <th scope="col">Strength</th>
+                <th scope="col">Dosage form</th>
+                <th scope="col">Category</th>
+              </tr>
+              </thead>
+              <tbody>
+                @for (medicine of medicines(); track medicine.id) {
+                  <tr>
+                    <td data-label="Generic name">
+                      <strong>{{ medicine.genericName }}</strong>
+                    </td>
+                    <td data-label="Brand">{{ medicine.brand }}</td>
+                    <td data-label="Strength">{{ medicine.strength }}</td>
+                    <td data-label="Dosage form">
+                      <span class="form-badge">{{ medicine.form }}</span>
+                    </td>
+                    <td data-label="Category">{{ medicine.category }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="state-panel" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+            <h3>Catalogue is empty</h3>
+            <p>Add a medicine using the form above.</p>
+          </div>
+        }
+      }
+    }
+  </section>
+</section>

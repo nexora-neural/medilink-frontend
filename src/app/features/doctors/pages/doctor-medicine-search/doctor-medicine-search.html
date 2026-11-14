@@ -1,0 +1,212 @@
+
+<section class="medicine-page" aria-labelledby="medicine-page-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">DOCTOR WORKSPACE</p>
+      <h1 id="medicine-page-title">Medicine catalogue</h1>
+      <p class="subtitle">
+        Search the sample medicine catalogue by generic name, brand,
+        strength or dosage form.
+      </p>
+    </div>
+  </header>
+
+  <aside class="preview-notice">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      Sample catalogue preview. Medicine information is fictional
+      demonstration data and is not a prescribing recommendation.
+    </p>
+  </aside>
+
+  <section class="search-card" aria-labelledby="search-heading">
+    <div class="section-heading">
+      <div>
+        <h2 id="search-heading">Search medicines</h2>
+        <p>Start typing to find a medicine in the catalogue.</p>
+      </div>
+      <span class="result-count">{{ medicines().length }} sample items</span>
+    </div>
+
+    <label for="medicine-search">Medicine name or keyword</label>
+
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon" aria-hidden="true">
+        search
+      </span>
+
+      <input
+        id="medicine-search"
+        type="search"
+        autocomplete="off"
+        placeholder="Search generic name, brand, strength..."
+        [value]="searchTerm()"
+        [attr.aria-expanded]="showSuggestions() && state() === 'ready'"
+        aria-controls="medicine-suggestions"
+        aria-autocomplete="list"
+        [attr.aria-activedescendant]="
+          activeIndex() >= 0 ? 'medicine-option-' + activeIndex() : null
+        "
+        (input)="onSearch($any($event.target).value)"
+        (keydown)="onSearchKeydown($event)"
+        (focus)="showSuggestions.set(true)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          class="clear-button"
+          type="button"
+          aria-label="Clear medicine search"
+          (click)="clearSearch()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      }
+    </div>
+
+    @if (showSuggestions() && state() === 'ready') {
+      <div
+        class="suggestion-list"
+        id="medicine-suggestions"
+        role="listbox"
+        aria-label="Medicine suggestions"
+      >
+        @for (medicine of filteredMedicines(); track medicine.id; let i = $index) {
+          <button
+            class="suggestion-item"
+            type="button"
+            role="option"
+            [id]="'medicine-option-' + i"
+            [attr.aria-selected]="selectedMedicine()?.id === medicine.id"
+            [class.highlighted]="activeIndex() === i"
+            (click)="selectMedicine(medicine)"
+            (mouseenter)="activeIndex.set(i)"
+          >
+            <span class="medicine-icon material-symbols-outlined" aria-hidden="true">
+              medication
+            </span>
+
+            <span class="suggestion-details">
+              <strong>{{ medicine.genericName }}</strong>
+              <span>{{ medicine.brand }} · {{ medicine.strength }}</span>
+            </span>
+
+            <span class="form-label">{{ medicine.form }}</span>
+          </button>
+        } @empty {
+          <p class="no-suggestions" role="status">
+            No matching medicines found.
+          </p>
+        }
+      </div>
+    }
+
+    <div class="preview-controls">
+      <span>Preview states</span>
+      <button type="button" (click)="setPreviewState('ready')">Ready</button>
+      <button type="button" (click)="setPreviewState('loading')">Loading</button>
+      <button type="button" (click)="setPreviewState('empty')">Empty</button>
+      <button type="button" (click)="setPreviewState('error')">Error</button>
+    </div>
+  </section>
+
+  <section class="results-section" aria-labelledby="results-heading">
+    <div class="results-heading">
+      <h2 id="results-heading">Medicine details</h2>
+      <span>Sample catalogue</span>
+    </div>
+
+    @switch (state()) {
+      @case ('loading') {
+        <div class="state-panel" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">
+            progress_activity
+          </span>
+          <h3>Loading medicines</h3>
+          <p>Please wait while the catalogue is loading.</p>
+        </div>
+      }
+
+      @case ('empty') {
+        <div class="state-panel" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+          <h3>No medicines available</h3>
+          <p>The sample catalogue currently has no available results.</p>
+        </div>
+      }
+
+      @case ('error') {
+        <div class="state-panel" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error_outline</span>
+          <h3>Unable to display medicines</h3>
+          <p>Something went wrong in this preview.</p>
+          <button class="primary-button" type="button" (click)="retry()">
+            Try again
+          </button>
+        </div>
+      }
+
+      @case ('ready') {
+        @if (selectedMedicine(); as medicine) {
+          <article class="medicine-detail-card">
+            <div class="detail-header">
+              <span class="detail-icon material-symbols-outlined" aria-hidden="true">
+                medication
+              </span>
+              <div>
+                <p class="detail-eyebrow">SELECTED MEDICINE</p>
+                <h3>{{ medicine.genericName }}</h3>
+                <p>{{ medicine.category }}</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-field">
+                <span>Generic name</span>
+                <strong>{{ medicine.genericName }}</strong>
+              </div>
+
+              <div class="detail-field">
+                <span>Brand name</span>
+                <strong>{{ medicine.brand }}</strong>
+              </div>
+
+              <div class="detail-field">
+                <span>Strength</span>
+                <strong>{{ medicine.strength }}</strong>
+              </div>
+
+              <div class="detail-field">
+                <span>Dosage form</span>
+                <strong>{{ medicine.form }}</strong>
+              </div>
+            </div>
+
+            <div class="description-box">
+              <strong>Information</strong>
+              <p>{{ medicine.description }}</p>
+            </div>
+
+            <p class="safety-note">
+              <span class="material-symbols-outlined" aria-hidden="true">info</span>
+              Confirm medicine details and clinical suitability using
+              approved professional references.
+            </p>
+          </article>
+        } @else if (searchTerm().trim() && filteredMedicines().length === 0) {
+          <div class="state-panel" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+            <h3>No matching medicines</h3>
+            <p>Try another generic name, brand or strength.</p>
+          </div>
+        } @else {
+          <div class="state-panel initial-state">
+            <span class="material-symbols-outlined" aria-hidden="true">medication</span>
+            <h3>Select a medicine</h3>
+            <p>Search and select a medicine to view its catalogue details.</p>
+          </div>
+        }
+      }
+    }
+  </section>
+</section>
