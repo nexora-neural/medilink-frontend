@@ -233,7 +233,7 @@ authorization matrix.
 - Automated routing tests cover Admin session restoration,
   signed-out access, and denial for other roles.
 
-  ## Account support integration (ML-42)
+## Account support integration (ML-42)
 
 Account support and Admin role management use the authenticated backend API.
 
@@ -256,6 +256,39 @@ Component and service tests cover mocked success and failure responses.
 Live Admin appointment/revocation success testing remains pending because
 an MFA-authenticated Super Admin test session is unavailable.
 MFA enrollment and login implementation are outside this change.
+
+## Doctor access grants preview — ML-49
+
+- Added record-category selection using the five existing consent categories.
+- Added duration choices: 24 hours by default, 7 days and 30 days.
+- Kept consultation permission separate and off by default.
+- Required a reviewed reference, selected categories and explicit confirmation
+  before displaying the sample access summary.
+- Reset the summary and confirmation when choices or the reference change,
+  while preserving selected categories.
+- Added fictional active, expired and revoked grant records with example expiry dates.
+- Added sample loading, empty, error and retry states.
+- Added local revoke confirmation and cancellation.
+- Kept grant history distinct from record-access activity.
+- Used client rendering for the patient access route to fix refresh redirects.
+
+### Integration boundary
+
+This is a frontend preview. Doctor references remain unverified, and no real
+grants are created or revoked. Sample records use fixed example dates and statuses.
+ML-65 connects the workflow to the real API and verifies authorization, expiry,
+revocation and grant-list contract behavior.
+
+### Verification
+
+- TypeScript checks passed.
+- All 163 tests passed across 53 test files.
+- The doctor access component has 16 passing tests.
+- Checked the layout at 375px width.
+- Manually checked reference editing, sample summary and revoke behavior.
+- Production build passed with size warnings:
+  initial bundle 859.04 kB and doctor access styles 7.93 kB.
+- Git whitespace checks passed.
 
 
 ## Private document controls ML-24

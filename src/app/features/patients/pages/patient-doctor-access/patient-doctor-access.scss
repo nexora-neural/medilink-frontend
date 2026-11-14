@@ -1,4 +1,3 @@
-
 :host {
   display: block;
   color: #17324d;
@@ -82,18 +81,6 @@ h1 {
   }
 }
 
-.heading-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: #eaf5fa;
-  color: #137fac;
-  font-size: 23px;
-}
-
 .camera-area {
   position: relative;
   display: grid;
@@ -114,18 +101,6 @@ h1 {
   &.visible {
     display: block;
   }
-}
-
-.scan-frame {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 170px;
-  height: 170px;
-  border: 3px solid #35a2d0;
-  border-radius: 14px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
 }
 
 .camera-placeholder {
@@ -376,5 +351,314 @@ form {
   .scan-card,
   .review-card {
     padding: 20px;
+  }
+}
+
+.grant-card {
+  margin-top: 24px;
+
+  .section-heading {
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0 0 8px;
+    }
+
+    p {
+      margin: 0;
+      color: #52677b;
+      line-height: 1.6;
+    }
+  }
+
+  form {
+    gap: 20px;
+  }
+
+  fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid #cbdce6;
+    border-radius: 10px;
+  }
+
+  legend {
+    padding: 0 6px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .field-help,
+  .verification-notice {
+    margin: 8px 0;
+    color: #52677b;
+    line-height: 1.6;
+  }
+
+  .grant-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+
+    input {
+      flex: 0 0 20px;
+      width: 20px;
+      height: 20px;
+      min-height: 20px;
+      margin: 2px 0 0;
+      padding: 0;
+      accent-color: #087fa3;
+      cursor: pointer;
+    }
+
+    span {
+      min-width: 0;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    &:hover {
+      border-radius: 6px;
+      background: #f0f8fc;
+    }
+  }
+
+  input:focus-visible {
+    outline: 3px solid #17324d;
+    outline-offset: 3px;
+  }
+}
+
+/* Include page padding within the available width on small screens. */
+.access-page {
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .grant-card {
+    padding: 16px;
+
+    fieldset {
+      padding: 12px;
+    }
+  }
+}
+
+.access-page {
+  .scanner-card,
+  .manual-card {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid #e3edf3;
+    border-radius: 14px;
+    background: white;
+  }
+
+  .section-heading {
+    display: block;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    p {
+      margin: 0;
+      color: #52677b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+
+  .page-description {
+    margin: 12px 0 16px;
+    line-height: 1.6;
+  }
+
+  .review-card {
+    margin-top: 24px;
+  }
+
+  .review-state {
+    padding: 16px 0;
+
+    h3 {
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    p {
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .review-details {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+
+    span,
+    strong {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    span {
+      margin-bottom: 4px;
+      color: #52677b;
+    }
+  }
+
+  .manual-card input {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .camera-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .error-message {
+    color: #b42318;
+    line-height: 1.6;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 3px solid #17324d;
+    outline-offset: 3px;
+  }
+
+  button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 480px) {
+  .access-page {
+    padding: 16px;
+
+    .scanner-card,
+    .manual-card {
+      padding: 16px;
+    }
+  }
+}
+.grant-summary {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #b9dce9;
+  border-radius: 10px;
+  background: #f0f9fd;
+  overflow-wrap: anywhere;
+
+  h3 {
+    margin-top: 0;
+    font-size: 18px;
+  }
+
+  dl {
+    margin-bottom: 0;
+  }
+
+  dt {
+    margin-top: 16px;
+    font-weight: 700;
+  }
+
+  dd {
+    margin: 6px 0 0;
+    line-height: 1.6;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+}
+
+.access-page {
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: normal;
+
+  h1,
+  h2,
+  h3,
+  p,
+  label,
+  legend,
+  button,
+  input,
+  dt,
+  dd {
+    font-family: inherit;
+    letter-spacing: normal;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.4;
+  }
+}
+.grants-list {
+  .camera-actions {
+    margin-bottom: 20px;
+  }
+
+  button[aria-pressed='true'] {
+    background: #087fa3;
+    color: white;
+  }
+
+  .grant-item {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #cbdce6;
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+
+    h4 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    p,
+    li {
+      line-height: 1.6;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+  }
+
+  .grant-history {
+    margin-top: 24px;
+  }
+
+  summary {
+    padding: 12px 0;
+    min-height: 44px;
+    box-sizing: border-box;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 3px solid #17324d;
+      outline-offset: 3px;
+    }
   }
 }
