@@ -222,47 +222,70 @@
           <div [hidden]="!showDocuments">
             <div class="form-section">
               <h3 #documentsHeading tabindex="-1">Supporting documents</h3>
-              <p class="section-description">
-                Upload a document that supports your professional registration. Accepted formats:
-                PDF, JPG and PNG. Maximum size: 10 MB.
-              </p>
 
-              <label class="upload-area" for="evidence-document">
-                <span class="material-symbols-outlined upload-icon"> cloud_upload </span>
-                <strong>Choose a document to upload</strong>
-                <span>Browse your device to select a file</span>
-                <input
-                  id="evidence-document"
-                  type="file"
-                  multiple
-                  [attr.aria-invalid]="!!fileError"
-                  [attr.aria-describedby]="fileError ? 'file-error' : null"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  (change)="onFileSelected($event)"
-                />
-              </label>
+              <app-document-upload
+                inputId="evidence-document"
+                label="Select supporting documents"
+                [files]="selectedFiles"
+                [disabled]="busy"
+                [externalError]="fileError"
+                (filesChange)="onDocumentsChanged($event)"
+              />
+              <section class="download-preview" aria-labelledby="download-preview-heading">
+                <h3 id="download-preview-heading">Document download preview</h3>
 
-              @for (file of selectedFiles; track $index; let index = $index) {
-                <div class="selected-file">
-                  <span class="material-symbols-outlined">description</span>
-                  <div class="file-details">
-                    <strong>{{ file.name }}</strong>
-                    <small> {{ (file.size / 1024 / 1024).toFixed(2) }} MB </small>
-                  </div>
+                <p>
+                  Fictional document for reviewing download controls. Server downloads will be
+                  connected during API integration.
+                </p>
+
+                <div
+                  class="download-preview-controls"
+                  role="group"
+                  aria-label="Download preview state"
+                >
                   <button
                     type="button"
-                    class="remove-file"
-                    [attr.aria-label]="'Remove ' + file.name"
-                    (click)="removeSelectedFile(index)"
+                    [attr.aria-pressed]="downloadPreviewState === 'ready'"
+                    (click)="setDownloadPreviewState('ready')"
                   >
-                    <span class="material-symbols-outlined">close</span>
+                    Ready
+                  </button>
+                  <button
+                    type="button"
+                    [attr.aria-pressed]="downloadPreviewState === 'loading'"
+                    (click)="setDownloadPreviewState('loading')"
+                  >
+                    Loading
+                  </button>
+                  <button
+                    type="button"
+                    [attr.aria-pressed]="downloadPreviewState === 'empty'"
+                    (click)="setDownloadPreviewState('empty')"
+                  >
+                    Empty
+                  </button>
+                  <button
+                    type="button"
+                    [attr.aria-pressed]="downloadPreviewState === 'error'"
+                    (click)="setDownloadPreviewState('error')"
+                  >
+                    Error
                   </button>
                 </div>
-              }
 
-              @if (fileError) {
-                <small id="file-error" class="error" role="alert">{{ fileError }}</small>
-              }
+                <app-document-download
+                  [document]="downloadPreviewState === 'empty' ? null : sampleDocument"
+                  [loading]="downloadPreviewState === 'loading'"
+                  [error]="
+                    downloadPreviewState === 'error'
+                      ? 'Sample error: the document could not be downloaded.'
+                      : ''
+                  "
+                  [message]="downloadPreviewMessage"
+                  (downloadRequested)="previewDownload($event)"
+                />
+              </section>
             </div>
 
             <div class="form-section">
@@ -319,7 +342,7 @@
           Prepare a clear copy of your professional registration or supporting evidence before
           submitting.
         </p>
-        <p>Accepted formats: PDF, JPG and PNG, up to 10 MB per file.</p>
+        <p>Accepted formats: PDF, JPG and PNG, up to 10 MiB per file.</p>
         <p>Your care, connected.</p>
       </aside>
     </div>
