@@ -1,12 +1,10 @@
-
 <section class="medicine-page" aria-labelledby="medicine-page-title">
   <header class="page-heading">
     <div>
       <p class="eyebrow">DOCTOR WORKSPACE</p>
       <h1 id="medicine-page-title">Medicine catalogue</h1>
       <p class="subtitle">
-        Search the sample medicine catalogue by generic name, brand,
-        strength or dosage form.
+        Search the sample medicine catalogue by generic name, brand, strength or dosage form.
       </p>
     </div>
   </header>
@@ -14,8 +12,8 @@
   <aside class="preview-notice">
     <span class="material-symbols-outlined" aria-hidden="true">info</span>
     <p>
-      Sample catalogue preview. Medicine information is fictional
-      demonstration data and is not a prescribing recommendation.
+      Sample catalogue preview. Medicine information is fictional demonstration data and is not a
+      prescribing recommendation.
     </p>
   </aside>
 
@@ -31,25 +29,30 @@
     <label for="medicine-search">Medicine name or keyword</label>
 
     <div class="search-wrapper">
-      <span class="material-symbols-outlined search-icon" aria-hidden="true">
-        search
-      </span>
+      <span class="material-symbols-outlined search-icon" aria-hidden="true"> search </span>
 
       <input
         id="medicine-search"
         type="search"
+        role="combobox"
+        aria-haspopup="listbox"
         autocomplete="off"
         placeholder="Search generic name, brand, strength..."
         [value]="searchTerm()"
         [attr.aria-expanded]="showSuggestions() && state() === 'ready'"
-        aria-controls="medicine-suggestions"
+        [attr.aria-controls]="
+          showSuggestions() && state() === 'ready' ? 'medicine-suggestions' : null
+        "
         aria-autocomplete="list"
         [attr.aria-activedescendant]="
-          activeIndex() >= 0 ? 'medicine-option-' + activeIndex() : null
+          showSuggestions() && state() === 'ready' && activeIndex() >= 0
+            ? 'medicine-option-' + activeIndex()
+            : null
         "
         (input)="onSearch($any($event.target).value)"
         (keydown)="onSearchKeydown($event)"
-        (focus)="showSuggestions.set(true)"
+        (focus)="openSuggestions()"
+        (blur)="closeSuggestions()"
       />
 
       @if (searchTerm()) {
@@ -76,8 +79,10 @@
             class="suggestion-item"
             type="button"
             role="option"
+            tabindex="-1"
+            (mousedown)="$event.preventDefault()"
             [id]="'medicine-option-' + i"
-            [attr.aria-selected]="selectedMedicine()?.id === medicine.id"
+            [attr.aria-selected]="activeIndex() === i"
             [class.highlighted]="activeIndex() === i"
             (click)="selectMedicine(medicine)"
             (mouseenter)="activeIndex.set(i)"
@@ -94,9 +99,7 @@
             <span class="form-label">{{ medicine.form }}</span>
           </button>
         } @empty {
-          <p class="no-suggestions" role="status">
-            No matching medicines found.
-          </p>
+          <p class="no-suggestions" role="status">No matching medicines found.</p>
         }
       </div>
     }
@@ -119,9 +122,7 @@
     @switch (state()) {
       @case ('loading') {
         <div class="state-panel" role="status">
-          <span class="material-symbols-outlined" aria-hidden="true">
-            progress_activity
-          </span>
+          <span class="material-symbols-outlined" aria-hidden="true"> progress_activity </span>
           <h3>Loading medicines</h3>
           <p>Please wait while the catalogue is loading.</p>
         </div>
@@ -140,9 +141,7 @@
           <span class="material-symbols-outlined" aria-hidden="true">error_outline</span>
           <h3>Unable to display medicines</h3>
           <p>Something went wrong in this preview.</p>
-          <button class="primary-button" type="button" (click)="retry()">
-            Try again
-          </button>
+          <button class="primary-button" type="button" (click)="retry()">Try again</button>
         </div>
       }
 
@@ -189,8 +188,8 @@
 
             <p class="safety-note">
               <span class="material-symbols-outlined" aria-hidden="true">info</span>
-              Confirm medicine details and clinical suitability using
-              approved professional references.
+              Confirm medicine details and clinical suitability using approved professional
+              references.
             </p>
           </article>
         } @else if (searchTerm().trim() && filteredMedicines().length === 0) {

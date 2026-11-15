@@ -73,6 +73,16 @@ export class MedicineCatalogue {
     this.submitted.set(true);
     this.successMessage.set('');
 
+    // Normalize before validators run so whitespace cannot create blank entries.
+    const fields = this.form.getRawValue();
+    this.form.setValue({
+      genericName: fields.genericName.trim(),
+      brand: fields.brand.trim(),
+      strength: fields.strength.trim(),
+      dosageForm: fields.dosageForm.trim(),
+      category: fields.category.trim(),
+    });
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

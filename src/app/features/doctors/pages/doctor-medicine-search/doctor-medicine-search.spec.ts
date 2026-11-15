@@ -197,4 +197,98 @@ describe('DoctorMedicineSearch', () => {
     expect(component.activeIndex()).toBe(-1);
     expect(component.state()).toBe('ready');
   });
+  function searchInput(): HTMLInputElement {
+    return fixture.nativeElement.querySelector('#medicine-search');
+  }
+
+  function typeQuery(query: string): void {
+    const input = searchInput();
+    input.value = query;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+  }
+
+  function press(key: string): KeyboardEvent {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    searchInput().dispatchEvent(event);
+    fixture.detectChanges();
+    return event;
+  }
+
+  it('exposes an expanded combobox with an existing active option during arrow navigation', () => {
+    const input = searchInput();
+    expect(input.getAttribute('role')).toBe('combobox');
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.getAttribute('aria-controls')).toBeNull();
+    typeQuery('a');
+    press('ArrowDown');
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    const list = fixture.nativeElement.querySelector('#medicine-suggestions');
+    expect(list.getAttribute('role')).toBe('listbox');
+    const option = fixture.nativeElement.querySelector(
+      '#' + input.getAttribute('aria-activedescendant'),
+    );
+    expect(option).not.toBeNull();
+    expect(option.getAttribute('aria-selected')).toBe('true');
+    expect(option.getAttribute('tabindex')).toBe('-1');
+    press('ArrowDown');
+    expect(component.activeIndex()).toBe(1);
+    press('ArrowUp');
+    expect(component.activeIndex()).toBe(0);
+    press('Enter');
+    expect(component.selectedMedicine()).not.toBeNull();
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.getAttribute('aria-activedescendant')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#medicine-suggestions')).toBeNull();
+  });
+
+  it('does not select a hidden single suggestion after Escape', () => {
+    typeQuery('Panadol');
+    press('Escape');
+    expect(searchInput().getAttribute('aria-expanded')).toBe('false');
+    press('Enter');
+    expect(component.selectedMedicine()).toBeNull();
+  });
+
+  it('closes on Tab and blur, and reopens with ArrowUp', () => {
+    typeQuery('a');
+    press('ArrowDown');
+    expect(press('Tab').defaultPrevented).toBe(false);
+    expect(searchInput().getAttribute('aria-activedescendant')).toBeNull();
+    press('Enter');
+    expect(component.selectedMedicine()).toBeNull();
+    press('ArrowUp');
+    expect(component.activeIndex()).toBe(component.filteredMedicines().length - 1);
+    expect(searchInput().getAttribute('aria-expanded')).toBe('true');
+    searchInput().dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(searchInput().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it.each(['loading', 'empty', 'error'] as const)(
+    'does not select hidden results in the %s preview',
+    (state) => {
+      typeQuery('Panadol');
+      press('ArrowDown');
+      component.setPreviewState(state);
+      fixture.detectChanges();
+      press('ArrowDown');
+      press('Enter');
+      expect(component.selectedMedicine()).toBeNull();
+      expect(searchInput().getAttribute('aria-activedescendant')).toBeNull();
+      expect(fixture.nativeElement.querySelector('#medicine-suggestions')).toBeNull();
+    },
+  );
+
+  it('selects a visible option using a pointer while keeping input focus', () => {
+    typeQuery('Panadol');
+    const option = fixture.nativeElement.querySelector('[role="option"]') as HTMLButtonElement;
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    option.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    option.click();
+    fixture.detectChanges();
+    expect(component.selectedMedicine()?.brand).toBe('Panadol');
+    expect(searchInput().getAttribute('aria-expanded')).toBe('false');
+  });
 });

@@ -120,47 +120,56 @@ export class DoctorMedicineSearch {
     this.activeIndex.set(-1);
   }
 
+  openSuggestions(): void {
+    if (this.state() !== 'ready') return;
+    this.activeIndex.set(-1);
+    this.showSuggestions.set(true);
+  }
+
+  closeSuggestions(): void {
+    this.showSuggestions.set(false);
+    this.activeIndex.set(-1);
+  }
+
   onSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' || event.key === 'Tab') {
+      this.closeSuggestions();
+      return;
+    }
+    if (this.state() !== 'ready') return;
+
     const results = this.filteredMedicines();
-
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
+      const wasOpen = this.showSuggestions();
       this.showSuggestions.set(true);
-
       if (results.length > 0) {
-        this.activeIndex.update((index) => (index >= results.length - 1 ? 0 : index + 1));
+        const index = wasOpen ? this.activeIndex() : -1;
+        this.activeIndex.set(
+          event.key === 'ArrowDown'
+            ? (index + 1) % results.length
+            : index <= 0
+              ? results.length - 1
+              : index - 1,
+        );
       }
+      return;
     }
 
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-
-      if (results.length > 0) {
-        this.activeIndex.update((index) => (index <= 0 ? results.length - 1 : index - 1));
-      }
-    }
-
-    if (event.key === 'Enter') {
-      event.preventDefault();
-
+    if (event.key === 'Enter' && this.showSuggestions()) {
       const index = this.activeIndex();
-      if (index >= 0 && results[index]) {
-        this.selectMedicine(results[index]);
-      } else if (results.length === 1) {
-        this.selectMedicine(results[0]);
+      const medicine = index >= 0 ? results[index] : results.length === 1 ? results[0] : null;
+      if (medicine) {
+        event.preventDefault();
+        this.selectMedicine(medicine);
       }
-    }
-
-    if (event.key === 'Escape') {
-      this.showSuggestions.set(false);
-      this.activeIndex.set(-1);
     }
   }
 
   setPreviewState(state: MedicineState): void {
     this.state.set(state);
     this.selectedMedicine.set(null);
-    this.showSuggestions.set(false);
+    this.closeSuggestions();
   }
 
   retry(): void {

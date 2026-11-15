@@ -153,4 +153,38 @@ describe('MedicineCatalogue', () => {
 
     expect(component.hasError(control)).toBe(true);
   });
+  it.each(['genericName', 'brand', 'strength', 'dosageForm', 'category'] as const)(
+    'rejects whitespace-only %s without adding an entry',
+    (field) => {
+      component.form.setValue({
+        genericName: 'Ibuprofen',
+        brand: 'Brufen',
+        strength: '400 mg',
+        dosageForm: 'Tablet',
+        category: 'Pain relief',
+      });
+      component.form.controls[field].setValue('   ');
+      fixture.nativeElement
+        .querySelector('form')
+        .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      expect(component.totalMedicines()).toBe(3);
+      expect(component.form.controls[field].hasError('required')).toBe(true);
+      expect(component.successMessage()).toBe('');
+    },
+  );
+
+  it('validates minimum length after trimming', () => {
+    component.form.setValue({
+      genericName: ' A ',
+      brand: ' B ',
+      strength: '400 mg',
+      dosageForm: 'Tablet',
+      category: 'Pain relief',
+    });
+    component.addMedicine();
+    expect(component.genericNameControl.hasError('minlength')).toBe(true);
+    expect(component.brandControl.hasError('minlength')).toBe(true);
+    expect(component.totalMedicines()).toBe(3);
+  });
 });
