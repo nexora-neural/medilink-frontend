@@ -5,10 +5,8 @@
       <h1>Professional verification</h1>
       <p>Submit your professional information and supporting documents to request verification.</p>
     </div>
-
     <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
-      <span class="material-symbols-outlined">fact_check</span>
-      Application status
+      <span class="material-symbols-outlined">fact_check</span> Application status
     </button>
   </header>
 
@@ -16,30 +14,114 @@
     <button
       type="button"
       [class.active]="!showStatus && !showDocuments"
-      [attr.aria-current]="!showStatus && !showDocuments ? 'step' : null"
       (click)="viewApplicationForm()"
     >
       Application
     </button>
-    <button
-      type="button"
-      [class.active]="!showStatus && showDocuments"
-      [attr.aria-current]="!showStatus && showDocuments ? 'step' : null"
-      (click)="viewDocuments()"
-    >
+    <button type="button" [class.active]="!showStatus && showDocuments" (click)="viewDocuments()">
       Documents
     </button>
-    <button
-      type="button"
-      [class.active]="showStatus"
-      [attr.aria-current]="showStatus ? 'step' : null"
-      (click)="viewApplicationStatus()"
-    >
+    <button type="button" [class.active]="showStatus" (click)="viewApplicationStatus()">
       Status
     </button>
   </nav>
 
-  @if (!showStatus) {
+  @if (loading) {
+    <section class="verification-card" role="status">
+      Loading your verification application…
+    </section>
+  } @else if (loadError) {
+    <section class="verification-card" aria-labelledby="load-error-heading">
+      <h2 id="load-error-heading">Unable to load verification</h2>
+      <p class="error" role="alert">{{ loadError }}</p>
+      <button type="button" class="primary-button" (click)="loadApplication()">Try again</button>
+    </section>
+  } @else if (application && showStatus) {
+    <section class="verification-card status-card">
+      <div class="status-icon pending">
+        <span class="material-symbols-outlined">fact_check</span>
+      </div>
+      <span class="eyebrow">APPLICATION STATUS</span>
+      <h2 #statusHeading tabindex="-1">
+        {{
+          application.status === 'approved'
+            ? 'Application approved'
+            : application.status === 'rejected'
+              ? 'Application rejected'
+              : application.status === 'more_info_requested'
+                ? 'More information requested'
+                : application.status === 'under_review'
+                  ? 'Application under review'
+                  : 'Your application is pending review'
+        }}
+      </h2>
+      <p class="status-description">
+        Your application status is saved by MediLink and will remain available after you sign in
+        again.
+      </p>
+      <div class="status-summary">
+        <div>
+          <span>Professional role</span><strong>{{ roleLabel }}</strong>
+        </div>
+        <div>
+          <span>Registration number</span><strong>{{ application.registration_number }}</strong>
+        </div>
+        <div>
+          <span>Application status</span><strong>{{ statusLabel }}</strong>
+        </div>
+        <div>
+          <span>Submitted</span><strong>{{ application.submitted_at | date: 'medium' }}</strong>
+        </div>
+      </div>
+      <button type="button" class="primary-button" (click)="viewDocuments()">View documents</button>
+    </section>
+  } @else if (application && showDocuments) {
+    <section class="verification-card">
+      <div class="section-heading">
+        <div class="heading-icon"><span class="material-symbols-outlined">description</span></div>
+        <div>
+          <h2 #documentsHeading tabindex="-1">Supporting documents</h2>
+          <p>Private evidence attached to your application.</p>
+        </div>
+      </div>
+      @for (item of documents; track item.id) {
+        <app-document-download
+          [document]="{ id: item.id, name: item.original_filename }"
+          [loading]="downloadingId === item.id"
+          [disabled]="!!downloadingId"
+          [error]="downloadResultId === item.id ? downloadError : ''"
+          [message]="downloadResultId === item.id ? downloadMessage : ''"
+          (downloadRequested)="downloadDocument($event)"
+        />
+      } @empty {
+        <p class="section-description">No evidence documents are attached to this application.</p>
+      }
+    </section>
+  } @else if (application) {
+    <section class="verification-card">
+      <h2 #formHeading tabindex="-1">
+        {{ canSubmitAgain ? 'Application needs an update' : 'Application already submitted' }}
+      </h2>
+      <p>
+        {{
+          canSubmitAgain
+            ? 'You can update your professional information and submit a new application.'
+            : 'Your current application is ' +
+              statusLabel.toLowerCase() +
+              '. You cannot submit another while it is being reviewed.'
+        }}
+      </p>
+      @if (canSubmitAgain) {
+        <button type="button" class="primary-button" (click)="viewApplicationForm()">
+          Submit an updated application
+        </button>
+      } @else {
+        <button type="button" class="primary-button" (click)="viewApplicationStatus()">
+          View status
+        </button>
+      }
+    </section>
+  } @else if (!showStatus) {
     <div class="verification-layout">
       <section class="verification-card">
         <div class="section-heading">
@@ -50,10 +132,9 @@
             <h2 #formHeading tabindex="-1">
               {{ showDocuments ? 'Supporting documents' : 'Verification application' }}
             </h2>
-            <p>Complete all required fields marked with an asterisk.</p>
+            <p>Complete the professional details and attach supporting evidence.</p>
           </div>
         </div>
-
         <div class="notice" role="note">
           <span class="material-symbols-outlined">info</span>
           <p>
@@ -65,164 +146,65 @@
         <form [formGroup]="verificationForm" (ngSubmit)="submitApplication()" novalidate>
           <div [hidden]="showDocuments">
             <div class="form-section">
-              <h3>Personal information</h3>
-
-              <div class="form-grid">
-                <label class="field">
-                  <span>Full name <b>*</b></span>
-                  <input
-                    type="text"
-                    formControlName="fullName"
-                    [attr.aria-invalid]="submitted && verificationForm.controls.fullName.invalid"
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.fullName.invalid
-                        ? 'full-name-error'
-                        : null
-                    "
-                    placeholder="Enter your full name"
-                    autocomplete="name"
-                  />
-                  @if (submitted && verificationForm.controls.fullName.invalid) {
-                    <small id="full-name-error" class="error">Please enter your full name.</small>
-                  }
-                </label>
-
-                <label class="field">
-                  <span>Email address <b>*</b></span>
-                  <input
-                    type="email"
-                    formControlName="email"
-                    [attr.aria-invalid]="submitted && verificationForm.controls.email.invalid"
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.email.invalid ? 'email-error' : null
-                    "
-                    placeholder="you@example.com"
-                    autocomplete="email"
-                  />
-                  @if (submitted && verificationForm.controls.email.invalid) {
-                    <small id="email-error" class="error">Enter a valid email address.</small>
-                  }
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section">
               <h3>Professional information</h3>
-
               <div class="form-grid">
                 <label class="field">
                   <span>Professional role <b>*</b></span>
                   <select
                     formControlName="role"
                     [attr.aria-invalid]="submitted && verificationForm.controls.role.invalid"
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.role.invalid ? 'role-error' : null
-                    "
                   >
                     <option value="">Select your role</option>
-                    @for (role of roles; track role) {
-                      <option [value]="role">{{ role }}</option>
+                    @for (role of roles; track role.value) {
+                      <option [value]="role.value">{{ role.label }}</option>
                     }
                   </select>
                   @if (submitted && verificationForm.controls.role.invalid) {
-                    <small id="role-error" class="error"
-                      >Please select your professional role.</small
-                    >
+                    <small class="error">Please select your professional role.</small>
                   }
                 </label>
-
                 <label class="field">
-                  <span
-                    >{{
-                      verificationForm.controls.role.value === 'Doctor'
-                        ? 'SLMC registration number'
-                        : verificationForm.controls.role.value === 'Pharmacist'
-                          ? 'Pharmacist registration number'
-                          : verificationForm.controls.role.value === 'Lab Staff'
-                            ? 'Laboratory registration number'
-                            : 'Registration number'
-                    }}
-                    <b>*</b></span
-                  >
+                  <span>Registration number <b>*</b></span>
                   <input
                     type="text"
                     formControlName="registrationNumber"
+                    maxlength="100"
+                    placeholder="Enter your registration number"
                     [attr.aria-invalid]="
                       submitted && verificationForm.controls.registrationNumber.invalid
                     "
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.registrationNumber.invalid
-                        ? 'registration-error'
-                        : null
-                    "
-                    placeholder="Enter your registration number"
                   />
                   @if (submitted && verificationForm.controls.registrationNumber.invalid) {
-                    <small id="registration-error" class="error"
-                      >Registration number is required.</small
-                    >
+                    <small class="error">Registration number is required.</small>
                   }
                 </label>
-
                 <label class="field">
                   <span>Specialty / Department (optional)</span>
                   <input
                     type="text"
                     formControlName="specialty"
                     maxlength="150"
-                    [attr.aria-invalid]="submitted && verificationForm.controls.specialty.invalid"
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.specialty.invalid
-                        ? 'specialty-error'
-                        : null
-                    "
                     placeholder="Enter your specialty or department"
                   />
-                  @if (submitted && verificationForm.controls.specialty.invalid) {
-                    <small id="specialty-error" class="error"
-                      >Use no more than 150 characters.</small
-                    >
-                  }
-                </label>
-
-                <label class="field">
-                  <span>Organization (optional)</span>
-                  <select formControlName="institution">
-                    <option value="">No organization selected</option>
-                    <option value="Lakeside Clinic">Lakeside Clinic (sample)</option>
-                    <option value="Lakeside Pharmacy">Lakeside Pharmacy (sample)</option>
-                    <option value="Central Laboratory">Central Laboratory (sample)</option>
-                  </select>
-                  <small>Sample organizations shown for this preview.</small>
                 </label>
                 <label class="field">
-                  <span>Qualification (optional)</span>
+                  <span>Qualifications (optional)</span>
                   <input
                     formControlName="qualification"
                     maxlength="2000"
                     placeholder="Enter your qualification"
-                    [attr.aria-invalid]="
-                      submitted && verificationForm.controls.qualification.invalid
-                    "
-                    [attr.aria-describedby]="
-                      submitted && verificationForm.controls.qualification.invalid
-                        ? 'qualification-error'
-                        : null
-                    "
                   />
-                  @if (submitted && verificationForm.controls.qualification.invalid) {
-                    <small id="qualification-error" class="error"
-                      >Use no more than 2,000 characters.</small
-                    >
-                  }
                 </label>
               </div>
             </div>
           </div>
+
           <div [hidden]="!showDocuments">
             <div class="form-section">
               <h3 #documentsHeading tabindex="-1">Supporting documents</h3>
-
+              <p class="section-description">
+                Accepted formats: PDF, JPEG and PNG. Maximum 10 MiB per file.
+              </p>
               <app-document-upload
                 inputId="evidence-document"
                 label="Select supporting documents"
@@ -231,88 +213,22 @@
                 [externalError]="fileError"
                 (filesChange)="onDocumentsChanged($event)"
               />
-              <section class="download-preview" aria-labelledby="download-preview-heading">
-                <h3 id="download-preview-heading">Document download preview</h3>
-
-                <p>
-                  Fictional document for reviewing download controls. Server downloads will be
-                  connected during API integration.
-                </p>
-
-                <div
-                  class="download-preview-controls"
-                  role="group"
-                  aria-label="Download preview state"
-                >
-                  <button
-                    type="button"
-                    [attr.aria-pressed]="downloadPreviewState === 'ready'"
-                    (click)="setDownloadPreviewState('ready')"
-                  >
-                    Ready
-                  </button>
-                  <button
-                    type="button"
-                    [attr.aria-pressed]="downloadPreviewState === 'loading'"
-                    (click)="setDownloadPreviewState('loading')"
-                  >
-                    Loading
-                  </button>
-                  <button
-                    type="button"
-                    [attr.aria-pressed]="downloadPreviewState === 'empty'"
-                    (click)="setDownloadPreviewState('empty')"
-                  >
-                    Empty
-                  </button>
-                  <button
-                    type="button"
-                    [attr.aria-pressed]="downloadPreviewState === 'error'"
-                    (click)="setDownloadPreviewState('error')"
-                  >
-                    Error
-                  </button>
-                </div>
-
-                <app-document-download
-                  [document]="downloadPreviewState === 'empty' ? null : sampleDocument"
-                  [loading]="downloadPreviewState === 'loading'"
-                  [error]="
-                    downloadPreviewState === 'error'
-                      ? 'Sample error: the document could not be downloaded.'
-                      : ''
-                  "
-                  [message]="downloadPreviewMessage"
-                  (downloadRequested)="previewDownload($event)"
-                />
-              </section>
-            </div>
-
-            <div class="form-section">
-              <h3>Additional information</h3>
-
-              <label class="field">
-                <span>Notes <small>(Optional)</small></span>
-                <textarea
-                  rows="4"
-                  formControlName="notes"
-                  placeholder="Add any additional information for the verification team"
-                ></textarea>
-              </label>
             </div>
           </div>
+
           <div class="form-footer">
             @if (submissionError) {
               <p class="error" role="alert">{{ submissionError }}</p>
             }
             @if (busy) {
-              <p role="status">Submitting preview…</p>
+              <p role="status">
+                {{ showDocuments ? 'Uploading evidence and submitting application…' : 'Saving…' }}
+              </p>
             }
             <p>
-              <span class="material-symbols-outlined">lock</span>
-              Preview only. Information and documents are not sent to the server.
+              <span class="material-symbols-outlined">lock</span> Documents are stored privately and
+              can only be retrieved by permitted users.
             </p>
-
             @if (!showDocuments) {
               <button type="button" class="primary-button" (click)="viewDocuments()">
                 Continue to documents <span class="material-symbols-outlined">arrow_forward</span>
@@ -322,13 +238,7 @@
                 Back
               </button>
               <button type="submit" class="primary-button" [disabled]="busy">
-                {{
-                  busy
-                    ? 'Submitting preview…'
-                    : submissionError
-                      ? 'Try again'
-                      : 'Submit application'
-                }}
+                {{ busy ? 'Submitting…' : submissionError ? 'Try again' : 'Submit application' }}
                 <span class="material-symbols-outlined">arrow_forward</span>
               </button>
             }
@@ -348,100 +258,14 @@
     </div>
   } @else {
     <section class="verification-card status-card">
-      <div class="status-icon" [class.pending]="applicationSubmitted">
-        <span class="material-symbols-outlined">
-          {{ applicationSubmitted ? 'hourglass_top' : 'description' }}
-        </span>
-      </div>
-
-      @if (applicationSubmitted) {
-        <span class="eyebrow">APPLICATION PREVIEW</span>
-        <h2 #statusHeading tabindex="-1">
-          {{
-            previewStatus === 'pending'
-              ? 'Your application is pending review'
-              : previewStatus === 'under_review'
-                ? 'Application under review'
-                : previewStatus === 'verified'
-                  ? 'Verified (sample)'
-                  : previewStatus === 'rejected'
-                    ? 'Application rejected'
-                    : 'More information requested'
-          }}
-        </h2>
-        <p class="status-description">
-          Your application has been completed in this frontend preview. The verification team will
-          review your professional details and supporting documents once API integration is
-          available.
-        </p>
-
-        <ol class="progress-steps" aria-label="Application progress">
-          <li>Account details</li>
-          <li>Documents</li>
-          <li>Review decision</li>
-        </ol>
-        <div class="status-summary">
-          <div>
-            <span>Professional role</span>
-            <strong>{{ submittedSnapshot?.role }}</strong>
-          </div>
-          <div>
-            <span>Registration number</span>
-            <strong>{{ submittedSnapshot?.registrationNumber }}</strong>
-          </div>
-          <div>
-            <span>Organization</span>
-            <strong>{{ submittedSnapshot?.institution || 'Not selected' }}</strong>
-          </div>
-          <div>
-            <span>Application status</span>
-            <strong class="pending-text">{{
-              previewStatus === 'pending'
-                ? 'Pending'
-                : previewStatus === 'under_review'
-                  ? 'Under review'
-                  : previewStatus === 'verified'
-                    ? 'Verified (sample)'
-                    : previewStatus === 'rejected'
-                      ? 'Rejected'
-                      : 'More information requested'
-            }}</strong>
-          </div>
-          <div>
-            <span>Qualification</span><strong>{{ submittedSnapshot?.qualification }}</strong>
-          </div>
-          <div>
-            <span>Supporting documents</span
-            ><strong>{{ submittedSnapshot?.documents?.join(', ') }}</strong>
-          </div>
-        </div>
-        <label class="field preview-select">
-          <span>Sample status (preview only)</span>
-          <select
-            #statusChoice
-            [value]="previewStatus"
-            (change)="setPreviewStatus(statusChoice.value)"
-          >
-            <option value="pending">Pending</option>
-            <option value="under_review">Under review</option>
-            <option value="verified">Verified (sample)</option>
-            <option value="rejected">Rejected</option>
-            <option value="more_info_requested">Additional information required</option>
-          </select>
-          <small>This does not change a real application or grant access.</small>
-        </label>
-      } @else {
-        <span class="eyebrow">APPLICATION STATUS</span>
-        <h2 #statusHeading tabindex="-1">No application submitted yet</h2>
-        <p class="status-description">
-          You have not submitted a professional verification application. Complete the application
-          form to get started.
-        </p>
-      }
-
+      <span class="eyebrow">APPLICATION STATUS</span>
+      <h2 #statusHeading tabindex="-1">No application submitted yet</h2>
+      <p class="status-description">
+        You have not submitted a professional verification application. Complete the form to get
+        started.
+      </p>
       <button type="button" class="primary-button" (click)="viewApplicationForm()">
-        {{ applicationSubmitted ? 'Back to application' : 'Start application' }}
-        <span class="material-symbols-outlined">arrow_forward</span>
+        Start application <span class="material-symbols-outlined">arrow_forward</span>
       </button>
     </section>
   }
