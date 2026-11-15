@@ -20,7 +20,8 @@
         <input name="diastolic" type="number" [(ngModel)]="diastolic" min="1" max="400" step="1" required />
       </label>
     } @else {
-      <label>{{ kind === 'weight' ? 'Weight (kg)' : 'Glucose (mg/dL)' }}
+      <label>
+        {{ kind === 'weight' ? 'Weight (' + weightUnit + ')' : 'Glucose (' + glucoseUnit + ')' }}
         <input name="value" type="number" [(ngModel)]="value" min="0.01" max="10000" step="any" required />
       </label>
     }

@@ -1,10 +1,27 @@
 export type MeasurementKind = 'weight' | 'blood_pressure' | 'glucose';
-export type MeasurementSource = 'patient';
+
+export type MeasurementSource =
+  'patient' | 'doctor' | 'pharmacist' | 'lab_staff' | 'approved_external_system' | 'admin';
+
+export type MeasurementStatus = 'active' | 'superseded' | 'entered_in_error';
 
 export type MeasurementReading =
-  | { kind: 'weight'; value: number; unit: 'kg' }
-  | { kind: 'blood_pressure'; systolic: number; diastolic: number; unit: 'mmHg' }
-  | { kind: 'glucose'; value: number; unit: 'mg/dL' };
+  | {
+      kind: 'weight';
+      value: number;
+      unit: 'kg' | 'lb';
+    }
+  | {
+      kind: 'blood_pressure';
+      systolic: number;
+      diastolic: number;
+      unit: 'mmHg';
+    }
+  | {
+      kind: 'glucose';
+      value: number;
+      unit: 'mg/dL' | 'mmol/L';
+    };
 
 export interface MeasurementRecord {
   id: string;
@@ -15,6 +32,9 @@ export interface MeasurementRecord {
   source: MeasurementSource;
   reading: MeasurementReading;
   correctionReason: string | null;
+  status?: MeasurementStatus;
+  recordedBy?: string;
+  notes?: string | null;
 }
 
 export type MeasurementDraft = Pick<MeasurementRecord, 'recordedAt' | 'source' | 'reading'>;
@@ -30,11 +50,17 @@ export function readingText(reading: MeasurementReading): string {
 
 export function validateDraft(draft: MeasurementDraft): string | null {
   const timestamp = Date.parse(draft.recordedAt);
+
   if (!draft.recordedAt || !Number.isFinite(timestamp) || timestamp > Date.now()) {
     return 'Enter a valid measurement time that is not in the future.';
   }
-  if (draft.source !== 'patient') return 'Select a valid measurement source.';
+
+  if (draft.source !== 'patient') {
+    return 'Only patient entries can be added here.';
+  }
+
   const r = draft.reading;
+
   if (r.kind === 'blood_pressure') {
     if (
       !Number.isInteger(r.systolic) ||
@@ -46,11 +72,21 @@ export function validateDraft(draft: MeasurementDraft): string | null {
     ) {
       return 'Enter positive whole-number blood pressure values up to 400.';
     }
-    if (r.unit !== 'mmHg') return 'Blood pressure must use mmHg.';
-  } else if (!Number.isFinite(r.value) || r.value <= 0 || r.value > 10000) {
-    return 'Enter a positive measurement value (maximum 10000).';
-  } else if (r.kind === 'weight' ? r.unit !== 'kg' : r.unit !== 'mg/dL') {
-    return 'Invalid unit for this measurement.';
+
+    if (r.unit !== 'mmHg') {
+      return 'Blood pressure must use mmHg.';
+    }
+  } else {
+    if (!Number.isFinite(r.value) || r.value <= 0 || r.value > 10000) {
+      return 'Enter a positive measurement value (maximum 10000).';
+    }
+
+    if (
+      r.kind === 'weight' ? !['kg', 'lb'].includes(r.unit) : !['mg/dL', 'mmol/L'].includes(r.unit)
+    ) {
+      return 'Invalid unit for this measurement.';
+    }
   }
+
   return null;
 }

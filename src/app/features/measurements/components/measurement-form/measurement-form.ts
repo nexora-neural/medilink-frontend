@@ -31,6 +31,8 @@ export class MeasurementForm {
   diastolic: number | null = null;
   recordedAt = localDateTime(new Date());
   reason = '';
+  weightUnit: 'kg' | 'lb' = 'kg';
+  glucoseUnit: 'mg/dL' | 'mmol/L' = 'mg/dL';
   readonly error = signal('');
   readonly today = computed(() => localDateTime(new Date()));
 
@@ -45,6 +47,8 @@ export class MeasurementForm {
     this.diastolic = null;
     this.recordedAt = localDateTime(new Date());
     this.reason = '';
+    this.weightUnit = 'kg';
+    this.glucoseUnit = 'mg/dL';
     this.error.set('');
 
     if (!record) return;
@@ -55,8 +59,12 @@ export class MeasurementForm {
     if (record.reading.kind === 'blood_pressure') {
       this.systolic = record.reading.systolic;
       this.diastolic = record.reading.diastolic;
+    } else if (record.reading.kind === 'weight') {
+      this.value = record.reading.value;
+      this.weightUnit = record.reading.unit;
     } else {
       this.value = record.reading.value;
+      this.glucoseUnit = record.reading.unit;
     }
   }
 
@@ -71,9 +79,17 @@ export class MeasurementForm {
         unit: 'mmHg',
       };
     } else if (this.kind === 'weight') {
-      reading = { kind: 'weight', value: Number(this.value), unit: 'kg' };
+      reading = {
+        kind: 'weight',
+        value: Number(this.value),
+        unit: this.weightUnit,
+      };
     } else {
-      reading = { kind: 'glucose', value: Number(this.value), unit: 'mg/dL' };
+      reading = {
+        kind: 'glucose',
+        value: Number(this.value),
+        unit: this.glucoseUnit,
+      };
     }
     const millis = Date.parse(this.recordedAt);
     if (!Number.isFinite(millis)) {
