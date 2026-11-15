@@ -10,7 +10,10 @@ export class MeasurementStore {
 
   private patientId: string | null = null;
 
-  private pendingCorrectionKey: string | null = null;
+  private pendingCorrection: {
+    fingerprint: string;
+    key: string;
+  } | null = null;
 
   private readonly activeState = signal<MeasurementRecord[]>([]);
   private readonly historyState = signal<MeasurementRecord[]>([]);
@@ -76,16 +79,31 @@ export class MeasurementStore {
       throw new Error('A correction cannot change the measurement type.');
     }
 
-    const idempotencyKey = this.pendingCorrectionKey ?? crypto.randomUUID();
+    // Identify this exact correction operation.
+    const fingerprint = JSON.stringify({
+      currentId,
+      draft,
+      reason: trimmedReason,
+    });
 
-    this.pendingCorrectionKey = idempotencyKey;
+    // Reuse the same key only when retrying the same operation.
+    const idempotencyKey =
+      this.pendingCorrection?.fingerprint === fingerprint
+        ? this.pendingCorrection.key
+        : crypto.randomUUID();
+
+    this.pendingCorrection = {
+      fingerprint,
+      key: idempotencyKey,
+    };
 
     await this.api.correct(currentId, draft, trimmedReason, idempotencyKey);
 
-    this.pendingCorrectionKey = null;
+    // The API confirmed the correction was saved.
+    this.pendingCorrection = null;
 
+    // Reload measurements and correction history from the backend.
     await this.load();
-
   }
 
   revisionsFor(rootId: string): MeasurementRecord[] {
