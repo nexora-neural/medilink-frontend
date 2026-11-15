@@ -122,7 +122,9 @@ describe('MeasurementStore API integration', () => {
       original.id,
       correctionDraft,
       'Corrected entered weight',
+      expect.any(String),
     );
+
 
     expect(api.load).toHaveBeenCalledTimes(2);
   });

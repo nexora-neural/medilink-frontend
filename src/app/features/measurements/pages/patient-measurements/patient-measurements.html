@@ -104,11 +104,13 @@
       />
     }
 
-    @if (showHistory() && pageState() === 'ready') {
+
+    @if (showHistory() && (pageState() === 'ready' || pageState() === 'empty')) {
       <app-correction-history
         [records]="allHistory()"
         (closeRequested)="clearHistory()"
       />
     }
+
   </section>
 </section>

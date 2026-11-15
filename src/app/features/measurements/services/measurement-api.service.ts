@@ -130,7 +130,11 @@ export class MeasurementApiService {
     );
   }
 
-  async correct(measurementId: string, draft: MeasurementDraft, reason: string): Promise<void> {
+  async correct(measurementId: string,
+                draft: MeasurementDraft,
+                reason: string,
+                idempotencyKey: string,
+                ): Promise<void> {
     // The existing AuthService POST helper does not accept custom headers.
     // Use the same named Firebase app and runtime apiBaseUrl for the required idempotency header.
     const app = getApps().find((candidate) => candidate.name === 'medilink');
@@ -146,7 +150,12 @@ export class MeasurementApiService {
         .post<BackendMeasurement>(
           url,
           { ...toRequest(draft), reason },
-          { headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': crypto.randomUUID() } },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Idempotency-Key': idempotencyKey,
+            },
+          },
         )
         .pipe(timeout(10000)),
     );

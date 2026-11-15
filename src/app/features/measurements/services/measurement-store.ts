@@ -10,6 +10,8 @@ export class MeasurementStore {
 
   private patientId: string | null = null;
 
+  private pendingCorrectionKey: string | null = null;
+
   private readonly activeState = signal<MeasurementRecord[]>([]);
   private readonly historyState = signal<MeasurementRecord[]>([]);
 
@@ -74,9 +76,16 @@ export class MeasurementStore {
       throw new Error('A correction cannot change the measurement type.');
     }
 
-    await this.api.correct(currentId, draft, trimmedReason);
+    const idempotencyKey = this.pendingCorrectionKey ?? crypto.randomUUID();
+
+    this.pendingCorrectionKey = idempotencyKey;
+
+    await this.api.correct(currentId, draft, trimmedReason, idempotencyKey);
+
+    this.pendingCorrectionKey = null;
 
     await this.load();
+
   }
 
   revisionsFor(rootId: string): MeasurementRecord[] {
