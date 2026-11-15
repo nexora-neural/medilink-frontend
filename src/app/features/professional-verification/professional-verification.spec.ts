@@ -112,6 +112,28 @@ describe('ProfessionalVerification', () => {
     expect(component.documents[0].original_filename).toBe('evidence.pdf');
   });
 
+  it('shows suspended applications as suspended instead of pending', async () => {
+    api.listOwn.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'application-1',
+          role: 'doctor',
+          registration_number: 'D123',
+          status: 'suspended',
+          submitted_at: '2026-11-15T00:00:00Z',
+          evidence_document_ids: [],
+        },
+      ],
+      page: 1,
+      page_size: 20,
+      total: 1,
+    });
+    await component.loadApplication();
+    expect(component.statusLabel).toBe('Suspended');
+    expect(component.statusHeadingText).toBe('Application suspended');
+    expect(component.statusLabel).not.toContain('Pending');
+  });
+
   it('shows backend failures and allows retry', async () => {
     api.listOwn.mockRejectedValueOnce(new Error('offline'));
     await component.loadApplication();

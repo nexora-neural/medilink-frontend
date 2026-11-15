@@ -38,23 +38,11 @@
     </section>
   } @else if (application && showStatus) {
     <section class="verification-card status-card">
-      <div class="status-icon pending">
+      <div class="status-icon" [class.pending]="application.status !== 'suspended'">
         <span class="material-symbols-outlined">fact_check</span>
       </div>
       <span class="eyebrow">APPLICATION STATUS</span>
-      <h2 #statusHeading tabindex="-1">
-        {{
-          application.status === 'approved'
-            ? 'Application approved'
-            : application.status === 'rejected'
-              ? 'Application rejected'
-              : application.status === 'more_info_requested'
-                ? 'More information requested'
-                : application.status === 'under_review'
-                  ? 'Application under review'
-                  : 'Your application is pending review'
-        }}
-      </h2>
+      <h2 #statusHeading tabindex="-1">{{ statusHeadingText }}</h2>
       <p class="status-description">
         Your application status is saved by MediLink and will remain available after you sign in
         again.

@@ -74,6 +74,7 @@ export class ProfessionalVerification implements OnInit {
     const status = this.application?.status;
     if (status === 'approved' || status === 'verified') return 'Approved';
     if (status === 'rejected') return 'Rejected';
+    if (status === 'suspended') return 'Suspended';
     if (status === 'more_info_requested') return 'More information requested';
     if (status === 'under_review') return 'Under review';
     return 'Pending review';
@@ -87,6 +88,24 @@ export class ProfessionalVerification implements OnInit {
     return (
       this.application?.status === 'rejected' || this.application?.status === 'more_info_requested'
     );
+  }
+
+  get statusHeadingText(): string {
+    switch (this.application?.status) {
+      case 'approved':
+      case 'verified':
+        return 'Application approved';
+      case 'rejected':
+        return 'Application rejected';
+      case 'suspended':
+        return 'Application suspended';
+      case 'more_info_requested':
+        return 'More information requested';
+      case 'under_review':
+        return 'Application under review';
+      default:
+        return 'Your application is pending review';
+    }
   }
 
   onDocumentsChanged(files: File[]): void {
