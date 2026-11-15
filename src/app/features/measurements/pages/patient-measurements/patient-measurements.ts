@@ -65,11 +65,16 @@ export class PatientMeasurements implements OnInit {
   async retry(): Promise<void> {
     this.pageState.set('loading');
     this.error.set('');
+    this.message.set('');
 
     try {
       await this.store.load();
 
       this.pageState.set(this.measurements().length > 0 ? 'ready' : 'empty');
+
+      if (this.store.historyUnavailable()) {
+        this.message.set('Measurements loaded. Correction history is temporarily unavailable.');
+      }
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Unable to load measurements.');
 
@@ -112,14 +117,21 @@ export class PatientMeasurements implements OnInit {
     const target = this.correcting();
 
     try {
-      if (target) {
-        await this.store.correct(target.id, payload.draft, payload.reason);
-      } else {
-        await this.store.add(payload.draft);
-      }
+      const result = target
+        ? await this.store.correct(target.id, payload.draft, payload.reason)
+        : await this.store.add(payload.draft);
 
+      // Save succeeded. Close the form so it cannot be
+      // submitted again accidentally.
       this.saving.set(false);
       this.closeForm();
+
+      if (result?.refreshed === false) {
+        this.message.set(
+          'Measurement saved successfully, but the latest records could not be refreshed. Refresh the page to view the updated data.',
+        );
+        return;
+      }
 
       this.message.set(
         target
@@ -127,9 +139,19 @@ export class PatientMeasurements implements OnInit {
           : 'Measurement added successfully.',
       );
 
+      if (this.store.historyUnavailable()) {
+        this.message.set(
+          'Measurement saved successfully. Correction history is temporarily unavailable.',
+        );
+      }
+
       this.pageState.set(this.measurements().length > 0 ? 'ready' : 'empty');
     } catch (error) {
-      this.error.set(error instanceof Error ? error.message : 'Unable to save this measurement.');
+      this.error.set(
+        error instanceof Error
+          ? error.message
+          : 'Unable to confirm the save. Refresh the page to check before trying again.',
+      );
 
       this.saving.set(false);
     }

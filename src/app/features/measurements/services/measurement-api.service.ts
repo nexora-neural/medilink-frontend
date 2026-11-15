@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -101,22 +101,43 @@ export class MeasurementApiService {
     return result;
   }
 
-  async load(
-    patientId: string,
-  ): Promise<{ current: MeasurementRecord[]; history: MeasurementRecord[] }> {
+  async load(patientId: string): Promise<{
+    current: MeasurementRecord[];
+    history: MeasurementRecord[];
+    historyUnavailable: boolean;
+  }> {
     const base = `patients/${encodeURIComponent(patientId)}/measurements`;
-    const [active, history] = await Promise.all([
-      this.getAll(base),
-      this.getAll(`${base}/history`),
-    ]);
-    // Build correction chains in creation order, independent of API page order.
+
+    // Current measurements must load independently.
+    const active = await this.getAll(base);
+
+    let history: BackendMeasurement[] = [];
+    let historyUnavailable = false;
+
+    try {
+      history = await this.getAll(`${base}/history`);
+    } catch (error) {
+      // Never silently ignore authorization failures.
+      if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+        throw error;
+      }
+
+      // A missing or temporarily failing history endpoint
+      // must not hide successfully loaded active measurements.
+      historyUnavailable = true;
+    }
+
     const roots = new Map<string, string>();
+
     const all = [...history].sort((a, b) => a.created_at.localeCompare(b.created_at));
+
     const mappedHistory = all.map((row) => toRecord(row, roots));
     const mappedCurrent = active.map((row) => toRecord(row, roots));
+
     return {
       current: mappedCurrent.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)),
       history: mappedHistory.sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      historyUnavailable,
     };
   }
 

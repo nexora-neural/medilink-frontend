@@ -26,6 +26,7 @@ class MockMeasurementStore {
 
   readonly current = this.recordsState.asReadonly();
   readonly history = this.recordsState.asReadonly();
+  readonly historyUnavailable = signal(false);
 
   readonly patientAdded = computed(
     () => this.current().filter((record) => record.source === 'patient').length,

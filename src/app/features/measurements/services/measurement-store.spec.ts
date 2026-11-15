@@ -46,6 +46,7 @@ describe('MeasurementStore API integration', () => {
     api.load.mockResolvedValue({
       current: [original],
       history: [original],
+      historyUnavailable: false,
     });
 
     api.add.mockResolvedValue(undefined);
@@ -174,5 +175,52 @@ describe('MeasurementStore API integration', () => {
     await expect(store.load()).rejects.toThrow('Backend unavailable');
 
     expect(store.current()).toEqual([]);
+  });
+
+  it('does not treat a reload failure as an add failure', async () => {
+    await store.load();
+
+    api.load.mockRejectedValueOnce(new Error('Refresh failed'));
+
+    const result = await store.add(draft);
+
+    expect(api.add).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ refreshed: false });
+  });
+
+  it('reuses the idempotency key when retrying the same correction', async () => {
+    await store.load();
+
+    api.correct.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(store.correct(original.id, draft, 'Corrected value')).rejects.toThrow(
+      'Network error',
+    );
+
+    const firstKey = api.correct.mock.calls[0][3];
+
+    await store.correct(original.id, draft, 'Corrected value');
+
+    const secondKey = api.correct.mock.calls[1][3];
+
+    expect(secondKey).toBe(firstKey);
+  });
+
+  it('uses a new key when correction details change', async () => {
+    await store.load();
+
+    api.correct.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(store.correct(original.id, draft, 'First reason')).rejects.toThrow(
+      'Network error',
+    );
+
+    const firstKey = api.correct.mock.calls[0][3];
+
+    await store.correct(original.id, draft, 'Different reason');
+
+    const secondKey = api.correct.mock.calls[1][3];
+
+    expect(secondKey).not.toBe(firstKey);
   });
 });

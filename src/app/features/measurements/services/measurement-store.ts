@@ -4,6 +4,10 @@ import { MeasurementDraft, MeasurementRecord, validateDraft } from '../models/me
 
 import { MeasurementApiService } from './measurement-api.service';
 
+interface SaveResult {
+  refreshed: boolean;
+}
+
 @Injectable()
 export class MeasurementStore {
   private readonly api = inject(MeasurementApiService);
@@ -21,6 +25,8 @@ export class MeasurementStore {
   readonly current = this.activeState.asReadonly();
   readonly history = this.historyState.asReadonly();
 
+  readonly historyUnavailable = signal(false);
+
   readonly patientAdded = computed(
     () => this.activeState().filter((row) => row.source === 'patient').length,
   );
@@ -34,9 +40,10 @@ export class MeasurementStore {
 
     this.activeState.set(records.current);
     this.historyState.set(records.history);
+    this.historyUnavailable.set(records.historyUnavailable);
   }
 
-  async add(draft: MeasurementDraft): Promise<void> {
+  async add(draft: MeasurementDraft): Promise<SaveResult> {
     const error = validateDraft(draft);
 
     if (error) {
@@ -49,10 +56,10 @@ export class MeasurementStore {
 
     await this.api.add(this.patientId, draft);
 
-    await this.load();
+    return this.refreshAfterSave();
   }
 
-  async correct(currentId: string, draft: MeasurementDraft, reason: string): Promise<void> {
+  async correct(currentId: string, draft: MeasurementDraft, reason: string): Promise<SaveResult> {
     const error = validateDraft(draft);
 
     if (error) {
@@ -79,7 +86,12 @@ export class MeasurementStore {
       throw new Error('A correction cannot change the measurement type.');
     }
 
-    // Identify this exact correction operation.
+    // Preserve the original measurement unit.
+    if (draft.reading.unit !== original.reading.unit) {
+      throw new Error('A correction must preserve the original measurement unit.');
+    }
+
+    // Identify the exact correction operation.
     const fingerprint = JSON.stringify({
       currentId,
       draft,
@@ -97,13 +109,25 @@ export class MeasurementStore {
       key: idempotencyKey,
     };
 
+    // Submit the correction to the backend.
     await this.api.correct(currentId, draft, trimmedReason, idempotencyKey);
 
-    // The API confirmed the correction was saved.
+    // Clear the key only after the API confirms success.
     this.pendingCorrection = null;
 
-    // Reload measurements and correction history from the backend.
-    await this.load();
+    return this.refreshAfterSave();
+  }
+
+  private async refreshAfterSave(): Promise<SaveResult> {
+    try {
+      await this.load();
+
+      return { refreshed: true };
+    } catch {
+      // Saving succeeded, but refreshing failed.
+      // Do not repeat the successful POST request.
+      return { refreshed: false };
+    }
   }
 
   revisionsFor(rootId: string): MeasurementRecord[] {
