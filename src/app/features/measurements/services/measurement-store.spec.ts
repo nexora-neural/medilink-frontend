@@ -125,7 +125,6 @@ describe('MeasurementStore API integration', () => {
       expect.any(String),
     );
 
-
     expect(api.load).toHaveBeenCalledTimes(2);
   });
 
