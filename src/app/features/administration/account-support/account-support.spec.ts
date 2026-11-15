@@ -284,4 +284,46 @@ describe('AccountSupport API integration', () => {
     expect(cards[0].querySelector('button')?.textContent?.trim()).toBe('Suspend');
     expect(cards[1].querySelector('button')?.textContent?.trim()).toBe('Reactivate');
   });
+  it('rejects a status response for a different account', async () => {
+    await component.search();
+
+    api.updateStatus.mockResolvedValueOnce({
+      ...user,
+      id: 'another-user',
+      status: 'suspended',
+    });
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review required');
+
+    await component.confirmChange();
+
+    expect(component.accounts()[0].status).toBe('active');
+    expect(component.message()).toBe('');
+    expect(component.actionError()).toContain('result could not be confirmed');
+    expect(component.pendingAccount()).not.toBeNull();
+    expect(component.saving()).toBe(false);
+    expect(api.updateStatus).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a status response that does not match the requested change', async () => {
+    await component.search();
+
+    api.updateStatus.mockResolvedValueOnce({
+      ...user,
+      status: 'active',
+    });
+
+    component.requestChange(component.accounts()[0]);
+    component.reasonControl.setValue('Review required');
+
+    await component.confirmChange();
+
+    expect(component.accounts()[0].status).toBe('active');
+    expect(component.message()).toBe('');
+    expect(component.actionError()).toContain('result could not be confirmed');
+    expect(component.pendingAccount()).not.toBeNull();
+    expect(component.saving()).toBe(false);
+    expect(api.updateStatus).toHaveBeenCalledOnce();
+  });
 });

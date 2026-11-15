@@ -160,6 +160,12 @@ export class AccountSupport {
 
     try {
       const updated = await this.api.updateStatus(account.id, status, reason);
+      if (!updated || updated.id !== account.id || updated.status !== status) {
+        this.actionError.set(
+          'The result could not be confirmed. Cancel and search again to check the account status before retrying.',
+        );
+        return;
+      }
 
       this.accounts.update((accounts) =>
         accounts.map((item) =>
