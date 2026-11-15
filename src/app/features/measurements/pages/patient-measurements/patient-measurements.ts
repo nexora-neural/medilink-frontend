@@ -1,5 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 
 import { UiState } from '../../../../shared/components/ui-state/ui-state';
 
@@ -8,6 +7,7 @@ import { MeasurementForm } from '../../components/measurement-form/measurement-f
 import { MeasurementList } from '../../components/measurement-list/measurement-list';
 
 import { MeasurementDraft, MeasurementRecord } from '../../models/measurement.model';
+import { MeasurementApiService } from '../../services/measurement-api.service';
 import { MeasurementStore } from '../../services/measurement-store';
 
 type PageState = 'ready' | 'loading' | 'empty' | 'error';
@@ -16,17 +16,18 @@ type PageState = 'ready' | 'loading' | 'empty' | 'error';
   selector: 'app-patient-measurements',
   standalone: true,
   imports: [UiState, CorrectionHistory, MeasurementForm, MeasurementList],
-  providers: [MeasurementStore],
+  providers: [MeasurementApiService, MeasurementStore],
   templateUrl: './patient-measurements.html',
   styleUrl: './patient-measurements.scss',
 })
-export class PatientMeasurements {
+export class PatientMeasurements implements OnInit {
   private readonly store = inject(MeasurementStore);
-  private readonly route = inject(ActivatedRoute);
 
   readonly measurements = this.store.current;
 
-  readonly pageState = signal<PageState>('ready');
+  readonly pageState = signal<PageState>('loading');
+
+  readonly saving = signal(false);
 
   readonly formMode = signal<'add' | 'correct' | null>(null);
 
@@ -40,8 +41,7 @@ export class PatientMeasurements {
   readonly total = computed(() => {
     const state = this.pageState();
 
-    if (state === 'empty') return 0;
-    if (state !== 'ready') return null;
+    if (state === 'loading' || state === 'error') return null;
 
     return this.measurements().length;
   });
@@ -49,27 +49,37 @@ export class PatientMeasurements {
   readonly patientAdded = computed(() => {
     const state = this.pageState();
 
-    if (state === 'empty') return 0;
-    if (state !== 'ready') return null;
+    if (state === 'loading' || state === 'error') return null;
 
-    return this.measurements().filter((item) => item.source === 'patient').length;
+    return this.store.patientAdded();
   });
 
   readonly allHistory = computed(() =>
     [...this.store.history()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   );
 
-  constructor() {
-    this.route.queryParamMap.subscribe((params) => {
-      const state = params.get('preview');
+  ngOnInit(): void {
+    void this.retry();
+  }
 
-      this.pageState.set(
-        state === 'loading' || state === 'empty' || state === 'error' ? state : 'ready',
-      );
-    });
+  async retry(): Promise<void> {
+    this.pageState.set('loading');
+    this.error.set('');
+
+    try {
+      await this.store.load();
+
+      this.pageState.set(this.measurements().length > 0 ? 'ready' : 'empty');
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Unable to load measurements.');
+
+      this.pageState.set('error');
+    }
   }
 
   add(): void {
+    if (this.saving()) return;
+
     this.formMode.set('add');
     this.correcting.set(null);
     this.message.set('');
@@ -77,6 +87,8 @@ export class PatientMeasurements {
   }
 
   correct(record: MeasurementRecord): void {
+    if (this.saving() || record.source !== 'patient') return;
+
     this.correcting.set(record);
     this.formMode.set('correct');
     this.message.set('');
@@ -84,20 +96,30 @@ export class PatientMeasurements {
   }
 
   closeForm(): void {
+    if (this.saving()) return;
+
     this.formMode.set(null);
     this.correcting.set(null);
     this.error.set('');
   }
 
-  save(payload: { draft: MeasurementDraft; reason: string }): void {
-    try {
-      const target = this.correcting();
+  async save(payload: { draft: MeasurementDraft; reason: string }): Promise<void> {
+    if (this.saving()) return;
 
+    this.saving.set(true);
+    this.error.set('');
+
+    const target = this.correcting();
+
+    try {
       if (target) {
-        this.store.correct(target.id, payload.draft, payload.reason);
+        await this.store.correct(target.id, payload.draft, payload.reason);
       } else {
-        this.store.add(payload.draft);
+        await this.store.add(payload.draft);
       }
+
+      this.saving.set(false);
+      this.closeForm();
 
       this.message.set(
         target
@@ -105,10 +127,11 @@ export class PatientMeasurements {
           : 'Measurement added successfully.',
       );
 
-      this.closeForm();
-      this.pageState.set('ready');
+      this.pageState.set(this.measurements().length > 0 ? 'ready' : 'empty');
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Unable to save this measurement.');
+
+      this.saving.set(false);
     }
   }
 
@@ -118,10 +141,5 @@ export class PatientMeasurements {
 
   clearHistory(): void {
     this.showHistory.set(false);
-  }
-
-  retry(): void {
-    this.pageState.set('ready');
-    this.error.set('');
   }
 }

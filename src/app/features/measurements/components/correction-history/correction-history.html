@@ -9,7 +9,8 @@
       <li>
         <strong>{{ reading(record.reading) }}</strong>
         <div>Measured: {{ record.recordedAt | date:'medium' }}</div>
-        <div>Entered: {{ record.createdAt | date:'medium' }} · Source: Patient-added</div>
+        <div>Entered: {{ record.createdAt | date:'medium' }} · Source: {{ record.source }}</div>
+        <div>Status: {{ record.status ?? 'active' }}</div>
         @if (record.correctsId) {
           <div>Correction to record {{ record.correctsId }}</div>
           <div>Reason: {{ record.correctionReason }}</div>

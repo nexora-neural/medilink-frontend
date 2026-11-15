@@ -1,3 +1,4 @@
+
 <section class="measurements-page" aria-labelledby="measurements-title">
   <header class="page-heading">
     <div>
@@ -13,9 +14,8 @@
   </header>
 
   <p class="preview-notice">
-    <strong>Sample preview only.</strong>
-    These are fictional measurements. Any additions and corrections are temporary and will be lost
-    when you leave this page or refresh.
+    Your measurements are saved securely and can be reviewed here.
+    Corrections retain the original records in your measurement history.
   </p>
 
   <div class="summary-grid" aria-label="Measurement summary">
@@ -85,7 +85,7 @@
       <app-ui-state
         kind="error"
         title="Measurements unavailable"
-        description="We could not load the measurements preview."
+        description="We could not load your measurements. Please try again."
         actionLabel="Try again"
         (action)="retry()"
       />
@@ -105,7 +105,10 @@
     }
 
     @if (showHistory() && pageState() === 'ready') {
-      <app-correction-history [records]="allHistory()" (closeRequested)="clearHistory()" />
+      <app-correction-history
+        [records]="allHistory()"
+        (closeRequested)="clearHistory()"
+      />
     }
   </section>
 </section>

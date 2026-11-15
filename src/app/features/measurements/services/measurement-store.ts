@@ -1,85 +1,85 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+
 import { MeasurementDraft, MeasurementRecord, validateDraft } from '../models/measurement.model';
 
-/** ML-97 demo-only store. ML-102 must replace this with authenticated API calls. */
+import { MeasurementApiService } from './measurement-api.service';
+
 @Injectable()
 export class MeasurementStore {
-  private readonly recordsState = signal<MeasurementRecord[]>([
-    {
-      id: 'demo-bp',
-      rootId: 'demo-bp',
-      correctsId: null,
-      recordedAt: '2026-10-28T08:15:00+05:30',
-      createdAt: '2026-10-28T08:20:00+05:30',
-      source: 'patient',
-      reading: { kind: 'blood_pressure', systolic: 120, diastolic: 78, unit: 'mmHg' },
-      correctionReason: null,
-    },
-    {
-      id: 'demo-weight',
-      rootId: 'demo-weight',
-      correctsId: null,
-      recordedAt: '2026-10-20T09:30:00+05:30',
-      createdAt: '2026-10-20T09:32:00+05:30',
-      source: 'patient',
-      reading: { kind: 'weight', value: 64, unit: 'kg' },
-      correctionReason: null,
-    },
-  ]);
-  readonly history = this.recordsState.asReadonly();
-  readonly current = computed(() => {
-    const revisions = new Map<string, MeasurementRecord>();
-    for (const record of this.recordsState()) revisions.set(record.rootId, record);
-    return [...revisions.values()].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
-  });
+  private readonly api = inject(MeasurementApiService);
 
-  add(draft: MeasurementDraft): MeasurementRecord {
-    this.ensureValid(draft);
-    const id = crypto.randomUUID();
-    const record: MeasurementRecord = {
-      ...draft,
-      id,
-      rootId: id,
-      correctsId: null,
-      createdAt: new Date().toISOString(),
-      correctionReason: null,
-    };
-    this.recordsState.update((records) => [...records, record]);
-    return record;
+  private patientId: string | null = null;
+
+  private readonly activeState = signal<MeasurementRecord[]>([]);
+  private readonly historyState = signal<MeasurementRecord[]>([]);
+
+  readonly current = this.activeState.asReadonly();
+  readonly history = this.historyState.asReadonly();
+
+  readonly patientAdded = computed(
+    () => this.activeState().filter((row) => row.source === 'patient').length,
+  );
+
+  async load(): Promise<void> {
+    const patientId = await this.api.getPatientId();
+
+    const records = await this.api.load(patientId);
+
+    this.patientId = patientId;
+
+    this.activeState.set(records.current);
+    this.historyState.set(records.history);
   }
 
-  correct(currentId: string, draft: MeasurementDraft, reason: string): MeasurementRecord {
-    this.ensureValid(draft);
-    const cleanedReason = reason.trim();
-    if (!cleanedReason || cleanedReason.length > 500) {
+  async add(draft: MeasurementDraft): Promise<void> {
+    const error = validateDraft(draft);
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    if (!this.patientId) {
+      throw new Error('Patient record is not loaded.');
+    }
+
+    await this.api.add(this.patientId, draft);
+
+    await this.load();
+  }
+
+  async correct(currentId: string, draft: MeasurementDraft, reason: string): Promise<void> {
+    const error = validateDraft(draft);
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason || trimmedReason.length > 500) {
       throw new Error('Enter a correction reason of 1–500 characters.');
     }
-    const current = this.current().find((record) => record.id === currentId);
-    if (!current) throw new Error('Only the latest version of a measurement can be corrected.');
-    if (draft.reading.kind !== current.reading.kind) {
+
+    const original = this.current().find((record) => record.id === currentId);
+
+    if (
+      !original ||
+      original.source !== 'patient' ||
+      (original.status !== undefined && original.status !== 'active')
+    ) {
+      throw new Error('Only active patient-added measurements can be corrected.');
+    }
+
+    if (draft.reading.kind !== original.reading.kind) {
       throw new Error('A correction cannot change the measurement type.');
     }
-    const record: MeasurementRecord = {
-      ...draft,
-      id: crypto.randomUUID(),
-      rootId: current.rootId,
-      correctsId: current.id,
-      createdAt: new Date().toISOString(),
-      correctionReason: cleanedReason,
-    };
-    // Append a new version. Never mutate or remove a previous record.
-    this.recordsState.update((records) => [...records, record]);
-    return record;
+
+    await this.api.correct(currentId, draft, trimmedReason);
+
+    await this.load();
   }
 
   revisionsFor(rootId: string): MeasurementRecord[] {
-    return this.recordsState()
-      .filter((record) => record.rootId === rootId)
-      .reverse();
-  }
-
-  private ensureValid(draft: MeasurementDraft): void {
-    const error = validateDraft(draft);
-    if (error) throw new Error(error);
+    return this.historyState().filter((record) => record.rootId === rootId);
   }
 }

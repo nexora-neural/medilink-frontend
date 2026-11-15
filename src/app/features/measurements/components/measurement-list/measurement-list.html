@@ -1,3 +1,4 @@
+
 <div class="measurement-list" aria-label="Recorded measurements">
   @for (record of measurements(); track record.id) {
     <article class="measurement-row">
@@ -16,29 +17,57 @@
           </span>
 
           @if (record.correctsId) {
-            <small class="corrected-label">Corrected entry</small>
+            <small class="corrected-label">
+              Corrected entry
+            </small>
           }
         </div>
       </div>
 
       <div class="row-right">
-        <span class="source-badge">Patient-added</span>
+        <span class="source-badge">
+          @switch (record.source) {
+            @case ('patient') {
+              Patient-added
+            }
+            @case ('doctor') {
+              Doctor-recorded
+            }
+            @case ('pharmacist') {
+              Pharmacist-recorded
+            }
+            @case ('lab_staff') {
+              Lab staff-recorded
+            }
+            @case ('approved_external_system') {
+              External system
+            }
+            @case ('admin') {
+              Admin-recorded
+            }
+          }
+        </span>
 
         <strong class="reading">
           {{ reading(record.reading) }}
         </strong>
 
-        <button
-          type="button"
-          class="correct-btn"
-          (click)="correctionRequested.emit(record)"
-          [attr.aria-label]="'Correct ' + label(record.reading.kind)"
-          title="Correct measurement"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">
-            edit
-          </span>
-        </button>
+        @if (record.source === 'patient') {
+          <button
+            type="button"
+            class="correct-btn"
+            (click)="correctionRequested.emit(record)"
+            [attr.aria-label]="'Correct ' + label(record.reading.kind)"
+            title="Correct measurement"
+          >
+            <span
+              class="material-symbols-outlined"
+              aria-hidden="true"
+            >
+              edit
+            </span>
+          </button>
+        }
       </div>
     </article>
   }
