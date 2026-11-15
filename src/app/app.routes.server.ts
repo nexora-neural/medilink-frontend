@@ -23,6 +23,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'workspace/doctor/medicines',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/admin/medicine-catalogue',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },
