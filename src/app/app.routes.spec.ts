@@ -3,9 +3,18 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { ActiveRoleService } from './core/context/active-role.service';
 import { routes } from './app.routes';
+import { serverRoutes } from './app.routes.server';
+import { RenderMode } from '@angular/ssr';
 import { AuthService } from './core/auth.service';
 
 describe('workspace routing', () => {
+  it('renders professional verification on the client for direct navigation and refresh', () => {
+    expect(
+      serverRoutes.find((route) => route.path === 'workspace/professional-verification')
+        ?.renderMode,
+    ).toBe(RenderMode.Client);
+  });
+
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     TestBed.configureTestingModule({

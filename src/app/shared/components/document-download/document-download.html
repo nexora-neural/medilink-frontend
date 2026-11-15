@@ -1,0 +1,34 @@
+<div class="document-download" [attr.aria-busy]="loading()">
+  @if (document(); as item) {
+    <div class="document-row">
+      <span class="material-symbols-outlined" aria-hidden="true"> description </span>
+
+      <div class="document-details">
+        <strong>{{ item.name }}</strong>
+        <span>Document</span>
+      </div>
+
+      <button
+        type="button"
+        [disabled]="loading() || disabled()"
+        [attr.aria-label]="(error() ? 'Retry download of ' : 'Download ') + item.name"
+        (click)="requestDownload()"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">
+          {{ loading() ? 'hourglass_top' : 'download' }}
+        </span>
+        {{ loading() ? 'Preparing...' : error() ? 'Try again' : 'Download' }}
+      </button>
+    </div>
+  } @else {
+    <p class="empty-state">No document available to download.</p>
+  }
+
+  <p class="status" role="status" aria-atomic="true">
+    {{ loading() ? 'Preparing document for download...' : message() }}
+  </p>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+</div>

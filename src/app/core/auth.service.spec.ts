@@ -211,4 +211,63 @@ describe('AuthService onboarding recovery', () => {
     request.flush({ status: 'active' });
     await expect(result).resolves.toEqual({ status: 'active' });
   });
+
+  it('sends authorized profile updates with PUT', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const body = { role: 'doctor', registration_number: 'D123' };
+    const result = service.putAuthorized<{ verification_status: string }>(
+      'me/professional-profile',
+      body,
+    );
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/me/professional-profile');
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    expect(request.request.body).toEqual(body);
+    request.flush({ verification_status: 'not_submitted' });
+    await expect(result).resolves.toEqual({ verification_status: 'not_submitted' });
+  });
+
+  it('sends document uploads as authenticated multipart form data', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const body = new FormData();
+    body.append('document_type', 'verification_evidence');
+    body.append('file', new Blob(['pdf']), 'evidence.pdf');
+    const result = service.postAuthorizedForm<{ id: string }>('me/verification-documents', body);
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/me/verification-documents');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    expect(request.request.headers.has('Content-Type')).toBe(false);
+    expect(request.request.body).toBe(body);
+    request.flush({ id: 'doc-1' });
+    await expect(result).resolves.toEqual({ id: 'doc-1' });
+  });
+
+  it('downloads authorized document content as a blob', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const result = service.getAuthorizedBlob('documents/doc-1/content');
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/documents/doc-1/content');
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    expect(request.request.responseType).toBe('blob');
+    request.flush(new Blob(['pdf'], { type: 'application/pdf' }));
+    await expect(result).resolves.toBeInstanceOf(Blob);
+  });
 });

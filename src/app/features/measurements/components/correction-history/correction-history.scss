@@ -1,0 +1,51 @@
+:host {
+  display: block;
+}
+
+.history {
+  border: 1px solid #d9e8f3;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+  background: #f8fbff;
+}
+
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+p, li {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #60758d;
+}
+
+ol {
+  padding-left: 22px;
+  overflow-wrap: anywhere;
+}
+
+li {
+  padding: 8px 0;
+}
+
+li strong {
+  color: #183153;
+}
+
+button {
+  border: 1px solid #d6e3ef;
+  background: white;
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 7px 12px;
+  cursor: pointer;
+}

@@ -1,18 +1,14 @@
-
 <main class="access-page">
   <header class="page-header">
     <div>
       <p class="eyebrow">PATIENT WORKSPACE</p>
       <h1>Doctor access</h1>
       <p class="page-description">
-        Scan a doctor's QR code or enter the reference manually to review
-        their identity.
+        Scan a doctor's QR code or enter the reference manually to review their identity.
       </p>
     </div>
 
-    <a routerLink="/workspace" class="back-link">
-      Back to dashboard
-    </a>
+    <a routerLink="/workspace" class="back-link"> Back to dashboard </a>
   </header>
 
   <section class="access-grid">
@@ -33,10 +29,7 @@
           aria-label="Camera preview for scanning a doctor QR code"
         ></video>
 
-        @if (
-          cameraStatus() === 'idle' ||
-          cameraStatus() === 'unsupported'
-          ) {
+        @if (cameraStatus() === 'idle' || cameraStatus() === 'unsupported') {
           <div class="camera-placeholder">
             <span class="material-symbols-outlined">qr_code_scanner</span>
             <p>Camera is not active</p>
@@ -65,9 +58,7 @@
         }
 
         @if (cameraStatus() === 'scanning') {
-          <div class="scan-indicator" role="status" aria-live="polite">
-            Scanning for QR code...
-          </div>
+          <div class="scan-indicator" role="status" aria-live="polite">Scanning for QR code...</div>
         }
       </div>
 
@@ -87,7 +78,7 @@
           cameraStatus() === 'idle' ||
           cameraStatus() === 'error' ||
           cameraStatus() === 'unsupported'
-          ) {
+        ) {
           <button
             type="button"
             class="primary-button"
@@ -100,35 +91,19 @@
         }
 
         @if (cameraStatus() === 'requesting') {
-          <button type="button" class="primary-button" disabled>
-            Requesting camera...
-          </button>
+          <button type="button" class="primary-button" disabled>Requesting camera...</button>
 
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="stopCamera()"
-          >
-            Cancel
-          </button>
+          <button type="button" class="secondary-button" (click)="stopCamera()">Cancel</button>
         }
 
         @if (cameraStatus() === 'scanning') {
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="stopCamera()"
-          >
+          <button type="button" class="secondary-button" (click)="stopCamera()">
             Stop scanning
           </button>
         }
 
         @if (cameraStatus() === 'found') {
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="clearCode()"
-          >
+          <button type="button" class="secondary-button" (click)="clearCode()">
             Clear captured code
           </button>
         }
@@ -138,9 +113,7 @@
     <article class="manual-card">
       <div class="section-heading">
         <h2>Enter doctor reference</h2>
-        <p>
-          You can enter the reference manually if scanning is unavailable.
-        </p>
+        <p>You can enter the reference manually if scanning is unavailable.</p>
       </div>
 
       <form [formGroup]="codeForm" (ngSubmit)="reviewCode()">
@@ -153,24 +126,18 @@
           placeholder="Enter doctor reference"
           autocomplete="off"
           aria-describedby="code-help code-error"
+          (input)="clearGrantReview()"
         />
 
-        <p id="code-help" class="field-help">
-          Enter the reference provided by the doctor.
-        </p>
+        <p id="code-help" class="field-help">Enter the reference provided by the doctor.</p>
 
-        @if (
-          codeForm.controls.doctorCode.invalid &&
-          codeForm.controls.doctorCode.touched
-          ) {
+        @if (codeForm.controls.doctorCode.invalid && codeForm.controls.doctorCode.touched) {
           <p id="code-error" class="error-message" role="alert">
             Please enter a doctor QR reference.
           </p>
         }
 
-        <button type="submit" class="primary-button">
-          Review reference
-        </button>
+        <button type="submit" class="primary-button">Review reference</button>
       </form>
     </article>
   </section>
@@ -185,12 +152,9 @@
       <div class="review-state empty-state" role="status">
         <span class="material-symbols-outlined">person_search</span>
         <h3>No doctor reference entered</h3>
-        <p>
-          Scan a QR code or enter a reference to begin the review.
-        </p>
+        <p>Scan a QR code or enter a reference to begin the review.</p>
       </div>
     }
-
 
     @if (reviewStatus() === 'loading') {
       <div class="review-state loading-state" role="status" aria-live="polite">
@@ -208,7 +172,6 @@
         }
       </div>
     }
-
 
     @if (reviewStatus() === 'ready') {
       <div class="review-state ready-state" role="status">
@@ -244,18 +207,300 @@
     }
 
     @if (reviewStatus() !== 'empty') {
-      <button
-        type="button"
-        class="secondary-button"
-        (click)="clearCode()"
-      >
+      <button type="button" class="secondary-button" (click)="clearCode()">
         Clear and start again
       </button>
     }
 
     <p class="verification-notice">
-      This is a frontend sample preview. Doctor identity verification and
-      access granting require the backend API and are not available here.
+      This is a frontend sample preview. Doctor identity verification and access granting require
+      the backend API and are not available here.
     </p>
+  </section>
+
+  <section class="review-card grant-card" aria-labelledby="grant-heading">
+    <div class="section-heading">
+      <h2 id="grant-heading">Choose doctor access</h2>
+      <p>Sample preview only. These choices do not give a doctor access to your records.</p>
+    </div>
+
+    <form
+      [formGroup]="grantForm"
+      (ngSubmit)="reviewGrantChoices()"
+      (change)="onGrantChoiceChanged($event)"
+    >
+      <fieldset>
+        <legend>Which records would you like to share?</legend>
+
+        <p id="grant-category-help" class="field-help">
+          Choose the categories you want to share. During an active grant, selected categories
+          include new records until expiry or revocation.
+        </p>
+
+        @for (category of grantCategories; track category.code) {
+          <label class="grant-option">
+            <input
+              type="checkbox"
+              [id]="'grant-category-' + category.code"
+              [formControlName]="category.code"
+              aria-describedby="grant-category-help"
+            />
+            <span>{{ category.label }}</span>
+          </label>
+        }
+      </fieldset>
+
+      <fieldset>
+        <legend>How long should access last?</legend>
+
+        <label class="grant-option">
+          <input type="radio" formControlName="duration" value="24h" />
+          <span>24 hours — default</span>
+        </label>
+
+        <label class="grant-option">
+          <input type="radio" formControlName="duration" value="7d" />
+          <span>7 days</span>
+        </label>
+
+        <label class="grant-option">
+          <input type="radio" formControlName="duration" value="30d" />
+          <span>30 days</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Consultation permission</legend>
+
+        <label class="grant-option">
+          <input
+            type="checkbox"
+            formControlName="allowConsultation"
+            aria-describedby="consultation-help"
+          />
+          <span>Allow consultation</span>
+        </label>
+
+        <p id="consultation-help" class="field-help">
+          This is a separate permission from choosing which records to share. It is off unless you
+          select it.
+        </p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Confirm your choices</legend>
+
+        <label class="grant-option">
+          <input type="checkbox" formControlName="confirmed" />
+          <span>
+            I have reviewed the selected categories, duration and consultation permission for this
+            sample preview.
+          </span>
+        </label>
+      </fieldset>
+
+      <p class="verification-notice">
+        No access has been granted. Doctor identity and organization must be verified by the server
+        before real access can be granted.
+      </p>
+      @if (grantError()) {
+        <p class="error-message" role="alert">
+          {{ grantError() }}
+        </p>
+      }
+
+      <button type="submit" class="primary-button">Review sample access choices</button>
+    </form>
+    @if (grantSummary(); as summary) {
+      <section class="grant-summary" aria-labelledby="grant-summary-heading">
+        <h3 id="grant-summary-heading">Sample access summary</h3>
+
+        <p class="verification-notice" role="status">
+          Preview only. No access has been granted and doctor identity remains unverified.
+        </p>
+
+        <dl>
+          <dt>Entered doctor reference — unverified</dt>
+          <dd>{{ summary.reference }}</dd>
+
+          <dt>Selected record categories</dt>
+          <dd>
+            <ul>
+              @for (category of summary.categories; track category) {
+                <li>{{ category }}</li>
+              }
+            </ul>
+          </dd>
+
+          <dt>Duration</dt>
+          <dd>{{ summary.duration }}</dd>
+
+          <dt>Allow consultation</dt>
+          <dd>{{ summary.allowConsultation ? 'Yes' : 'No' }}</dd>
+        </dl>
+      </section>
+    }
+  </section>
+  <section class="review-card grants-list" aria-labelledby="grants-heading">
+    <div class="section-heading">
+      <h2 id="grants-heading">Sample doctor access grants</h2>
+      <p>
+        Fictional records with fixed example dates and statuses. No grants were retrieved from the
+        server. Grant history is separate from record-access activity.
+      </p>
+    </div>
+
+    <div class="camera-actions" role="group" aria-label="Grant list preview state">
+      <button
+        type="button"
+        class="secondary-button"
+        [attr.aria-pressed]="grantsView() === 'ready'"
+        (click)="grantsView.set('ready')"
+      >
+        Sample records
+      </button>
+      <button
+        type="button"
+        class="secondary-button"
+        [attr.aria-pressed]="grantsView() === 'loading'"
+        (click)="grantsView.set('loading')"
+      >
+        Loading
+      </button>
+      <button
+        type="button"
+        class="secondary-button"
+        [attr.aria-pressed]="grantsView() === 'empty'"
+        (click)="grantsView.set('empty')"
+      >
+        Empty
+      </button>
+      <button
+        type="button"
+        class="secondary-button"
+        [attr.aria-pressed]="grantsView() === 'error'"
+        (click)="grantsView.set('error')"
+      >
+        Error
+      </button>
+    </div>
+
+    <div [attr.aria-busy]="grantsView() === 'loading'">
+      <p role="status" aria-atomic="true">
+        @if (grantsView() === 'loading') {
+          Loading sample grants...
+        } @else if (grantsView() === 'empty') {
+          No sample grants to display.
+        }
+      </p>
+
+      @if (grantsView() === 'error') {
+        <p class="error-message" role="alert">Sample error: grants could not be loaded.</p>
+        <button type="button" class="secondary-button" (click)="grantsView.set('ready')">
+          Retry sample list
+        </button>
+      }
+
+      @if (grantsView() === 'ready') {
+        <h3>Active sample grants</h3>
+        <p role="status" aria-atomic="true">{{ revokeMessage() }}</p>
+
+        @if (!sampleGrants().some(isActiveSampleGrant)) {
+          <p>No active sample grants.</p>
+        }
+
+        @for (grant of sampleGrants(); track grant.id) {
+          @if (grant.status === 'active') {
+            <article class="grant-item">
+              <h4>{{ grant.doctor }}</h4>
+              <p>{{ grant.organization }}</p>
+              <p><strong>Example status:</strong> Active</p>
+
+              <ul>
+                @for (category of grant.categories; track category) {
+                  <li>{{ categoryLabel(category) }}</li>
+                }
+              </ul>
+
+              <p>
+                <strong>Allow consultation:</strong>
+                {{ grant.allowConsultation ? 'Yes' : 'No' }}
+              </p>
+              <p>
+                <strong>Example expiry (UTC):</strong>
+                <time [attr.datetime]="grant.expiresAt">
+                  {{ grant.expiresAt }}
+                </time>
+              </p>
+              @if (pendingRevokeId() === grant.id) {
+                <div class="revoke-confirmation">
+                  <p>
+                    Mark the sample grant for {{ grant.doctor }} at {{ grant.organization }} as
+                    revoked? This changes the local preview only.
+                  </p>
+
+                  <div class="camera-actions">
+                    <button
+                      type="button"
+                      class="primary-button"
+                      (click)="confirmSampleRevoke(grant.id)"
+                    >
+                      Confirm sample revoke
+                    </button>
+
+                    <button type="button" class="secondary-button" (click)="cancelSampleRevoke()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [attr.aria-label]="'Revoke sample grant for ' + grant.doctor"
+                  (click)="requestSampleRevoke(grant.id)"
+                >
+                  Revoke sample grant
+                </button>
+              }
+            </article>
+          }
+        }
+
+        <details class="grant-history">
+          <summary>Review expired and revoked sample grants</summary>
+
+          @for (grant of sampleGrants(); track grant.id) {
+            @if (grant.status !== 'active') {
+              <article class="grant-item">
+                <h4>{{ grant.doctor }}</h4>
+                <p>{{ grant.organization }}</p>
+                <p>
+                  <strong>Example status:</strong>
+                  {{ grant.status === 'expired' ? 'Expired' : 'Revoked' }}
+                </p>
+
+                <ul>
+                  @for (category of grant.categories; track category) {
+                    <li>{{ categoryLabel(category) }}</li>
+                  }
+                </ul>
+
+                <p>
+                  <strong>Allow consultation:</strong>
+                  {{ grant.allowConsultation ? 'Yes' : 'No' }}
+                </p>
+                <p>
+                  <strong>Example expiry (UTC):</strong>
+                  <time [attr.datetime]="grant.expiresAt">
+                    {{ grant.expiresAt }}
+                  </time>
+                </p>
+              </article>
+            }
+          }
+        </details>
+      }
+    </div>
   </section>
 </main>

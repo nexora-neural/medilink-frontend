@@ -77,7 +77,7 @@ export class AuthService {
   }
 
   private async authorizedRequest<T>(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'PUT',
     path: string,
     body?: unknown,
   ): Promise<T> {
@@ -94,9 +94,48 @@ export class AuthService {
     const request =
       method === 'GET'
         ? this.http.get<T>(url, options)
-        : this.http.post<T>(url, body ?? {}, options);
+        : method === 'PUT'
+          ? this.http.put<T>(url, body ?? {}, options)
+          : this.http.post<T>(url, body ?? {}, options);
 
     return firstValueFrom(request.pipe(timeout(10000)));
+  }
+
+  private async authorizationHeaders(): Promise<{
+    url: string;
+    headers: { Authorization: string };
+  }> {
+    const { auth, config } = await this.firebase();
+    await auth.authStateReady();
+    if (!auth.currentUser) throw new Error('Please sign in to continue.');
+    const token = await auth.currentUser.getIdToken();
+    return {
+      url: config.apiBaseUrl,
+      headers: { Authorization: `Bearer ${token}` },
+    };
+  }
+
+  postAuthorizedForm<T>(path: string, body: FormData): Promise<T> {
+    return this.authorizationHeaders().then(({ url, headers }) =>
+      firstValueFrom(
+        this.http
+          .post<T>(`${url}/${path.replace(/^\//, '')}`, body, { headers })
+          .pipe(timeout(30000)),
+      ),
+    );
+  }
+
+  getAuthorizedBlob(path: string): Promise<Blob> {
+    return this.authorizationHeaders().then(({ url, headers }) =>
+      firstValueFrom(
+        this.http
+          .get(`${url}/${path.replace(/^\//, '')}`, {
+            headers,
+            responseType: 'blob',
+          })
+          .pipe(timeout(30000)),
+      ),
+    );
   }
 
   getAuthorized<T>(path: string): Promise<T> {
@@ -105,6 +144,10 @@ export class AuthService {
 
   postAuthorized<T>(path: string, body: unknown): Promise<T> {
     return this.authorizedRequest<T>('POST', path, body);
+  }
+
+  putAuthorized<T>(path: string, body: unknown): Promise<T> {
+    return this.authorizedRequest<T>('PUT', path, body);
   }
 
   async getOwnProfile(): Promise<MeResponse> {

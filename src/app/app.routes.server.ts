@@ -31,6 +31,26 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/admin/account-support',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/account-support',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/admin-accounts',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/access',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/professional-verification',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },

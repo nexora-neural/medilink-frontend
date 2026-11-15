@@ -19,6 +19,7 @@ import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/docto
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
+import { PatientMeasurements } from './features/measurements/pages/patient-measurements/patient-measurements';
 import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
 import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
@@ -61,12 +62,6 @@ const rolePages: Route[] = [
     ['Patient'],
     'Reports',
     'A protected patient route for the reports workspace.',
-  ),
-  rolePage(
-    'patient/measurements',
-    ['Patient'],
-    'Measurements',
-    'A protected patient route for the measurements workspace.',
   ),
   rolePage(
     'patient/vaccinations',
@@ -222,6 +217,14 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'patient/measurements',
+        component: PatientMeasurements,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
+      {
         path: 'professional-verification',
         component: ProfessionalVerification,
       },
@@ -306,6 +309,5 @@ export const routes: Routes = [
       },
     ],
   },
-
   { path: '**', redirectTo: 'not-found' },
 ];

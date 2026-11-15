@@ -282,4 +282,128 @@ describe('PatientDoctorAccess', () => {
     expect(getScreenText()).toContain('No doctor reference entered');
     expect(getScreenText()).not.toContain('DEMO-DOCTOR-01');
   });
+  it('keeps category selections when duration changes and resets confirmation', async () => {
+    const root = fixture!.nativeElement as HTMLElement;
+
+    const prescription = root.querySelector('#grant-category-prescriptions') as HTMLInputElement;
+
+    const confirmation = root.querySelector(
+      'input[formControlName="confirmed"]',
+    ) as HTMLInputElement;
+
+    const sevenDays = root.querySelector('input[type="radio"][value="7d"]') as HTMLInputElement;
+
+    prescription.click();
+    await fixture!.whenStable();
+
+    confirmation.click();
+    await fixture!.whenStable();
+
+    expect(component.grantForm.controls.confirmed.value).toBe(true);
+
+    sevenDays.click();
+    await fixture!.whenStable();
+
+    expect(prescription.checked).toBe(true);
+    expect(component.selectedGrantCategories).toEqual(['prescriptions']);
+    expect(component.grantForm.controls.duration.value).toBe('7d');
+    expect(component.grantForm.controls.confirmed.value).toBe(false);
+    expect(confirmation.checked).toBe(false);
+  });
+
+  it('requires a reviewed reference, categories and explicit confirmation', () => {
+    component.reviewGrantChoices();
+    expect(component.grantError()).toContain('doctor reference');
+    expect(component.grantSummary()).toBeNull();
+
+    component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
+    component.enteredCode.set('DEMO-DOCTOR-01');
+    component.reviewStatus.set('ready');
+
+    component.reviewGrantChoices();
+    expect(component.grantError()).toContain('at least one');
+
+    component.grantForm.controls.prescriptions.setValue(true);
+    component.reviewGrantChoices();
+    expect(component.grantError()).toContain('Confirm');
+
+    component.grantForm.controls.confirmed.setValue(true);
+    component.reviewGrantChoices();
+
+    expect(component.grantError()).toBe('');
+    expect(component.grantSummary()).toEqual({
+      reference: 'DEMO-DOCTOR-01',
+      categories: ['Prescriptions'],
+      duration: '24 hours',
+      allowConsultation: false,
+    });
+  });
+
+  it('clears the summary and confirmation when the reference is edited', async () => {
+    component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
+    component.enteredCode.set('DEMO-DOCTOR-01');
+    component.reviewStatus.set('ready');
+    component.grantForm.patchValue({
+      prescriptions: true,
+      confirmed: true,
+    });
+    component.reviewGrantChoices();
+
+    await fixture!.whenStable();
+    expect(component.grantSummary()).not.toBeNull();
+
+    const reference = fixture!.nativeElement.querySelector('#doctorCode') as HTMLInputElement;
+
+    reference.value = '';
+    reference.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture!.whenStable();
+
+    expect(component.grantSummary()).toBeNull();
+    expect(component.grantForm.controls.confirmed.value).toBe(false);
+    expect(component.grantForm.controls.prescriptions.value).toBe(true);
+    expect(fixture!.nativeElement.querySelector('.grant-summary')).toBeNull();
+  });
+
+  it('requires matching confirmation before revoking a sample grant', () => {
+    const id = 'sample-grant-active';
+
+    component.confirmSampleRevoke(id);
+    expect(component.sampleGrants().find((grant) => grant.id === id)?.status).toBe('active');
+
+    component.requestSampleRevoke(id);
+    component.cancelSampleRevoke();
+    component.confirmSampleRevoke(id);
+
+    expect(component.sampleGrants().find((grant) => grant.id === id)?.status).toBe('active');
+  });
+
+  it('moves a confirmed sample revoke into history and shows the empty active state', async () => {
+    const root = fixture!.nativeElement as HTMLElement;
+
+    const revoke = root.querySelector(
+      'button[aria-label="Revoke sample grant for Sample Doctor A"]',
+    ) as HTMLButtonElement;
+
+    revoke.click();
+    await fixture!.whenStable();
+
+    const confirm = Array.from(root.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Confirm sample revoke',
+    );
+
+    expect(confirm).toBeDefined();
+    confirm!.click();
+    await fixture!.whenStable();
+
+    expect(getScreenText()).toContain('No active sample grants.');
+    expect(getScreenText()).toContain('No server permissions were changed.');
+
+    const history = root.querySelector('.grant-history') as HTMLDetailsElement;
+
+    expect(history.textContent).toContain('Sample Doctor A');
+    expect(history.textContent).toContain('Revoked');
+    expect(
+      root.querySelector('button[aria-label="Revoke sample grant for Sample Doctor A"]'),
+    ).toBeNull();
+  });
 });

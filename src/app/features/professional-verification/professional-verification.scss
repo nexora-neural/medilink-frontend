@@ -566,3 +566,47 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+.download-preview {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #dce6ee;
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  p {
+    line-height: 1.6;
+  }
+}
+
+.download-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid #b9cbd8;
+    border-radius: 8px;
+    background: #fff;
+    color: #173454;
+    font: inherit;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      background: #087fa3;
+      border-color: #087fa3;
+      color: #fff;
+    }
+
+    &:focus-visible {
+      outline: 3px solid #173454;
+      outline-offset: 3px;
+    }
+  }
+}
