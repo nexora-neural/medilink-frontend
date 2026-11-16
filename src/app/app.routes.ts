@@ -302,10 +302,6 @@ export const routes: Routes = [
         title: 'Application review | MediLink',
       },
       {
-        path: 'membership-request',
-        component: MembershipRequest,
-      },
-      {
         path: 'account-support',
         component: AccountSupport,
       },

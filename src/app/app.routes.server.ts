@@ -51,6 +51,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/professional-verification/membership-request',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'workspace/patient/measurements',
     renderMode: RenderMode.Client,
   },
