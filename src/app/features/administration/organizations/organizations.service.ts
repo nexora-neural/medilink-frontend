@@ -5,7 +5,8 @@ export type OrganizationStatus = 'pending' | 'active' | 'rejected' | 'suspended'
 export type MembershipStatus =
   'not_submitted' | 'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'suspended';
 export type OrganizationDecisionStatus = 'active' | 'rejected' | 'suspended';
-export type MembershipDecisionStatus = 'approved' | 'rejected';
+export type MembershipDecisionStatus =
+  'approved' | 'rejected' | 'more_info_requested' | 'suspended';
 
 export interface Organization {
   id: string;
