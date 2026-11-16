@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 import { RenderMode } from '@angular/ssr';
 import { AuthService } from './core/auth.service';
+import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
   it('renders professional verification on the client for direct navigation and refresh', () => {
@@ -25,6 +26,13 @@ describe('workspace routing', () => {
           useValue: {
             restoreSession: vi.fn().mockResolvedValue(true),
             getOwnProfile: vi.fn(),
+          },
+        },
+        {
+          provide: OrganizationsService,
+          useValue: {
+            listPublicOrganizations: vi.fn().mockResolvedValue([]),
+            requestMembership: vi.fn(),
           },
         },
       ],
@@ -75,6 +83,23 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/patient/reports');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
     expect(harness.routeNativeElement?.textContent).toContain('Access denied');
+  });
+
+  it('allows professional accounts to request membership and blocks Super Admin', async () => {
+    const harness = await RouterTestingHarness.create();
+    const roles = TestBed.inject(ActiveRoleService);
+
+    roles.setAccountRoles('demo-doctor', ['doctor']);
+    await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+    expect(TestBed.inject(Router).url).toBe(
+      '/workspace/professional-verification/membership-request',
+    );
+    expect(harness.routeNativeElement?.textContent).toContain('Request organization membership');
+
+    roles.setAccountRoles('demo-super-admin', ['super_admin']);
+    await harness.navigateByUrl('/workspace');
+    await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
   });
 
   it('sends the unimplemented verification documents route to not found', async () => {

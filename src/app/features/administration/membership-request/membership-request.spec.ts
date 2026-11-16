@@ -68,4 +68,32 @@ describe('MembershipRequest', () => {
     await fixture.componentInstance.submit();
     expect(fixture.componentInstance.error()).toContain('not eligible');
   });
+
+  it('refreshes organizations when the selected organization becomes inactive', async () => {
+    const fixture = TestBed.createComponent(MembershipRequest);
+    fixture.componentInstance.organizations.set([
+      { id: 'org-uuid-1', name: 'Central Clinic', type: 'clinic' },
+    ]);
+    fixture.componentInstance.organizationId = 'org-uuid-1';
+    fixture.componentInstance.professionalRole = 'doctor';
+    organizationsApi.requestMembership.mockRejectedValueOnce({ status: 404 });
+
+    await fixture.componentInstance.submit();
+
+    expect(organizationsApi.listPublicOrganizations).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance.error()).toContain('not currently accepting');
+  });
+
+  it('offers a retry when the organization list cannot be loaded', async () => {
+    organizationsApi.listPublicOrganizations.mockRejectedValueOnce(new Error('Unavailable'));
+    const fixture = TestBed.createComponent(MembershipRequest);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Organizations could not be loaded. Please try again.',
+    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Try again');
+  });
 });
