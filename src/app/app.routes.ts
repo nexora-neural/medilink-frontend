@@ -228,6 +228,12 @@ export const routes: Routes = [
         path: 'professional-verification',
         component: ProfessionalVerification,
       },
+      {
+        path: 'professional-verification/membership-request',
+        component: MembershipRequest,
+        canActivate: [roleGuard],
+        data: { allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'] },
+      },
 
       {
         path: 'admin/dashboard',
