@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ProfessionalVerification } from './professional-verification';
 import { ProfessionalVerificationService } from './professional-verification.service';
 
@@ -32,7 +33,7 @@ describe('ProfessionalVerification', () => {
     };
     await TestBed.configureTestingModule({
       imports: [ProfessionalVerification],
-      providers: [{ provide: ProfessionalVerificationService, useValue: api }],
+      providers: [provideRouter([]), { provide: ProfessionalVerificationService, useValue: api }],
     }).compileComponents();
     fixture = TestBed.createComponent(ProfessionalVerification);
     component = fixture.componentInstance;

@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DocumentUpload } from '../../shared/components/document-upload/document-upload';
 import { DocumentDownload } from '../../shared/components/document-download/document-download';
@@ -16,7 +17,7 @@ const nonblank = (control: AbstractControl) =>
 @Component({
   selector: 'app-professional-verification',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, DocumentUpload, DocumentDownload],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, DocumentUpload, DocumentDownload],
   templateUrl: './professional-verification.html',
   styleUrl: './professional-verification.scss',
 })

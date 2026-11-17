@@ -27,6 +27,12 @@ export interface OrganizationMembership {
   created_at: string;
 }
 
+export interface PublicOrganization {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface Page<T> {
   items: T[];
   page: number;
@@ -37,6 +43,17 @@ interface Page<T> {
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
   private readonly auth = inject(AuthService);
+
+  async listPublicOrganizations(): Promise<PublicOrganization[]> {
+    return this.collectPages<PublicOrganization>('/organizations');
+  }
+
+  requestMembership(organizationId: string, role: string): Promise<OrganizationMembership> {
+    return this.auth.postAuthorized<OrganizationMembership>('/me/memberships', {
+      organization_id: organizationId,
+      role,
+    });
+  }
 
   async listOrganizations(): Promise<Organization[]> {
     return this.collectPages<Organization>('/admin/organizations');

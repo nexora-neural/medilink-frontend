@@ -1,13 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-
-interface OrganizationOption {
-  id: number;
-  name: string;
-  type: string;
-  approved: boolean;
-}
+import { OrganizationsService, PublicOrganization } from '../organizations/organizations.service';
 
 @Component({
   selector: 'app-membership-request',
@@ -16,51 +10,79 @@ interface OrganizationOption {
   templateUrl: './membership-request.html',
   styleUrl: './membership-request.scss',
 })
-export class MembershipRequest {
-  readonly organizations: OrganizationOption[] = [
-    { id: 1, name: 'Lakeside Clinic', type: 'Clinic', approved: true },
-    { id: 2, name: 'Central Laboratory', type: 'Laboratory', approved: false },
-    { id: 3, name: 'Lakeside Pharmacy', type: 'Pharmacy', approved: true },
-  ];
-  organizationId: number | null = null;
-  fullName = '';
-  email = '';
+export class MembershipRequest implements OnInit {
+  private readonly organizationsApi = inject(OrganizationsService);
+  readonly organizations = signal<PublicOrganization[]>([]);
+  readonly loading = signal(true);
+  readonly submitting = signal(false);
+  readonly error = signal('');
+  readonly success = signal('');
+  organizationId: string | null = null;
   professionalRole = '';
-  reason = '';
-  submitted = false;
-  error = '';
-  success = '';
-  loading = false;
+  private requestVersion = 0;
 
-  submit(): void {
-    this.submitted = true;
-    this.error = '';
-    this.success = '';
-    const selected = this.organizations.find(
-      (item) => item.id === Number(this.organizationId) && item.approved,
-    );
-    if (!selected) {
-      this.error = 'Choose an approved organization.';
+  ngOnInit(): void {
+    void this.loadOrganizations();
+  }
+
+  async loadOrganizations(): Promise<void> {
+    const version = ++this.requestVersion;
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      const organizations = await this.organizationsApi.listPublicOrganizations();
+      if (version === this.requestVersion) this.organizations.set(organizations);
+    } catch {
+      if (version === this.requestVersion) {
+        this.error.set('Organizations could not be loaded. Please try again.');
+      }
+    } finally {
+      if (version === this.requestVersion) this.loading.set(false);
+    }
+  }
+
+  async submit(): Promise<void> {
+    this.error.set('');
+    this.success.set('');
+    if (!this.organizationId || !this.professionalRole) {
+      this.error.set('Choose an organization and professional role.');
       return;
     }
-    if (
-      !this.fullName.trim() ||
-      !this.email.trim() ||
-      !this.professionalRole ||
-      !this.reason.trim()
-    ) {
-      this.error = 'Complete all required fields.';
+    if (!this.organizations().some((item) => item.id === this.organizationId)) {
+      this.error.set('Choose an active organization from the list.');
       return;
     }
-    if (this.reason.trim().length < 10) {
-      this.error = 'Reason must contain at least 10 characters.';
-      return;
+
+    this.submitting.set(true);
+    try {
+      const membership = await this.organizationsApi.requestMembership(
+        this.organizationId,
+        this.professionalRole,
+      );
+      const organization = this.organizations().find(
+        (item) => item.id === membership.organization_id,
+      );
+      this.success.set(
+        `Your ${membership.role.replaceAll('_', ' ')} membership request${organization ? ` for ${organization.name}` : ''} was submitted and is pending review.`,
+      );
+    } catch (error: unknown) {
+      const status = (error as { status?: number } | null)?.status;
+      if (status === 409) {
+        this.error.set('A request for this organization and role already exists.');
+      } else if (status === 403) {
+        this.error.set('Your account is not eligible to request this professional role.');
+      } else if (status === 404) {
+        await this.loadOrganizations();
+        this.error.set('This organization is not currently accepting membership requests.');
+      } else {
+        this.error.set('Your request could not be submitted. Please try again.');
+      }
+    } finally {
+      this.submitting.set(false);
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) {
-      this.error = 'Enter a valid email address.';
-      return;
-    }
-    this.success = `Membership request for ${selected.name} validated locally. Nothing was submitted to the server.`;
-    this.submitted = false;
+  }
+
+  retryLoad(): void {
+    void this.loadOrganizations();
   }
 }

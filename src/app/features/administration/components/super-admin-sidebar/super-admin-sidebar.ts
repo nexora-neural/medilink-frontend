@@ -27,11 +27,6 @@ export class SuperAdminSidebar {
     },
     { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
     {
-      label: 'Membership request',
-      icon: 'assignment_add',
-      route: '/super-admin/membership-request',
-    },
-    {
       label: 'Professional applications',
       icon: 'fact_check',
       route: '/super-admin/applications',

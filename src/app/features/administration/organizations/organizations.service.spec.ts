@@ -40,6 +40,33 @@ describe('OrganizationsService', () => {
     );
   });
 
+  it('loads active public organizations with UUIDs', async () => {
+    auth.getAuthorized.mockResolvedValueOnce({
+      items: [
+        { id: '2a25c62f-2cc1-4ee8-aee4-c8fb7aee25ab', name: 'Central Clinic', type: 'clinic' },
+      ],
+      page: 1,
+      page_size: 100,
+      total: 1,
+    });
+
+    await expect(service.listPublicOrganizations()).resolves.toEqual([
+      { id: '2a25c62f-2cc1-4ee8-aee4-c8fb7aee25ab', name: 'Central Clinic', type: 'clinic' },
+    ]);
+    expect(auth.getAuthorized).toHaveBeenCalledWith('/organizations?page=1&page_size=100');
+  });
+
+  it('submits a membership request using the server organization UUID and role', async () => {
+    auth.postAuthorized.mockResolvedValue({ id: 'membership-1', status: 'pending' });
+
+    await service.requestMembership('2a25c62f-2cc1-4ee8-aee4-c8fb7aee25ab', 'doctor');
+
+    expect(auth.postAuthorized).toHaveBeenCalledWith('/me/memberships', {
+      organization_id: '2a25c62f-2cc1-4ee8-aee4-c8fb7aee25ab',
+      role: 'doctor',
+    });
+  });
+
   it('loads one organization by id for the detail view', async () => {
     auth.getAuthorized.mockResolvedValue({ id: 'org-1', name: 'Central Clinic' });
 
