@@ -1,293 +1,142 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  MedicineCatalogueApi,
+  MedicinePage,
+} from '../../../administration/medicine-catalogue/medicine-catalogue-api.service';
 import { DoctorMedicineSearch } from './doctor-medicine-search';
 
+const page: MedicinePage = {
+  page: 1,
+  pageSize: 20,
+  total: 1,
+  items: [
+    {
+      id: 'medicine-1',
+      genericName: 'Paracetamol',
+      brand: 'Panadol',
+      strength: '500 mg',
+      form: 'Tablet',
+      isSample: true,
+    },
+  ],
+};
+
 describe('DoctorMedicineSearch', () => {
-  let component: DoctorMedicineSearch;
   let fixture: ComponentFixture<DoctorMedicineSearch>;
+  let component: DoctorMedicineSearch;
+  const search = vi.fn<MedicineCatalogueApi['search']>();
 
   beforeEach(async () => {
+    search.mockReset().mockResolvedValue(page);
+
     await TestBed.configureTestingModule({
       imports: [DoctorMedicineSearch],
+      providers: [{ provide: MedicineCatalogueApi, useValue: { search } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DoctorMedicineSearch);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('creates the component successfully', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('loads the sample medicine catalogue', () => {
-    expect(component.medicines().length).toBe(6);
-    expect(component.filteredMedicines().length).toBe(6);
-  });
-
-  it('filters medicines using the generic name', () => {
-    component.onSearch('Paracetamol');
-
-    expect(component.filteredMedicines().length).toBe(1);
-    expect(component.filteredMedicines()[0].genericName).toBe('Paracetamol');
-  });
-
-  it('filters medicines using the brand name', () => {
-    component.onSearch('Panadol');
-
-    expect(component.filteredMedicines().length).toBe(1);
-    expect(component.filteredMedicines()[0].brand).toBe('Panadol');
-  });
-
-  it('filters medicines using strength and dosage form', () => {
-    component.onSearch('100 mcg');
-
-    expect(component.filteredMedicines().length).toBe(1);
-    expect(component.filteredMedicines()[0].strength).toBe('100 mcg');
-
-    component.onSearch('Capsule');
-
-    expect(component.filteredMedicines().length).toBe(2);
-  });
-
-  it('performs case-insensitive search', () => {
-    component.onSearch('panadol');
-
-    expect(component.filteredMedicines().length).toBe(1);
-    expect(component.filteredMedicines()[0].brand).toBe('Panadol');
-  });
-
-  it('returns all medicines when the search is empty', () => {
-    component.onSearch('Panadol');
-    component.onSearch('');
-
-    expect(component.filteredMedicines().length).toBe(6);
-  });
-
-  it('shows an empty result when no medicine matches', () => {
-    component.onSearch('UnknownMedicine');
-
-    expect(component.filteredMedicines()).toEqual([]);
-  });
-
-  it('selects a medicine and updates the search field', () => {
-    const medicine = component.medicines()[0];
-
-    component.selectMedicine(medicine);
-
-    expect(component.selectedMedicine()).toEqual(medicine);
-    expect(component.searchTerm()).toBe('Paracetamol');
-    expect(component.showSuggestions()).toBe(false);
-    expect(component.activeIndex()).toBe(-1);
-  });
-
-  it('opens suggestions and moves down using ArrowDown', () => {
-    component.onSearch('a');
-
-    const event = {
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent;
-
-    component.onSearchKeydown(event);
-
-    expect(event.preventDefault).toHaveBeenCalled();
-    expect(component.showSuggestions()).toBe(true);
-    expect(component.activeIndex()).toBe(0);
-  });
-
-  it('moves through suggestions using ArrowUp and ArrowDown', () => {
-    component.onSearch('a');
-
-    component.onSearchKeydown({
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    component.onSearchKeydown({
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    expect(component.activeIndex()).toBe(1);
-
-    component.onSearchKeydown({
-      key: 'ArrowUp',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    expect(component.activeIndex()).toBe(0);
-  });
-
-  it('selects the active medicine using Enter', () => {
-    component.onSearch('Paracetamol');
-
-    component.onSearchKeydown({
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    component.onSearchKeydown({
-      key: 'Enter',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    expect(component.selectedMedicine()?.genericName).toBe('Paracetamol');
-    expect(component.showSuggestions()).toBe(false);
-  });
-
-  it('selects the only matching medicine when Enter is pressed', () => {
-    component.onSearch('Panadol');
-
-    component.onSearchKeydown({
-      key: 'Enter',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    expect(component.selectedMedicine()?.brand).toBe('Panadol');
-  });
-
-  it('closes suggestions using Escape', () => {
-    component.onSearch('Paracetamol');
-
-    component.onSearchKeydown({
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    component.onSearchKeydown({
-      key: 'Escape',
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-
-    expect(component.showSuggestions()).toBe(false);
-    expect(component.activeIndex()).toBe(-1);
-  });
-
-  it('changes the preview state', () => {
-    component.setPreviewState('loading');
-
-    expect(component.state()).toBe('loading');
-    expect(component.selectedMedicine()).toBeNull();
-    expect(component.showSuggestions()).toBe(false);
-  });
-
-  it('returns to ready state when retry is called', () => {
-    component.setPreviewState('error');
-
-    component.retry();
-
-    expect(component.state()).toBe('ready');
-  });
-
-  it('resets the search and selected medicine when clearSearch is called', () => {
-    component.onSearch('Panadol');
-    component.selectMedicine(component.filteredMedicines()[0]);
-
-    component.clearSearch();
-
-    expect(component.searchTerm()).toBe('');
-    expect(component.selectedMedicine()).toBeNull();
-    expect(component.showSuggestions()).toBe(false);
-    expect(component.activeIndex()).toBe(-1);
-    expect(component.state()).toBe('ready');
-  });
   function searchInput(): HTMLInputElement {
     return fixture.nativeElement.querySelector('#medicine-search');
   }
 
-  function typeQuery(query: string): void {
-    const input = searchInput();
-    input.value = query;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+  function press(key: string): void {
+    searchInput().dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
     fixture.detectChanges();
   }
 
-  function press(key: string): KeyboardEvent {
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-    searchInput().dispatchEvent(event);
+  it('loads the first page from the API', () => {
+    expect(search).toHaveBeenCalledExactlyOnceWith('', 1);
+    expect(component.medicines()).toEqual(page.items);
+    expect(component.total()).toBe(1);
+  });
+
+  it('sends the latest query and shows the empty state', async () => {
+    search.mockResolvedValueOnce({ ...page, items: [], total: 0 });
+    component.onSearch('Pan');
+    component.onSearch('Unknown brand');
+
+    await vi.waitFor(() => {
+      expect(search).toHaveBeenCalledTimes(2);
+      expect(search).toHaveBeenLastCalledWith('Unknown brand', 1);
+      expect(component.state()).toBe('empty');
+    });
     fixture.detectChanges();
-    return event;
-  }
 
-  it('exposes an expanded combobox with an existing active option during arrow navigation', () => {
-    const input = searchInput();
-    expect(input.getAttribute('role')).toBe('combobox');
-    expect(input.getAttribute('aria-expanded')).toBe('false');
-    expect(input.getAttribute('aria-controls')).toBeNull();
-    typeQuery('a');
-    press('ArrowDown');
-    expect(input.getAttribute('aria-expanded')).toBe('true');
-    const list = fixture.nativeElement.querySelector('#medicine-suggestions');
-    expect(list.getAttribute('role')).toBe('listbox');
-    const option = fixture.nativeElement.querySelector(
-      '#' + input.getAttribute('aria-activedescendant'),
-    );
-    expect(option).not.toBeNull();
-    expect(option.getAttribute('aria-selected')).toBe('true');
-    expect(option.getAttribute('tabindex')).toBe('-1');
-    press('ArrowDown');
-    expect(component.activeIndex()).toBe(1);
-    press('ArrowUp');
-    expect(component.activeIndex()).toBe(0);
-    press('Enter');
-    expect(component.selectedMedicine()).not.toBeNull();
-    expect(input.getAttribute('aria-expanded')).toBe('false');
-    expect(input.getAttribute('aria-activedescendant')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#medicine-suggestions')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('No matching medicines');
   });
 
-  it('does not select a hidden single suggestion after Escape', () => {
-    typeQuery('Panadol');
-    press('Escape');
-    expect(searchInput().getAttribute('aria-expanded')).toBe('false');
-    press('Enter');
-    expect(component.selectedMedicine()).toBeNull();
+  it('shows denied access for a 403 response', async () => {
+    search.mockRejectedValueOnce(new HttpErrorResponse({ status: 403 }));
+
+    await component.load();
+    fixture.detectChanges();
+
+    expect(component.state()).toBe('denied');
+    expect(fixture.nativeElement.textContent).toContain('Catalogue access denied');
   });
 
-  it('closes on Tab and blur, and reopens with ArrowUp', () => {
-    typeQuery('a');
+  it('retries the failed page after a service error', async () => {
+    search.mockRejectedValueOnce(new HttpErrorResponse({ status: 503 }));
+    await component.load(2);
+    fixture.detectChanges();
+
+    expect(component.state()).toBe('error');
+    expect(fixture.nativeElement.textContent).toContain('Could not load medicines');
+
+    search.mockResolvedValueOnce({ ...page, page: 2 });
+    const retryButton: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[role="alert"] button');
+    retryButton.click();
+
+    await vi.waitFor(() => {
+      expect(search).toHaveBeenLastCalledWith('', 2);
+      expect(component.state()).toBe('ready');
+    });
+  });
+
+  it('selects an API result using the keyboard', () => {
     press('ArrowDown');
-    expect(press('Tab').defaultPrevented).toBe(false);
-    expect(searchInput().getAttribute('aria-activedescendant')).toBeNull();
-    press('Enter');
-    expect(component.selectedMedicine()).toBeNull();
-    press('ArrowUp');
-    expect(component.activeIndex()).toBe(component.filteredMedicines().length - 1);
+
     expect(searchInput().getAttribute('aria-expanded')).toBe('true');
-    searchInput().dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
+    expect(searchInput().getAttribute('aria-activedescendant')).toBe('medicine-option-0');
+
+    press('Enter');
+
+    expect(component.selectedMedicine()).toEqual(page.items[0]);
     expect(searchInput().getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('.detail-eyebrow').textContent).toContain(
+      'Sample data',
+    );
   });
 
-  it.each(['loading', 'empty', 'error'] as const)(
-    'does not select hidden results in the %s preview',
-    (state) => {
-      typeQuery('Panadol');
-      press('ArrowDown');
-      component.setPreviewState(state);
-      fixture.detectChanges();
-      press('ArrowDown');
-      press('Enter');
-      expect(component.selectedMedicine()).toBeNull();
-      expect(searchInput().getAttribute('aria-activedescendant')).toBeNull();
-      expect(fixture.nativeElement.querySelector('#medicine-suggestions')).toBeNull();
-    },
-  );
+  it('closes the suggestions on Escape and keeps them closed on Enter', () => {
+    press('ArrowDown');
+    press('Escape');
+    press('Enter');
 
-  it('selects a visible option using a pointer while keeping input focus', () => {
-    typeQuery('Panadol');
-    const option = fixture.nativeElement.querySelector('[role="option"]') as HTMLButtonElement;
-    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-    option.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(true);
+    expect(searchInput().getAttribute('aria-expanded')).toBe('false');
+    expect(component.selectedMedicine()).toBeNull();
+  });
+
+  it('selects a visible result with the pointer', () => {
+    searchInput().dispatchEvent(new FocusEvent('focus'));
+    fixture.detectChanges();
+    const option: HTMLButtonElement = fixture.nativeElement.querySelector('[role="option"]');
+    const mouseDown = new MouseEvent('mousedown', { cancelable: true });
+
+    option.dispatchEvent(mouseDown);
     option.click();
     fixture.detectChanges();
+
+    expect(mouseDown.defaultPrevented).toBe(true);
     expect(component.selectedMedicine()?.brand).toBe('Panadol');
     expect(searchInput().getAttribute('aria-expanded')).toBe('false');
   });

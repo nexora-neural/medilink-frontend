@@ -238,15 +238,6 @@ export const routes: Routes = [
           allowedRoles: ['Admin'],
         },
       },
-      {
-        path: 'admin/medicine-catalogue',
-        component: MedicineCatalogue,
-        canActivate: [roleGuard],
-        title: 'Medicine catalogue | MediLink',
-        data: {
-          allowedRoles: ['Admin'],
-        },
-      },
 
       {
         path: 'admin/account-support',
@@ -306,6 +297,11 @@ export const routes: Routes = [
       {
         path: 'admin-accounts',
         component: AdminAccounts,
+      },
+      {
+        path: 'medicine-catalogue',
+        component: MedicineCatalogue,
+        title: 'Medicine catalogue | MediLink',
       },
     ],
   },
