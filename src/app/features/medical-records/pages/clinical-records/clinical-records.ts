@@ -94,6 +94,9 @@ export class ClinicalRecords {
           ? preview
           : 'ready',
       );
+      if (this.pageState() === 'empty') {
+        this.allergyStatus.set('unknown');
+      }
 
       this.closeForm();
       this.message.set('');
@@ -173,8 +176,6 @@ export class ClinicalRecords {
 
     if (entry.kind === 'allergy') {
       this.allergyStatus.set('allergies-recorded');
-    } else if (this.pageState() === 'empty') {
-      this.allergyStatus.set('unknown');
     }
 
     this.pageState.set('ready');

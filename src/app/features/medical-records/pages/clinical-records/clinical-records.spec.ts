@@ -217,4 +217,33 @@ describe('ClinicalRecords preview', () => {
 
     reopened.destroy();
   });
+  it('allows no known allergies with no clinical entries', async () => {
+    const { page, fixture } = await setup('patient', 'empty');
+
+    expect(page.visibleEntries()).toHaveLength(0);
+    expect(page.allergyStatus()).toBe('unknown');
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+
+    const reportButton = buttons.find((button) =>
+      button.textContent?.includes('Report no known allergies'),
+    );
+
+    expect(reportButton).toBeDefined();
+    reportButton!.click();
+    fixture.detectChanges();
+
+    expect(page.allergyStatus()).toBe('no-known-allergies');
+    expect(page.visibleEntries()).toHaveLength(0);
+    expect(fixture.nativeElement.textContent).toContain('No known allergies reported.');
+
+    page.openForm();
+    page.form.controls.title.setValue('Sample condition');
+    page.save();
+
+    expect(page.visibleEntries()).toHaveLength(1);
+    expect(page.allergyStatus()).toBe('no-known-allergies');
+  });
 });

@@ -47,7 +47,7 @@
     <section class="panel" aria-labelledby="allergy-summary-title">
       <h2 id="allergy-summary-title">Allergy status</h2>
 
-      @if (pageState() === 'empty' || allergyStatus() === 'unknown') {
+      @if (allergyStatus() === 'unknown') {
         <p class="allergy-status">
           <strong>Unknown</strong> — allergy information has not been established.
         </p>
@@ -63,7 +63,7 @@
         </p>
       }
 
-      @if (audience === 'patient' && pageState() !== 'empty') {
+      @if (audience === 'patient') {
         <div class="button-row">
           <button class="secondary-button" type="button" (click)="setAllergyStatus('unknown')">
             Mark status unknown
