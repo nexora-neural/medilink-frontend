@@ -3,6 +3,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AccessFormComponent } from './components/access-form/access-form';
 import { ProfessionalRolesComponent } from './components/professional-roles/professional-roles';
+import { AuthService } from '../../../core/auth.service';
 import { RegistrationComponent } from './components/registration/registration';
 
 describe('Public authentication control flow', () => {
@@ -15,6 +16,10 @@ describe('Public authentication control flow', () => {
         { provide: ActivatedRoute, useValue: { data: of({ page: 'login' }), queryParams: of({}) } },
       ],
     }).compileComponents();
+    vi.spyOn(TestBed.inject(AuthService), 'registrationAvailable').mockResolvedValue({
+      available: true,
+      recoverable: false,
+    });
   });
 
   it('shows the appropriate fields for login, reset and verification', async () => {
@@ -113,11 +118,38 @@ describe('Public authentication control flow', () => {
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(fixture.componentInstance.registerStep).toBe(2);
+    await vi.waitFor(() => expect(fixture.componentInstance.registerStep).toBe(2));
+    fixture.detectChanges();
     expect(element.querySelector('input[name="password"]')).not.toBeNull();
   });
 
-  it('validates professional details and matching passwords before review', () => {
+  it('reports a registered email when the field loses focus', async () => {
+    vi.mocked(TestBed.inject(AuthService).registrationAvailable).mockResolvedValue({
+      available: false,
+      recoverable: false,
+    });
+    const fixture = TestBed.createComponent(RegistrationComponent);
+    fixture.componentInstance.page = 'register';
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.registrationForm.controls.email.setValue('existing@example.com');
+    await component.checkAvailability('email');
+    expect(component.availabilityMessage.email).toContain('already registered');
+  });
+
+  it('allows a Firebase-only account to resume with its existing password', async () => {
+    vi.mocked(TestBed.inject(AuthService).registrationAvailable).mockResolvedValue({
+      available: false,
+      recoverable: true,
+    });
+    const component = TestBed.createComponent(RegistrationComponent).componentInstance;
+    component.registrationForm.controls.email.setValue('pending@example.com');
+    expect(await component.checkAvailability('email')).toBe(true);
+    expect(component.recoverExisting).toBe(true);
+    expect(component.availabilityMessage.email).toContain('existing password');
+  });
+
+  it('validates professional details and matching passwords before review', async () => {
     const fixture = TestBed.createComponent(RegistrationComponent);
     const component = fixture.componentInstance;
     component.page = 'register';
@@ -127,20 +159,20 @@ describe('Public authentication control flow', () => {
       email: 'person@example.com',
       phone: '0771234567',
     });
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.registerStep).toBe(2);
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.registerStep).toBe(2);
     component.registrationForm.patchValue({ professionalId: '123', organization: 'Clinic' });
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.registerStep).toBe(3);
     component.registrationForm.patchValue({ password: 'password1', registerConfirm: 'different' });
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.registerStep).toBe(3);
     component.registrationForm.patchValue({ registerConfirm: 'password1' });
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.registerStep).toBe(4);
-    component.registrationNext();
+    await component.registrationNext();
     expect(component.message).toContain('No account has been created');
   });
 

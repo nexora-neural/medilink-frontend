@@ -6,7 +6,7 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../../core/auth.service';
 
@@ -29,8 +29,20 @@ export class RegistrationComponent implements OnChanges {
   readonly registrationForm = this.formBuilder.nonNullable.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', Validators.required],
-    dateOfBirth: [''],
+    phone: ['', [Validators.required, Validators.pattern(/^(?:0[0-9]{9}|\+94[0-9]{9})$/)]],
+    dateOfBirth: [
+      '',
+      [
+        Validators.required,
+        (control: AbstractControl) => {
+          const value = control.value as string;
+          if (!value) return null;
+          const valid =
+            /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= new Date().toLocaleDateString('en-CA');
+          return valid ? null : { invalidDate: true };
+        },
+      ],
+    ],
     sex: [''],
     professionalId: ['', Validators.required],
     organization: ['', Validators.required],
@@ -41,6 +53,44 @@ export class RegistrationComponent implements OnChanges {
   busy = false;
   registerStep = 1;
   registerSubmitted = false;
+  checking: Record<'email' | 'phone', boolean> = { email: false, phone: false };
+  availabilityMessage: Record<'email' | 'phone', string> = { email: '', phone: '' };
+  private checkSequence: Record<'email' | 'phone', number> = { email: 0, phone: 0 };
+  recoverExisting = false;
+
+  resetAvailability(field: 'email' | 'phone'): void {
+    if (field === 'email') this.recoverExisting = false;
+    this.checkSequence[field]++;
+    this.checking[field] = false;
+    this.availabilityMessage[field] = '';
+  }
+
+  async checkAvailability(field: 'email' | 'phone'): Promise<boolean> {
+    const control = this.registrationForm.controls[field];
+    if (control.invalid) return false;
+    const sequence = ++this.checkSequence[field];
+    const value = control.value.trim();
+    this.checking[field] = true;
+    this.availabilityMessage[field] = '';
+    try {
+      const result = await this.auth.registrationAvailable(field, value);
+      if (sequence !== this.checkSequence[field]) return false;
+      if (field === 'email') this.recoverExisting = result.recoverable;
+      this.availabilityMessage[field] = result.recoverable
+        ? 'This email has an incomplete account. Use its existing password to finish registration.'
+        : result.available
+          ? ''
+          : `This ${field === 'phone' ? 'mobile number' : 'email address'} is already registered.`;
+      return result.available || result.recoverable;
+    } catch {
+      if (sequence === this.checkSequence[field])
+        this.availabilityMessage[field] = 'Could not check availability. Please try again.';
+      return false;
+    } finally {
+      if (sequence === this.checkSequence[field]) this.checking[field] = false;
+      this.changeDetector.markForCheck();
+    }
+  }
 
   get registerSteps(): number {
     return this.role === 'Patient' ? 3 : 4;
@@ -68,9 +118,16 @@ export class RegistrationComponent implements OnChanges {
     if (
       this.role === 'Patient' &&
       this.registerStep === 1 &&
-      (!controls.dateOfBirth.value || !['female', 'male'].includes(controls.sex.value))
+      (controls.dateOfBirth.invalid || !['female', 'male'].includes(controls.sex.value))
     )
       return;
+    if (this.registerStep === 1) {
+      const results = await Promise.all([
+        this.checkAvailability('email'),
+        this.checkAvailability('phone'),
+      ]);
+      if (results.some((available) => !available)) return;
+    }
     if (
       this.registerStep === this.registerSteps - 1 &&
       controls.password.value !== controls.registerConfirm.value
@@ -94,10 +151,16 @@ export class RegistrationComponent implements OnChanges {
           phone: controls.phone.value,
           dateOfBirth: controls.dateOfBirth.value,
           sex: controls.sex.value as 'female' | 'male',
+          recoverExisting: this.recoverExisting,
         });
         await this.router.navigate(['/workspace']);
-      } catch {
-        this.message = 'Registration could not be completed. Please try again.';
+      } catch (error) {
+        const code =
+          typeof error === 'object' && error !== null && 'code' in error ? error.code : '';
+        this.message =
+          code === 'auth/email-already-in-use'
+            ? 'This email address is already registered. Please log in.'
+            : 'Registration could not be completed. Please try again.';
       } finally {
         this.busy = false;
         this.changeDetector.markForCheck();
