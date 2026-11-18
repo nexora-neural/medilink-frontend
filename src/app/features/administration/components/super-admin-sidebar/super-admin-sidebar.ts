@@ -25,6 +25,11 @@ export class SuperAdminSidebar {
       icon: 'manage_accounts',
       route: '/super-admin/admin-accounts',
     },
+    {
+      label: 'Medicine catalogue',
+      icon: 'medication',
+      route: '/super-admin/medicine-catalogue',
+    },
     { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
     {
       label: 'Professional applications',
