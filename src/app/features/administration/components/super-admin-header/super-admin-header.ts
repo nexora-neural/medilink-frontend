@@ -16,6 +16,8 @@ export class SuperAdminHeader {
 
   get pageTitle(): string {
     const url = this.router.url;
+    if (url.includes('/integrations/submissions')) return 'Submission outcomes';
+    if (url.includes('/integrations')) return 'Integration clients';
     if (url.includes('/admin-accounts')) return 'Admin accounts';
     if (url.includes('/account-support')) return 'Account support';
     if (/\/applications\/[^/?#]+/.test(url)) return 'Application review';

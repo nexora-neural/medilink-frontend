@@ -1,4 +1,5 @@
 import { Route, Routes } from '@angular/router';
+import { integrationClientsPreviewProviders } from './features/administration/integration-clients/integration-clients.store';
 import { roleGuard } from './core/guards/role.guard';
 import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
@@ -269,6 +270,7 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
+    providers: integrationClientsPreviewProviders,
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [
@@ -308,6 +310,23 @@ export const routes: Routes = [
       {
         path: 'admin-accounts',
         component: AdminAccounts,
+      },
+      {
+        path: 'integrations',
+        loadComponent: () =>
+          import('./features/administration/integration-clients/integration-clients').then(
+            (module) => module.IntegrationClients,
+          ),
+        title: 'Integration clients | MediLink',
+      },
+      {
+        path: 'integrations/submissions',
+        loadComponent: () =>
+          import('./features/administration/integration-clients/integration-clients').then(
+            (module) => module.IntegrationClients,
+          ),
+        title: 'Submission outcomes | MediLink',
+        data: { view: 'outcomes' },
       },
       {
         path: 'medicine-catalogue',
