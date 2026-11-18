@@ -5,7 +5,9 @@ export interface VerificationApplication {
   id: string;
   role: 'doctor' | 'pharmacist' | 'lab_staff';
   registration_number: string | null;
-  status: string;
+  organization_id?: string | null;
+  status:
+    'not_submitted' | 'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'suspended';
   submitted_at: string;
   evidence_document_ids: string[];
 }
@@ -15,8 +17,21 @@ export interface VerificationDocument {
   original_filename: string;
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  type: 'clinic' | 'hospital' | 'pharmacy' | 'laboratory' | 'other';
+}
+
 interface ApplicationsPage {
   items: VerificationApplication[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+interface OrganizationsPage {
+  items: Organization[];
   page: number;
   page_size: number;
   total: number;
@@ -35,10 +50,15 @@ export class ProfessionalVerificationService {
     return this.auth.putAuthorized('me/professional-profile', input);
   }
 
+  listOrganizations(): Promise<OrganizationsPage> {
+    return this.auth.getAuthorized<OrganizationsPage>('organizations?page=1&page_size=100');
+  }
+
   uploadEvidence(file: File): Promise<VerificationDocument> {
     const body = new FormData();
     body.append('file', file, file.name);
     body.append('document_type', 'verification_evidence');
+
     return this.auth.postAuthorizedForm<VerificationDocument>('me/verification-documents', body);
   }
 
@@ -46,6 +66,7 @@ export class ProfessionalVerificationService {
     role: VerificationApplication['role'];
     registration_number: string;
     evidence_document_ids: string[];
+    organization_id?: string;
   }): Promise<VerificationApplication> {
     return this.auth.postAuthorized<VerificationApplication>('verification-applications', input);
   }

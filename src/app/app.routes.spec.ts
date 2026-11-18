@@ -165,6 +165,7 @@ describe('workspace routing', () => {
       '/super-admin/applications',
     );
   });
+
   it('restores a Patient session before opening the profile directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
@@ -190,6 +191,7 @@ describe('workspace routing', () => {
       roles: ['patient'],
       memberships: [],
       patient_profile: null,
+      professional_profile: null,
     });
 
     const harness = await RouterTestingHarness.create();
@@ -207,6 +209,7 @@ describe('workspace routing', () => {
 
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
+
   it('restores an Admin session before opening the dashboard directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);

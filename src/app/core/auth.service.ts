@@ -48,6 +48,17 @@ export interface MeResponse {
     emergency_contact_phone: string | null;
     notification_preferences: Record<string, boolean>;
   } | null;
+  professional_profile: {
+    user_id: string;
+    role: string;
+    doctor_reference: string | null;
+    registration_number: string | null;
+    qualifications: string | null;
+    specialty: string | null;
+    verification_status: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
 }
 
 declare global {
@@ -67,12 +78,15 @@ export class AuthService {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
       throw new Error('Authentication is not configured.');
     }
+
     const config = window.medilinkConfig;
     const app: FirebaseApp =
       getApps().find((item) => item.name === 'medilink') ??
       initializeApp(config.firebase, 'medilink');
+
     const auth = getAuth(app);
     await setPersistence(auth, browserLocalPersistence);
+
     return { auth, config };
   }
 
@@ -91,6 +105,7 @@ export class AuthService {
     const token = await auth.currentUser.getIdToken();
     const url = `${config.apiBaseUrl}/${path.replace(/^\//, '')}`;
     const options = { headers: { Authorization: `Bearer ${token}` } };
+
     const request =
       method === 'GET'
         ? this.http.get<T>(url, options)
@@ -107,8 +122,13 @@ export class AuthService {
   }> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
-    if (!auth.currentUser) throw new Error('Please sign in to continue.');
+
+    if (!auth.currentUser) {
+      throw new Error('Please sign in to continue.');
+    }
+
     const token = await auth.currentUser.getIdToken();
+
     return {
       url: config.apiBaseUrl,
       headers: { Authorization: `Bearer ${token}` },
@@ -171,6 +191,7 @@ export class AuthService {
         .pipe(timeout(10000)),
     );
   }
+
   async updateOwnAccount(input: { name: string; phone: string }): Promise<MeResponse> {
     const { auth, config } = await this.firebase();
 
@@ -209,7 +230,7 @@ export class AuthService {
     await auth.authStateReady();
 
     if (!auth.currentUser) {
-      throw new Error('Please sign in to update your emergency contact.');
+      throw new Error('Please sign in to update your profile.');
     }
 
     const token = await auth.currentUser.getIdToken();
@@ -241,7 +262,7 @@ export class AuthService {
     await auth.authStateReady();
 
     if (!auth.currentUser) {
-      throw new Error('Please sign in to update your preferences.');
+      throw new Error('Please sign in to update your emergency contact.');
     }
 
     const token = await auth.currentUser.getIdToken();
@@ -304,8 +325,10 @@ export class AuthService {
   async signIn(email: string, password: string): Promise<void> {
     const { auth, config } = await this.firebase();
     const credential = await signInWithEmailAndPassword(auth, email, password);
+
     try {
       const token = await credential.user.getIdToken();
+
       await firstValueFrom(
         this.http
           .get(`${config.apiBaseUrl}/me`, {
@@ -328,7 +351,9 @@ export class AuthService {
     sex: 'female' | 'male';
   }): Promise<void> {
     const { auth, config } = await this.firebase();
+
     await auth.authStateReady();
+
     const email = input.email.trim();
 
     const credential = await (async () => {
@@ -345,8 +370,10 @@ export class AuthService {
         return signInWithEmailAndPassword(auth, email, input.password);
       }
     })();
+
     try {
       const token = await credential.user.getIdToken();
+
       await firstValueFrom(
         this.http
           .post(

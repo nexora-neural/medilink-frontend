@@ -5,9 +5,12 @@
       <h1>Professional verification</h1>
       <p>Submit your professional information and supporting documents to request verification.</p>
     </div>
+
     <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
-      <span class="material-symbols-outlined">fact_check</span> Application status
+      <span class="material-symbols-outlined">fact_check</span>
+      Application status
     </button>
+
   </header>
 
   <nav class="verification-nav" aria-label="Verification sections">
@@ -18,9 +21,11 @@
     >
       Application
     </button>
+
     <button type="button" [class.active]="!showStatus && showDocuments" (click)="viewDocuments()">
       Documents
     </button>
+
     <button type="button" [class.active]="showStatus" (click)="viewApplicationStatus()">
       Status
     </button>
@@ -41,37 +46,59 @@
       <div class="status-icon" [class.pending]="application.status !== 'suspended'">
         <span class="material-symbols-outlined">fact_check</span>
       </div>
+
       <span class="eyebrow">APPLICATION STATUS</span>
       <h2 #statusHeading tabindex="-1">{{ statusHeadingText }}</h2>
+
       <p class="status-description">
         Your application status is saved by MediLink and will remain available after you sign in
         again.
       </p>
+
       <div class="status-summary">
         <div>
-          <span>Professional role</span><strong>{{ roleLabel }}</strong>
+          <span>Professional role</span>
+          <strong>{{ roleLabel }}</strong>
         </div>
+
         <div>
-          <span>Registration number</span><strong>{{ application.registration_number }}</strong>
+          <span>Registration number</span>
+          <strong>{{ application.registration_number }}</strong>
         </div>
+
+        @if (organizationName) {
+          <div>
+            <span>Organization</span>
+            <strong>{{ organizationName }}</strong>
+          </div>
+        }
+
         <div>
-          <span>Application status</span><strong>{{ statusLabel }}</strong>
+          <span>Application status</span>
+          <strong>{{ statusLabel }}</strong>
         </div>
+
         <div>
-          <span>Submitted</span><strong>{{ application.submitted_at | date: 'medium' }}</strong>
+          <span>Submitted</span>
+          <strong>{{ application.submitted_at | date: 'medium' }}</strong>
         </div>
       </div>
+
       <button type="button" class="primary-button" (click)="viewDocuments()">View documents</button>
     </section>
   } @else if (application && showDocuments) {
     <section class="verification-card">
       <div class="section-heading">
-        <div class="heading-icon"><span class="material-symbols-outlined">description</span></div>
+        <div class="heading-icon">
+          <span class="material-symbols-outlined">description</span>
+        </div>
+
         <div>
           <h2 #documentsHeading tabindex="-1">Supporting documents</h2>
           <p>Private evidence attached to your application.</p>
         </div>
       </div>
+
       @for (item of documents; track item.id) {
         <app-document-download
           [document]="{ id: item.id, name: item.original_filename }"
@@ -90,6 +117,7 @@
       <h2 #formHeading tabindex="-1">
         {{ canSubmitAgain ? 'Application needs an update' : 'Application already submitted' }}
       </h2>
+
       <p>
         {{
           canSubmitAgain
@@ -99,6 +127,7 @@
               '. You cannot submit another while it is being reviewed.'
         }}
       </p>
+
       @if (canSubmitAgain) {
         <button type="button" class="primary-button" (click)="viewApplicationForm()">
           Submit an updated application
@@ -116,6 +145,7 @@
           <div class="heading-icon">
             <span class="material-symbols-outlined">verified_user</span>
           </div>
+
           <div>
             <h2 #formHeading tabindex="-1">
               {{ showDocuments ? 'Supporting documents' : 'Verification application' }}
@@ -123,6 +153,7 @@
             <p>Complete the professional details and attach supporting evidence.</p>
           </div>
         </div>
+
         <div class="notice" role="note">
           <span class="material-symbols-outlined">info</span>
           <p>
@@ -135,24 +166,30 @@
           <div [hidden]="showDocuments">
             <div class="form-section">
               <h3>Professional information</h3>
+
               <div class="form-grid">
                 <label class="field">
                   <span>Professional role <b>*</b></span>
+
                   <select
                     formControlName="role"
                     [attr.aria-invalid]="submitted && verificationForm.controls.role.invalid"
                   >
                     <option value="">Select your role</option>
+
                     @for (role of roles; track role.value) {
                       <option [value]="role.value">{{ role.label }}</option>
                     }
                   </select>
+
                   @if (submitted && verificationForm.controls.role.invalid) {
                     <small class="error">Please select your professional role.</small>
                   }
                 </label>
+
                 <label class="field">
                   <span>Registration number <b>*</b></span>
+
                   <input
                     type="text"
                     formControlName="registrationNumber"
@@ -162,12 +199,33 @@
                       submitted && verificationForm.controls.registrationNumber.invalid
                     "
                   />
+
                   @if (submitted && verificationForm.controls.registrationNumber.invalid) {
                     <small class="error">Registration number is required.</small>
                   }
                 </label>
+
+                <label class="field">
+                  <span>Organization (optional)</span>
+
+                  <select formControlName="organizationId">
+                    <option value="">Select your organization</option>
+
+                    @for (organization of organizations; track organization.id) {
+                      <option [value]="organization.id">
+                        {{ organization.name }} ({{ organization.type }})
+                      </option>
+                    }
+                  </select>
+
+                  @if (organizationLoadError) {
+                    <small class="error">{{ organizationLoadError }}</small>
+                  }
+                </label>
+
                 <label class="field">
                   <span>Specialty / Department (optional)</span>
+
                   <input
                     type="text"
                     formControlName="specialty"
@@ -175,8 +233,10 @@
                     placeholder="Enter your specialty or department"
                   />
                 </label>
+
                 <label class="field">
                   <span>Qualifications (optional)</span>
+
                   <input
                     formControlName="qualification"
                     maxlength="2000"
@@ -190,9 +250,11 @@
           <div [hidden]="!showDocuments">
             <div class="form-section">
               <h3 #documentsHeading tabindex="-1">Supporting documents</h3>
+
               <p class="section-description">
                 Accepted formats: PDF, JPEG and PNG. Maximum 10 MiB per file.
               </p>
+
               <app-document-upload
                 inputId="evidence-document"
                 label="Select supporting documents"
@@ -208,23 +270,28 @@
             @if (submissionError) {
               <p class="error" role="alert">{{ submissionError }}</p>
             }
+
             @if (busy) {
               <p role="status">
                 {{ showDocuments ? 'Uploading evidence and submitting application…' : 'Saving…' }}
               </p>
             }
+
             <p>
-              <span class="material-symbols-outlined">lock</span> Documents are stored privately and
-              can only be retrieved by permitted users.
+              <span class="material-symbols-outlined">lock</span>
+              Documents are stored privately and can only be retrieved by permitted users.
             </p>
+
             @if (!showDocuments) {
               <button type="button" class="primary-button" (click)="viewDocuments()">
-                Continue to documents <span class="material-symbols-outlined">arrow_forward</span>
+                Continue to documents
+                <span class="material-symbols-outlined">arrow_forward</span>
               </button>
             } @else {
               <button type="button" class="secondary-button" (click)="viewApplicationForm()">
                 Back
               </button>
+
               <button type="submit" class="primary-button" [disabled]="busy">
                 {{ busy ? 'Submitting…' : submissionError ? 'Try again' : 'Submit application' }}
                 <span class="material-symbols-outlined">arrow_forward</span>
@@ -233,13 +300,16 @@
           </div>
         </form>
       </section>
+
       <aside class="help-card">
         <span class="material-symbols-outlined">support_agent</span>
         <h2>Need help?</h2>
+
         <p>
           Prepare a clear copy of your professional registration or supporting evidence before
           submitting.
         </p>
+
         <p>Accepted formats: PDF, JPG and PNG, up to 10 MiB per file.</p>
         <p>Your care, connected.</p>
       </aside>
@@ -248,12 +318,15 @@
     <section class="verification-card status-card">
       <span class="eyebrow">APPLICATION STATUS</span>
       <h2 #statusHeading tabindex="-1">No application submitted yet</h2>
+
       <p class="status-description">
         You have not submitted a professional verification application. Complete the form to get
         started.
       </p>
+
       <button type="button" class="primary-button" (click)="viewApplicationForm()">
-        Start application <span class="material-symbols-outlined">arrow_forward</span>
+        Start application
+        <span class="material-symbols-outlined">arrow_forward</span>
       </button>
     </section>
   }
