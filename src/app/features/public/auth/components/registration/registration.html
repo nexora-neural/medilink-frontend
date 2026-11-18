@@ -40,7 +40,7 @@
       @if (registerStep === 1) {
         @if (role === 'Patient') {
           <label>Date of birth <span>*</span>
-            <input name="dateOfBirth" type="date" formControlName="dateOfBirth" required />
+            <input name="dateOfBirth" type="date" formControlName="dateOfBirth" [max]="maxBirthDate" required />
             @if ((registerSubmitted || registrationForm.controls.dateOfBirth.touched) && registrationForm.controls.dateOfBirth.invalid) {
               <small class="error">Enter a valid date of birth that is not in the future.</small>
             }
@@ -92,7 +92,9 @@
             name="phone"
             type="tel"
             formControlName="phone"
-            (input)="resetAvailability('phone')"
+            maxlength="12"
+            inputmode="tel"
+            (input)="limitPhoneInput($event)"
             (blur)="checkAvailability('phone')"
             required
             placeholder="Enter your mobile number"

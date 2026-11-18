@@ -123,6 +123,19 @@ describe('Public authentication control flow', () => {
     expect(element.querySelector('input[name="password"]')).not.toBeNull();
   });
 
+  it('limits Sri Lankan phone input to nine digits after +94 and rejects extended birth years', () => {
+    const component = TestBed.createComponent(RegistrationComponent).componentInstance;
+    const phoneInput = document.createElement('input');
+    phoneInput.value = '+9477123456789';
+    component.limitPhoneInput({ target: phoneInput } as unknown as Event);
+    expect(phoneInput.value).toBe('+94771234567');
+    expect(component.registrationForm.controls.phone.value).toBe('+94771234567');
+    expect(component.registrationForm.controls.phone.valid).toBe(true);
+
+    component.registrationForm.controls.dateOfBirth.setValue('12000-01-01');
+    expect(component.registrationForm.controls.dateOfBirth.hasError('invalidDate')).toBe(true);
+  });
+
   it('reports a registered email when the field loses focus', async () => {
     vi.mocked(TestBed.inject(AuthService).registrationAvailable).mockResolvedValue({
       available: false,

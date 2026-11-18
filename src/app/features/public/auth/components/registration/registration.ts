@@ -23,6 +23,10 @@ export class RegistrationComponent implements OnChanges {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  readonly maxBirthDate = (() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  })();
 
   showPassword = false;
   private readonly formBuilder = inject(FormBuilder);
@@ -37,8 +41,15 @@ export class RegistrationComponent implements OnChanges {
         (control: AbstractControl) => {
           const value = control.value as string;
           if (!value) return null;
+          const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+          if (!match) return { invalidDate: true };
+          const [, year, month, day] = match;
+          const parsed = new Date(Number(year), Number(month) - 1, Number(day));
           const valid =
-            /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= new Date().toLocaleDateString('en-CA');
+            parsed.getFullYear() === Number(year) &&
+            parsed.getMonth() === Number(month) - 1 &&
+            parsed.getDate() === Number(day) &&
+            value <= new Date().toLocaleDateString('en-CA');
           return valid ? null : { invalidDate: true };
         },
       ],
@@ -63,6 +74,22 @@ export class RegistrationComponent implements OnChanges {
     this.checkSequence[field]++;
     this.checking[field] = false;
     this.availabilityMessage[field] = '';
+  }
+
+  limitPhoneInput(event: Event): void {
+    this.resetAvailability('phone');
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    let limited = value;
+    if (value.startsWith('+94')) {
+      limited = `+94${value.slice(3).replace(/\D/g, '').slice(0, 9)}`;
+    } else if (value.startsWith('0')) {
+      limited = `0${value.slice(1).replace(/\D/g, '').slice(0, 9)}`;
+    }
+    if (limited !== value) {
+      input.value = limited;
+      this.registrationForm.controls.phone.setValue(limited);
+    }
   }
 
   async checkAvailability(field: 'email' | 'phone'): Promise<boolean> {
