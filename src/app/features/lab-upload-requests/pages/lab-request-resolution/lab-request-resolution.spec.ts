@@ -203,4 +203,27 @@ describe('LabRequestResolution preview', () => {
     expect(element.querySelector('form')).toBeNull();
     expect(element.textContent).not.toContain('Sample Patient');
   });
+  it('does not restore the resolved request when switching back to Lab Staff', async () => {
+    const { page, fixture, activeRole } = await setup();
+
+    page.referenceControl.setValue(SAMPLE_ACTIVE_REFERENCE);
+    page.resolve();
+    fixture.detectChanges();
+
+    expect(page.resolved()).not.toBeNull();
+
+    activeRole.set('Patient');
+    fixture.detectChanges();
+
+    expect(page.resolved()).toBeNull();
+    expect(page.referenceControl.value).toBe('');
+
+    activeRole.set('Lab Staff');
+    fixture.detectChanges();
+
+    expect(page.resolved()).toBeNull();
+    expect(page.referenceControl.value).toBe('');
+    expect(page.searched()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Sample Patient');
+  });
 });

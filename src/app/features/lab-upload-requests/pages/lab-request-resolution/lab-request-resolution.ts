@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, effect } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -74,6 +74,12 @@ export class LabRequestResolution {
   });
 
   constructor() {
+    effect(() => {
+      if (!this.permitted()) {
+        this.referenceControl.reset('', { emitEvent: false });
+        this.clearResult();
+      }
+    });
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const preview = params.get('preview');
 

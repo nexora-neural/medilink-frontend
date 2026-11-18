@@ -198,4 +198,30 @@ describe('PatientLabRequests preview', () => {
     expect(page.requests()).toEqual(original);
     expect(page.visibleRequests()).toHaveLength(0);
   });
+  it('does not restore pending revocation when switching back to Patient', async () => {
+    const { page, fixture, activeRole } = await setup();
+
+    const request = page.visibleRequests().find((item) => page.status(item) === 'active')!;
+
+    page.requestRevoke(request);
+    fixture.detectChanges();
+
+    expect(page.selectedRevoke()?.id).toBe(request.id);
+
+    activeRole.set('Lab Staff');
+    fixture.detectChanges();
+
+    expect(page.pendingRevoke()).toBeNull();
+    expect(page.selectedRevoke()).toBeNull();
+
+    activeRole.set('Patient');
+    fixture.detectChanges();
+
+    expect(page.pendingRevoke()).toBeNull();
+    expect(page.selectedRevoke()).toBeNull();
+
+    const unchanged = page.requests().find((item) => item.id === request.id)!;
+    expect(unchanged.revokedAt).toBeNull();
+    expect(page.status(unchanged)).toBe('active');
+  });
 });
