@@ -6,6 +6,7 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../../core/auth.service';
@@ -60,6 +61,19 @@ export class RegistrationComponent implements OnChanges {
     password: ['', [Validators.required, Validators.minLength(8)]],
     registerConfirm: ['', Validators.required],
   });
+
+  constructor() {
+    this.registrationForm.controls.phone.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((value) => {
+        this.resetAvailability('phone');
+        const limited = this.normalizePhone(value);
+        if (limited !== value) {
+          this.registrationForm.controls.phone.setValue(limited, { emitEvent: false });
+        }
+      });
+  }
+
   message = '';
   busy = false;
   registerStep = 1;
@@ -76,20 +90,12 @@ export class RegistrationComponent implements OnChanges {
     this.availabilityMessage[field] = '';
   }
 
-  limitPhoneInput(event: Event): void {
-    this.resetAvailability('phone');
-    const input = event.target as HTMLInputElement;
-    const value = input.value;
-    let limited = value;
+  private normalizePhone(value: string): string {
     if (value.startsWith('+94')) {
-      limited = `+94${value.slice(3).replace(/\D/g, '').slice(0, 9)}`;
-    } else if (value.startsWith('0')) {
-      limited = `0${value.slice(1).replace(/\D/g, '').slice(0, 9)}`;
+      return `+94${value.slice(3).replace(/\D/g, '').slice(0, 9)}`;
     }
-    if (limited !== value) {
-      input.value = limited;
-      this.registrationForm.controls.phone.setValue(limited);
-    }
+    if (value.startsWith('0')) return `0${value.slice(1).replace(/\D/g, '').slice(0, 9)}`;
+    return value;
   }
 
   async checkAvailability(field: 'email' | 'phone'): Promise<boolean> {

@@ -124,10 +124,16 @@ describe('Public authentication control flow', () => {
   });
 
   it('limits Sri Lankan phone input to nine digits after +94 and rejects extended birth years', () => {
-    const component = TestBed.createComponent(RegistrationComponent).componentInstance;
-    const phoneInput = document.createElement('input');
+    const fixture = TestBed.createComponent(RegistrationComponent);
+    fixture.componentInstance.page = 'register';
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const phoneInput = fixture.nativeElement.querySelector(
+      'input[name="phone"]',
+    ) as HTMLInputElement;
     phoneInput.value = '+9477123456789';
-    component.limitPhoneInput({ target: phoneInput } as unknown as Event);
+    phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
     expect(phoneInput.value).toBe('+94771234567');
     expect(component.registrationForm.controls.phone.value).toBe('+94771234567');
     expect(component.registrationForm.controls.phone.valid).toBe(true);
