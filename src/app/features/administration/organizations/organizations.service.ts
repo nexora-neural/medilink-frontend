@@ -5,7 +5,8 @@ export type OrganizationStatus = 'pending' | 'active' | 'rejected' | 'suspended'
 export type MembershipStatus =
   'not_submitted' | 'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'suspended';
 export type OrganizationDecisionStatus = 'active' | 'rejected' | 'suspended';
-export type MembershipDecisionStatus = 'approved' | 'rejected';
+export type MembershipDecisionStatus =
+  'approved' | 'rejected' | 'more_info_requested' | 'suspended';
 
 export interface Organization {
   id: string;
@@ -27,6 +28,12 @@ export interface OrganizationMembership {
   created_at: string;
 }
 
+export interface PublicOrganization {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface Page<T> {
   items: T[];
   page: number;
@@ -37,6 +44,17 @@ interface Page<T> {
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
   private readonly auth = inject(AuthService);
+
+  async listPublicOrganizations(): Promise<PublicOrganization[]> {
+    return this.collectPages<PublicOrganization>('/organizations');
+  }
+
+  requestMembership(organizationId: string, role: string): Promise<OrganizationMembership> {
+    return this.auth.postAuthorized<OrganizationMembership>('/me/memberships', {
+      organization_id: organizationId,
+      role,
+    });
+  }
 
   async listOrganizations(): Promise<Organization[]> {
     return this.collectPages<Organization>('/admin/organizations');

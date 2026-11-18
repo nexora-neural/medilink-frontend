@@ -1,0 +1,314 @@
+:host {
+  display: block;
+  color: #193052;
+}
+
+.records-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.page-heading,
+.section-heading,
+.entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-heading {
+  margin-bottom: 24px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+h2 {
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+}
+
+h3 {
+  margin: 6px 0 0;
+  font-size: 1.05rem;
+}
+
+.subtitle,
+.help-text,
+.field small,
+.entry-metadata dt {
+  color: #52657d;
+  line-height: 1.6;
+}
+
+.subtitle {
+  margin-bottom: 0;
+}
+
+.preview-notice,
+.status-message,
+.panel {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #dbe5ef;
+  border-radius: 16px;
+}
+
+.preview-notice {
+  background: #eaf6fd;
+  border-color: #a8d9f5;
+  line-height: 1.7;
+}
+
+.panel {
+  background: #fff;
+}
+
+.status-message {
+  background: #edf8f1;
+  border-color: #afd5bc;
+  color: #235638;
+}
+
+.allergy-status {
+  line-height: 1.7;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.primary-button {
+  background: #1b2e50;
+  color: #fff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #29456e;
+}
+
+.secondary-button {
+  background: #fff;
+  color: #193052;
+  border-color: #b9cadc;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #eef5fb;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #087bb5;
+  outline-offset: 3px;
+}
+
+.button-row,
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button-row {
+  margin-bottom: 16px;
+}
+
+.form-actions {
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.form-grid,
+.entry-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid #b9cadc;
+  border-radius: 8px;
+  background: #fff;
+  color: #193052;
+}
+
+textarea {
+  resize: vertical;
+}
+
+[aria-invalid='true'] {
+  border-color: #b42318;
+}
+
+.error-message {
+  margin-top: 16px;
+  color: #b42318;
+  line-height: 1.6;
+}
+
+.section-heading {
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
+.section-heading > span {
+  color: #52657d;
+}
+
+.entry-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry-card {
+  padding: 20px;
+  border: 1px solid #dbe5ef;
+  border-radius: 12px;
+  background: #f7f9fc;
+  overflow-wrap: anywhere;
+}
+
+.entry-heading {
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.entry-kind {
+  color: #315d80;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border: 1px solid #c4d6e7;
+  border-radius: 20px;
+  background: #eaf2fa;
+  font-size: 0.8rem;
+}
+
+.entry-details {
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.entry-metadata {
+  margin: 20px 0;
+}
+
+.entry-metadata > div {
+  min-width: 0;
+}
+
+.entry-metadata dt {
+  font-size: 0.85rem;
+}
+
+.entry-metadata dd {
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+
+.entry-card > .help-text {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .records-page {
+    padding: 20px 16px 32px;
+  }
+
+  .page-heading,
+  .entry-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-heading > button {
+    width: 100%;
+  }
+
+  .preview-notice,
+  .status-message,
+  .panel {
+    padding: 18px;
+  }
+
+  .form-grid,
+  .entry-metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .status-badge {
+    align-self: flex-start;
+  }
+
+  .form-actions > button,
+  .button-row > button {
+    flex: 1 1 100%;
+  }
+
+  .section-heading {
+    flex-wrap: wrap;
+  }
+}

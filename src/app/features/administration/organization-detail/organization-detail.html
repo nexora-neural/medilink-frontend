@@ -64,6 +64,24 @@
                     Reject
                   </button>
                 }
+                @if (member.status === 'pending') {
+                  <button
+                    type="button"
+                    class="outline"
+                    (click)="prepareMembershipDecision(member.id, 'more_info_requested')"
+                  >
+                    Request More Info
+                  </button>
+                }
+                @if (member.status === 'approved') {
+                  <button
+                    type="button"
+                    class="outline"
+                    (click)="prepareMembershipDecision(member.id, 'suspended')"
+                  >
+                    Suspend Membership
+                  </button>
+                }
               </div>
             }
           </article>

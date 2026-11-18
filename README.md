@@ -332,3 +332,31 @@ Browser checks do not establish file safety or access permission.
 - Production build passed with bundle and component-style warnings.
 - Initial bundle size: 848.90 kB against a 500 kB warning budget.
 - Professional verification styles: 7.71 kB against a 4 kB warning budget.
+
+
+## Patient record and clinical entries preview (ML-57)
+
+- Patient route: `/workspace/patient/history`
+- Doctor route: `/workspace/doctor/records`
+- Shows fictional conditions, allergies, diagnoses and clinical notes.
+- Patients can add sample conditions and allergies.
+- Doctors can add sample diagnoses and clinical notes.
+- Entries display source, author, organization, recorded time and status.
+- Existing entries are read-only.
+- Unknown allergy status is distinct from no known allergies.
+- Includes loading, empty, error, retry and denied preview states.
+- Changes remain in memory and reset when the page is reopened or refreshed.
+
+### Integration boundary
+
+This is a frontend preview with fictional records and identities.
+It does not verify real patient access or save clinical records to the backend.
+ML-74 connects the real API and verifies authorization and feature rules.
+
+### Verification
+
+- All 14 clinical-records component tests passed.
+- TypeScript checks passed.
+- Manually verified patient condition entry, doctor diagnosis/note entry,
+  validation, preview states, refresh reset and allergy-status handling.
+- Inspected the doctor records layout at a mobile viewport.

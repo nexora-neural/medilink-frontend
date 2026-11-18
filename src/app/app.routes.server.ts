@@ -27,7 +27,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    path: 'workspace/admin/medicine-catalogue',
+    path: 'super-admin/medicine-catalogue',
     renderMode: RenderMode.Client,
   },
   {
@@ -51,6 +51,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/professional-verification/membership-request',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'workspace/patient/measurements',
     renderMode: RenderMode.Client,
   },
@@ -59,6 +63,14 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'workspace/doctor/correction-requests', renderMode: RenderMode.Client },
   { path: 'workspace/doctor/corrections', renderMode: RenderMode.Client },
   { path: 'workspace/doctor/correction-history', renderMode: RenderMode.Client },
+  {
+    path: 'workspace/patient/history',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/records',
+    renderMode: RenderMode.Client,
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender,

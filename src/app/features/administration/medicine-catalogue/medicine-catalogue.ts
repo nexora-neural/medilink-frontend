@@ -1,16 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-
-type CatalogueState = 'ready' | 'loading' | 'empty' | 'error';
-
-interface CatalogueMedicine {
-  id: string;
-  genericName: string;
-  brand: string;
-  strength: string;
-  form: string;
-  category: string;
-}
+import {
+  isCatalogueAccessError,
+  MedicineCatalogueApi,
+  MedicinePage,
+} from './medicine-catalogue-api.service';
 
 @Component({
   selector: 'app-medicine-catalogue',
@@ -19,109 +14,96 @@ interface CatalogueMedicine {
   templateUrl: './medicine-catalogue.html',
   styleUrl: './medicine-catalogue.scss',
 })
-export class MedicineCatalogue {
+export class MedicineCatalogue implements OnInit {
   private readonly fb = inject(FormBuilder);
-
-  readonly state = signal<CatalogueState>('ready');
-  readonly medicines = signal<CatalogueMedicine[]>([
-    {
-      id: 'MED-001',
-      genericName: 'Paracetamol',
-      brand: 'Panadol',
-      strength: '500 mg',
-      form: 'Tablet',
-      category: 'Pain relief',
-    },
-    {
-      id: 'MED-002',
-      genericName: 'Amoxicillin',
-      brand: 'Amoxil',
-      strength: '500 mg',
-      form: 'Capsule',
-      category: 'Antibiotic',
-    },
-    {
-      id: 'MED-003',
-      genericName: 'Cetirizine',
-      brand: 'Zyrtec',
-      strength: '10 mg',
-      form: 'Tablet',
-      category: 'Antihistamine',
-    },
-  ]);
+  private readonly api = inject(MedicineCatalogueApi);
+  private requestedPage = 1;
 
   readonly form = this.fb.nonNullable.group({
-    genericName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    brand: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    strength: ['', [Validators.required, Validators.maxLength(50)]],
-    dosageForm: ['', Validators.required],
-    category: ['', Validators.required],
+    genericName: ['', [Validators.required, Validators.maxLength(200)]],
+    brand: ['', Validators.maxLength(200)],
+    strength: ['', Validators.maxLength(100)],
+    dosageForm: ['', Validators.maxLength(100)],
   });
 
-  readonly totalMedicines = computed(() => this.medicines().length);
+  readonly result = signal<MedicinePage | null>(null);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly denied = signal(false);
+  readonly loadError = signal('');
+  readonly saveError = signal('');
+  readonly successMessage = signal('');
 
-  readonly genericNameControl = this.form.controls.genericName;
-  readonly brandControl = this.form.controls.brand;
-  readonly strengthControl = this.form.controls.strength;
-  readonly dosageFormControl = this.form.controls.dosageForm;
-  readonly categoryControl = this.form.controls.category;
+  ngOnInit(): void {
+    void this.load();
+  }
 
-  submitted = signal(false);
-  successMessage = signal('');
+  async load(page = this.requestedPage): Promise<void> {
+    if (this.loading()) return;
 
-  addMedicine(): void {
-    this.submitted.set(true);
+    this.requestedPage = page;
+    this.loading.set(true);
+    this.loadError.set('');
+    this.denied.set(false);
+
+    try {
+      this.result.set(await this.api.listForManagement(page));
+    } catch (error) {
+      this.result.set(null);
+      this.denied.set(isCatalogueAccessError(error));
+      this.loadError.set(
+        this.denied()
+          ? 'You do not have access to manage the catalogue.'
+          : 'Could not load the catalogue. Try again.',
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async addMedicine(): Promise<void> {
+    if (this.saving() || this.loading() || this.denied()) return;
+
+    this.saveError.set('');
     this.successMessage.set('');
 
-    // Normalize before validators run so whitespace cannot create blank entries.
-    const fields = this.form.getRawValue();
-    this.form.setValue({
-      genericName: fields.genericName.trim(),
-      brand: fields.brand.trim(),
-      strength: fields.strength.trim(),
-      dosageForm: fields.dosageForm.trim(),
-      category: fields.category.trim(),
-    });
-
+    const { genericName, brand, strength, dosageForm } = this.form.getRawValue();
+    this.form.patchValue({ genericName: genericName.trim() });
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const value = this.form.getRawValue();
+    this.saving.set(true);
+    this.form.disable();
 
-    const newMedicine: CatalogueMedicine = {
-      id: `MED-${String(Date.now()).slice(-6)}`,
-      genericName: value.genericName.trim(),
-      brand: value.brand.trim(),
-      strength: value.strength.trim(),
-      form: value.dosageForm,
-      category: value.category,
-    };
-
-    this.medicines.update((items) => [newMedicine, ...items]);
-    this.form.reset();
-    this.submitted.set(false);
-    this.successMessage.set('Medicine added to the sample catalogue.');
-    this.state.set('ready');
-  }
-
-  setPreviewState(state: CatalogueState): void {
-    this.state.set(state);
-    this.successMessage.set('');
-  }
-
-  retry(): void {
-    this.state.set('ready');
+    try {
+      await this.api.create({
+        generic_name: genericName.trim(),
+        brand_name: brand.trim() || null,
+        strength: strength.trim() || null,
+        form: dosageForm.trim() || null,
+      });
+      this.form.reset();
+      this.successMessage.set('Medicine saved to the sample catalogue.');
+      await this.load(1);
+    } catch (error) {
+      if (isCatalogueAccessError(error)) {
+        this.saveError.set('You do not have permission to add a medicine.');
+      } else if (error instanceof HttpErrorResponse && error.status === 422) {
+        this.saveError.set('Check the medicine fields and try again.');
+      } else {
+        this.saveError.set('Could not confirm the save. Reload the catalogue before trying again.');
+      }
+    } finally {
+      this.form.enable();
+      this.saving.set(false);
+    }
   }
 
   clearForm(): void {
     this.form.reset();
-    this.submitted.set(false);
+    this.saveError.set('');
     this.successMessage.set('');
-  }
-
-  hasError(control: typeof this.genericNameControl): boolean {
-    return control.invalid && (control.touched || this.submitted());
   }
 }

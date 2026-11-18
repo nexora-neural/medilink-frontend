@@ -14,11 +14,6 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
       path: '/workspace/admin/dashboard',
     },
     {
-      label: 'Medicine catalogue',
-      icon: 'medication',
-      path: '/workspace/admin/medicine-catalogue',
-    },
-    {
       label: 'Account support',
       icon: 'support_agent',
       path: '/workspace/admin/account-support',
