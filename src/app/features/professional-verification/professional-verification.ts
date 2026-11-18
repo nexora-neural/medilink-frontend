@@ -20,7 +20,7 @@ const nonblank = (control: AbstractControl) =>
 @Component({
   selector: 'app-professional-verification',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, DocumentUpload, DocumentDownload],
+  imports: [DatePipe, ReactiveFormsModule, DocumentUpload, DocumentDownload],
   templateUrl: './professional-verification.html',
   styleUrl: './professional-verification.scss',
 })

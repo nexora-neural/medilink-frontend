@@ -25,12 +25,12 @@ export class SuperAdminSidebar {
       icon: 'manage_accounts',
       route: '/super-admin/admin-accounts',
     },
-    { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
     {
-      label: 'Membership request',
-      icon: 'assignment_add',
-      route: '/super-admin/membership-request',
+      label: 'Medicine catalogue',
+      icon: 'medication',
+      route: '/super-admin/medicine-catalogue',
     },
+    { label: 'Organizations', icon: 'corporate_fare', route: '/super-admin/organizations' },
     {
       label: 'Professional applications',
       icon: 'fact_check',

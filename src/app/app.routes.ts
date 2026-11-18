@@ -25,6 +25,7 @@ import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-ac
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
+import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 
 const rolePage = (
   path: string,
@@ -51,12 +52,16 @@ const rolePages: Route[] = [
     'Prescriptions',
     'A protected patient route for the prescription workspace.',
   ),
-  rolePage(
-    'patient/history',
-    ['Patient'],
-    'Medical history',
-    'A protected patient route for the medical history workspace.',
-  ),
+  {
+    path: 'patient/history',
+    component: ClinicalRecords,
+    canActivate: [roleGuard],
+    title: 'Medical history | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+      audience: 'patient',
+    },
+  },
   rolePage(
     'patient/reports',
     ['Patient'],
@@ -77,12 +82,16 @@ const rolePages: Route[] = [
       allowedRoles: ['Patient'],
     },
   },
-  rolePage(
-    'doctor/records',
-    ['Doctor'],
-    'Patient records',
-    'A protected doctor route for the patient records workspace.',
-  ),
+  {
+    path: 'doctor/records',
+    component: ClinicalRecords,
+    canActivate: [roleGuard],
+    title: 'Patient clinical records | MediLink',
+    data: {
+      allowedRoles: ['Doctor'],
+      audience: 'doctor',
+    },
+  },
   rolePage(
     'doctor/prescriptions',
     ['Doctor'],
@@ -228,21 +237,18 @@ export const routes: Routes = [
         path: 'professional-verification',
         component: ProfessionalVerification,
       },
+      {
+        path: 'professional-verification/membership-request',
+        component: MembershipRequest,
+        canActivate: [roleGuard],
+        data: { allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'] },
+      },
 
       {
         path: 'admin/dashboard',
         component: AdminDashboard,
         canActivate: [roleGuard],
         title: 'Admin dashboard | MediLink',
-        data: {
-          allowedRoles: ['Admin'],
-        },
-      },
-      {
-        path: 'admin/medicine-catalogue',
-        component: MedicineCatalogue,
-        canActivate: [roleGuard],
-        title: 'Medicine catalogue | MediLink',
         data: {
           allowedRoles: ['Admin'],
         },
@@ -296,16 +302,17 @@ export const routes: Routes = [
         title: 'Application review | MediLink',
       },
       {
-        path: 'membership-request',
-        component: MembershipRequest,
-      },
-      {
         path: 'account-support',
         component: AccountSupport,
       },
       {
         path: 'admin-accounts',
         component: AdminAccounts,
+      },
+      {
+        path: 'medicine-catalogue',
+        component: MedicineCatalogue,
+        title: 'Medicine catalogue | MediLink',
       },
     ],
   },

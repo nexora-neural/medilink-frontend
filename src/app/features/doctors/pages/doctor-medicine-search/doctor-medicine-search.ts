@@ -1,73 +1,11 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  CatalogueMedicine,
+  isCatalogueAccessError,
+  MedicineCatalogueApi,
+} from '../../../administration/medicine-catalogue/medicine-catalogue-api.service';
 
-type MedicineState = 'ready' | 'loading' | 'empty' | 'error';
-
-interface Medicine {
-  id: string;
-  genericName: string;
-  brand: string;
-  strength: string;
-  form: string;
-  category: string;
-  description: string;
-}
-
-const SAMPLE_MEDICINES: Medicine[] = [
-  {
-    id: 'MED-001',
-    genericName: 'Paracetamol',
-    brand: 'Panadol',
-    strength: '500 mg',
-    form: 'Tablet',
-    category: 'Pain relief',
-    description: 'Used for temporary relief of pain and fever.',
-  },
-  {
-    id: 'MED-002',
-    genericName: 'Amoxicillin',
-    brand: 'Amoxil',
-    strength: '500 mg',
-    form: 'Capsule',
-    category: 'Antibiotic',
-    description: 'Prescription antibiotic medicine.',
-  },
-  {
-    id: 'MED-003',
-    genericName: 'Cetirizine',
-    brand: 'Zyrtec',
-    strength: '10 mg',
-    form: 'Tablet',
-    category: 'Antihistamine',
-    description: 'Used to relieve allergy symptoms.',
-  },
-  {
-    id: 'MED-004',
-    genericName: 'Metformin',
-    brand: 'Glucophage',
-    strength: '500 mg',
-    form: 'Tablet',
-    category: 'Antidiabetic',
-    description: 'Prescription medicine used to manage blood glucose.',
-  },
-  {
-    id: 'MED-005',
-    genericName: 'Omeprazole',
-    brand: 'Losec',
-    strength: '20 mg',
-    form: 'Capsule',
-    category: 'Gastrointestinal',
-    description: 'Reduces stomach acid production.',
-  },
-  {
-    id: 'MED-006',
-    genericName: 'Salbutamol',
-    brand: 'Ventolin',
-    strength: '100 mcg',
-    form: 'Inhaler',
-    category: 'Respiratory',
-    description: 'A bronchodilator used for breathing difficulties.',
-  },
-];
+type MedicineState = 'ready' | 'loading' | 'empty' | 'denied' | 'error';
 
 @Component({
   selector: 'app-doctor-medicine-search',
@@ -75,53 +13,77 @@ const SAMPLE_MEDICINES: Medicine[] = [
   templateUrl: './doctor-medicine-search.html',
   styleUrl: './doctor-medicine-search.scss',
 })
-export class DoctorMedicineSearch {
+export class DoctorMedicineSearch implements OnInit, OnDestroy {
+  private readonly api = inject(MedicineCatalogueApi);
+  private timer?: ReturnType<typeof setTimeout>;
+  private requestId = 0;
+  private query = '';
+
   readonly searchTerm = signal('');
-  readonly selectedMedicine = signal<Medicine | null>(null);
-  readonly state = signal<MedicineState>('ready');
+  readonly selectedMedicine = signal<CatalogueMedicine | null>(null);
+  readonly state = signal<MedicineState>('loading');
   readonly activeIndex = signal(-1);
   readonly showSuggestions = signal(false);
+  readonly medicines = signal<CatalogueMedicine[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
+  readonly pageSize = signal(20);
 
-  readonly medicines = signal<Medicine[]>(SAMPLE_MEDICINES);
+  ngOnInit(): void {
+    void this.load();
+  }
 
-  readonly filteredMedicines = computed(() => {
-    const query = this.searchTerm().trim().toLowerCase();
-
-    if (!query) {
-      return this.medicines();
-    }
-
-    return this.medicines().filter((medicine) =>
-      [
-        medicine.genericName,
-        medicine.brand,
-        medicine.strength,
-        medicine.form,
-        medicine.category,
-      ].some((value) => value.toLowerCase().includes(query)),
-    );
-  });
+  ngOnDestroy(): void {
+    clearTimeout(this.timer);
+    this.requestId++;
+  }
 
   onSearch(value: string): void {
+    clearTimeout(this.timer);
+    this.requestId++;
+    this.query = value;
     this.searchTerm.set(value);
     this.selectedMedicine.set(null);
     this.activeIndex.set(-1);
     this.showSuggestions.set(true);
+    this.page.set(1);
+    this.total.set(0);
+    this.medicines.set([]);
+    this.state.set('loading');
+    this.timer = setTimeout(() => void this.load(), 250);
+  }
 
-    if (this.state() === 'error' || this.state() === 'empty') {
-      this.state.set('ready');
+  async load(page = this.page()): Promise<void> {
+    clearTimeout(this.timer);
+    const requestId = ++this.requestId;
+    this.page.set(page);
+    this.state.set('loading');
+    this.activeIndex.set(-1);
+    this.selectedMedicine.set(null);
+    this.medicines.set([]);
+
+    try {
+      const result = await this.api.search(this.query, page);
+      if (requestId !== this.requestId) return;
+
+      this.medicines.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
+      this.pageSize.set(result.pageSize);
+      this.state.set(result.items.length ? 'ready' : 'empty');
+    } catch (error) {
+      if (requestId !== this.requestId) return;
+
+      this.total.set(0);
+      this.state.set(isCatalogueAccessError(error) ? 'denied' : 'error');
     }
   }
 
-  selectMedicine(medicine: Medicine): void {
+  selectMedicine(medicine: CatalogueMedicine): void {
     this.selectedMedicine.set(medicine);
-    this.searchTerm.set(medicine.genericName);
-    this.showSuggestions.set(false);
-    this.activeIndex.set(-1);
+    this.closeSuggestions();
   }
-
   openSuggestions(): void {
-    if (this.state() !== 'ready') return;
     this.activeIndex.set(-1);
     this.showSuggestions.set(true);
   }
@@ -138,20 +100,15 @@ export class DoctorMedicineSearch {
     }
     if (this.state() !== 'ready') return;
 
-    const results = this.filteredMedicines();
+    const results = this.medicines();
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      const wasOpen = this.showSuggestions();
+      const index = this.showSuggestions() ? this.activeIndex() : -1;
       this.showSuggestions.set(true);
-      if (results.length > 0) {
-        const index = wasOpen ? this.activeIndex() : -1;
-        this.activeIndex.set(
-          event.key === 'ArrowDown'
-            ? (index + 1) % results.length
-            : index <= 0
-              ? results.length - 1
-              : index - 1,
-        );
+      if (event.key === 'ArrowDown') {
+        this.activeIndex.set((index + 1) % results.length);
+      } else {
+        this.activeIndex.set(index <= 0 ? results.length - 1 : index - 1);
       }
       return;
     }
@@ -166,21 +123,12 @@ export class DoctorMedicineSearch {
     }
   }
 
-  setPreviewState(state: MedicineState): void {
-    this.state.set(state);
-    this.selectedMedicine.set(null);
-    this.closeSuggestions();
-  }
-
   retry(): void {
-    this.state.set('ready');
+    void this.load();
   }
 
   clearSearch(): void {
-    this.searchTerm.set('');
-    this.selectedMedicine.set(null);
-    this.showSuggestions.set(false);
-    this.activeIndex.set(-1);
-    this.state.set('ready');
+    this.onSearch('');
+    this.closeSuggestions();
   }
 }

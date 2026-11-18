@@ -40,9 +40,9 @@
       @if (registerStep === 1) {
         @if (role === 'Patient') {
           <label>Date of birth <span>*</span>
-            <input name="dateOfBirth" type="date" formControlName="dateOfBirth" required />
-            @if (registerSubmitted && !registrationForm.controls.dateOfBirth.value) {
-              <small class="error">Enter your date of birth.</small>
+            <input name="dateOfBirth" type="date" formControlName="dateOfBirth" [max]="maxBirthDate" required />
+            @if ((registerSubmitted || registrationForm.controls.dateOfBirth.touched) && registrationForm.controls.dateOfBirth.invalid) {
+              <small class="error">Enter a valid date of birth that is not in the future.</small>
             }
           </label>
           <label>Sex <span>*</span>
@@ -64,7 +64,7 @@
             placeholder="Enter your full name"
             autocomplete="name"
           />
-          @if (registerSubmitted && registrationForm.controls.fullName.invalid) {
+          @if ((registerSubmitted || registrationForm.controls.fullName.touched) && registrationForm.controls.fullName.invalid) {
             <small class="error">Please enter your name.</small>
           }</label
         ><label
@@ -73,26 +73,43 @@
             type="email"
             name="email"
             formControlName="email"
+            (input)="resetAvailability('email')"
+            (blur)="checkAvailability('email')"
             required
             email
             placeholder="you@example.com"
             autocomplete="email"
           />
-          @if (registerSubmitted && registrationForm.controls.email.invalid) {
+          @if ((registerSubmitted || registrationForm.controls.email.touched) && registrationForm.controls.email.invalid) {
             <small class="error">Enter a valid email address.</small>
-          }</label
+          }
+          @if (checking.email) { <small>Checking email address…</small> }
+          @if (availabilityMessage.email) { <small class="error" role="status">{{ availabilityMessage.email }}</small> }
+          </label
         ><label
           >Mobile number <span>*</span
-          ><input
-            name="phone"
-            formControlName="phone"
-            required
-            placeholder="Enter your mobile number"
-            autocomplete="tel"
-          />
-          @if (registerSubmitted && registrationForm.controls.phone.invalid) {
-            <small class="error">Enter your mobile number.</small>
+          ><div class="phone-input">
+            <select aria-label="Country calling code" value="+94">
+              <option value="+94" selected>🇱🇰 +94</option>
+            </select>
+            <input
+              name="phone"
+              type="tel"
+              formControlName="phone"
+              maxlength="9"
+              inputmode="numeric"
+              (blur)="checkAvailability('phone')"
+              required
+              pattern="[0-9]{9}"
+              placeholder="771234567"
+              autocomplete="tel-national"
+            />
+          </div>
+          @if ((registerSubmitted || registrationForm.controls.phone.touched) && registrationForm.controls.phone.invalid) {
+            <small class="error">Enter 9 digits after the +94 country code.</small>
           }
+          @if (checking.phone) { <small>Checking mobile number…</small> }
+          @if (availabilityMessage.phone) { <small class="error" role="status">{{ availabilityMessage.phone }}</small> }
         </label>
       }
       @if (role !== 'Patient' && registerStep === 2) {
@@ -183,7 +200,7 @@
             <span>Email</span><strong>{{ registrationForm.controls.email.value }}</strong>
           </div>
           <div>
-            <span>Mobile</span><strong>{{ registrationForm.controls.phone.value }}</strong>
+            <span>Mobile</span><strong>{{ countryDialCode }}{{ registrationForm.controls.phone.value }}</strong>
           </div>
           @if (role !== 'Patient') {
             <div>

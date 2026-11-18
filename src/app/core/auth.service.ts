@@ -342,6 +342,25 @@ export class AuthService {
     }
   }
 
+  async registrationAvailable(
+    field: 'email' | 'phone',
+    value: string,
+  ): Promise<{ available: boolean; recoverable: boolean }> {
+    const { config } = await this.firebase();
+    const result = await firstValueFrom(
+      this.http
+        .post<{ available: boolean; recoverable: boolean }>(
+          `${config.apiBaseUrl}/registration/availability`,
+          {
+            field,
+            value,
+          },
+        )
+        .pipe(timeout(10000)),
+    );
+    return result;
+  }
+
   async registerPatient(input: {
     email: string;
     password: string;
@@ -349,6 +368,7 @@ export class AuthService {
     phone: string;
     dateOfBirth: string;
     sex: 'female' | 'male';
+    recoverExisting?: boolean;
   }): Promise<void> {
     const { auth, config } = await this.firebase();
 
@@ -356,20 +376,9 @@ export class AuthService {
 
     const email = input.email.trim();
 
-    const credential = await (async () => {
-      try {
-        return await createUserWithEmailAndPassword(auth, email, input.password);
-      } catch (error) {
-        const code =
-          typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
-
-        if (code !== 'auth/email-already-in-use') {
-          throw error;
-        }
-
-        return signInWithEmailAndPassword(auth, email, input.password);
-      }
-    })();
+    const credential = input.recoverExisting
+      ? await signInWithEmailAndPassword(auth, email, input.password)
+      : await createUserWithEmailAndPassword(auth, email, input.password);
 
     try {
       const token = await credential.user.getIdToken();

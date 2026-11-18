@@ -84,6 +84,32 @@
 .register-box .notice {
   margin-bottom: 18px;
 }
+.phone-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.phone-input select {
+  flex: 0 0 104px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid #dce7e4;
+  border-radius: 7px;
+  background: #fff;
+  color: #203c44;
+  font: inherit;
+  font-size: 13px;
+}
+.phone-input input {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+}
+.phone-input select:focus-visible,
+.phone-input input:focus-visible {
+  outline: 2px solid #168dc5;
+  outline-offset: 2px;
+}
 @media (max-width: 600px) {
   .registration-review > div {
     gap: 10px;

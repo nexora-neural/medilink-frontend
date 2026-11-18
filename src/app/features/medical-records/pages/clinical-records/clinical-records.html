@@ -1,0 +1,232 @@
+<section class="records-page" aria-labelledby="records-page-title">
+  <header class="page-heading">
+    <div>
+      <h1 id="records-page-title">
+        {{ audience === 'patient' ? 'Medical history' : 'Patient clinical records' }}
+      </h1>
+      <p class="subtitle">Review conditions, allergies, diagnoses and clinical notes.</p>
+    </div>
+
+    @if (canAdd()) {
+      <button class="primary-button" type="button" [disabled]="formOpen()" (click)="openForm()">
+        Add {{ audience === 'patient' ? 'condition or allergy' : 'diagnosis or note' }}
+      </button>
+    }
+  </header>
+
+  <p class="preview-notice">
+    <strong>Sample preview only.</strong>
+    All records and identities on this screen are fictional. Changes are temporary and disappear
+    when you leave this page or refresh.
+    @if (audience === 'doctor') {
+      This demonstrates a sample authorized patient workspace. Real patient access must be verified
+      during API integration.
+    }
+  </p>
+
+  @if (!permitted() || pageState() === 'denied') {
+    <section class="panel" aria-labelledby="access-title">
+      <h2 id="access-title">Access unavailable</h2>
+      <p>This workspace is unavailable for the current role or sample access state.</p>
+    </section>
+  } @else if (pageState() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading medical history"
+      description="Getting the sample clinical records."
+    />
+  } @else if (pageState() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Medical history unavailable"
+      description="The sample records could not be loaded."
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else {
+    <section class="panel" aria-labelledby="allergy-summary-title">
+      <h2 id="allergy-summary-title">Allergy status</h2>
+
+      @if (allergyStatus() === 'unknown') {
+        <p class="allergy-status">
+          <strong>Unknown</strong> — allergy information has not been established.
+        </p>
+      } @else if (allergyStatus() === 'no-known-allergies') {
+        <p class="allergy-status">
+          <strong>No known allergies reported.</strong>
+          This is different from an unknown allergy status.
+        </p>
+      } @else {
+        <p class="allergy-status">
+          <strong>Allergies recorded.</strong>
+          Review the individual entries and their recorded sources below.
+        </p>
+      }
+
+      @if (audience === 'patient') {
+        <div class="button-row">
+          <button class="secondary-button" type="button" (click)="setAllergyStatus('unknown')">
+            Mark status unknown
+          </button>
+          <button
+            class="secondary-button"
+            type="button"
+            (click)="setAllergyStatus('no-known-allergies')"
+          >
+            Report no known allergies
+          </button>
+        </div>
+      }
+
+      <p class="help-text">
+        Patient-reported information is shown as reported; this preview does not clinically verify
+        or interpret it.
+      </p>
+    </section>
+
+    @if (message()) {
+      <p class="status-message" role="status">{{ message() }}</p>
+    }
+
+    @if (formOpen() && canAdd()) {
+      <section class="panel" aria-labelledby="entry-form-title">
+        <h2 id="entry-form-title">Add sample entry</h2>
+        <p class="help-text">
+          Required fields are marked *. The recorded author and source are assigned by this sample
+          workspace.
+        </p>
+
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="form-grid">
+            <div class="field">
+              <label for="clinical-kind">Entry type *</label>
+              <select id="clinical-kind" formControlName="kind">
+                @for (kind of allowedKinds; track kind) {
+                  <option [value]="kind">{{ labels[kind] }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="clinical-time">Recorded at *</label>
+              <input
+                id="clinical-time"
+                type="datetime-local"
+                formControlName="recordedAt"
+                required
+                [attr.aria-invalid]="submitted() && form.controls.recordedAt.invalid"
+              />
+            </div>
+
+            <div class="field full-width">
+              <label for="clinical-title">Title *</label>
+              <input
+                id="clinical-title"
+                type="text"
+                formControlName="title"
+                maxlength="160"
+                required
+                aria-describedby="clinical-title-help"
+                [attr.aria-invalid]="
+                  submitted() && (form.controls.title.invalid || !form.controls.title.value.trim())
+                "
+              />
+              <small id="clinical-title-help">Maximum 160 characters.</small>
+            </div>
+
+            <div class="field full-width">
+              <label for="clinical-details">Details</label>
+              <textarea
+                id="clinical-details"
+                formControlName="details"
+                rows="4"
+                maxlength="2000"
+                aria-describedby="clinical-details-help"
+                [attr.aria-invalid]="submitted() && form.controls.details.invalid"
+              ></textarea>
+              <small id="clinical-details-help">Maximum 2,000 characters.</small>
+            </div>
+          </div>
+
+          @if (formError()) {
+            <p class="error-message" role="alert">{{ formError() }}</p>
+          }
+
+          <div class="form-actions">
+            <button class="secondary-button" type="button" (click)="closeForm()">Cancel</button>
+            <button class="primary-button" type="submit">Save sample entry</button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="panel" aria-labelledby="history-title">
+      <div class="section-heading">
+        <h2 id="history-title">Recorded history</h2>
+        <span>
+          {{ visibleEntries().length }}
+          {{ visibleEntries().length === 1 ? 'entry' : 'entries' }}
+        </span>
+      </div>
+
+      @if (pageState() === 'empty' || visibleEntries().length === 0) {
+        <app-ui-state
+          kind="empty"
+          title="No clinical entries yet"
+          description="Add a sample entry to preview the recorded history."
+          actionLabel="Add sample entry"
+          (action)="openForm()"
+        />
+      } @else {
+        <ul class="entry-list">
+          @for (entry of visibleEntries(); track entry.id) {
+            <li>
+              <article class="entry-card">
+                <header class="entry-heading">
+                  <div>
+                    <span class="entry-kind">{{ labels[entry.kind] }}</span>
+                    <h3>{{ entry.title }}</h3>
+                  </div>
+                  <span class="status-badge">
+                    {{ statusLabels[entry.status] }}
+                  </span>
+                </header>
+
+                @if (entry.details) {
+                  <p class="entry-details">{{ entry.details }}</p>
+                }
+
+                <dl class="entry-metadata">
+                  <div>
+                    <dt>Source</dt>
+                    <dd>
+                      {{ entry.source === 'patient' ? 'Patient-reported' : 'Doctor-entered' }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Author</dt>
+                    <dd>{{ entry.authorName }}</dd>
+                  </div>
+                  <div>
+                    <dt>Organization</dt>
+                    <dd>{{ entry.organization ?? 'Not associated with an organization' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Recorded at</dt>
+                    <dd>
+                      <time [attr.datetime]="entry.recordedAt">
+                        {{ entry.recordedAt | date: 'medium' }}
+                      </time>
+                    </dd>
+                  </div>
+                </dl>
+
+                <p class="help-text">Recorded entries are read-only in this preview.</p>
+              </article>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</section>

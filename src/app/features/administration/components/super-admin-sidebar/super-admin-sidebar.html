@@ -9,7 +9,6 @@
     @for (item of mainItems; track item.label) {
       @if (item.route) {
         <a class="nav-item" [routerLink]="item.route" routerLinkActive="active"
-           [routerLinkActiveOptions]="{ exact: item.route === '/super-admin/membership-request' }"
            (click)="closeSidebar.emit()">
           <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
           <span>{{ item.label }}</span>

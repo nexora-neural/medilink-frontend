@@ -116,40 +116,25 @@ describe('AuthService onboarding recovery', () => {
     expect(firebaseMocks.signInWithEmailAndPassword).not.toHaveBeenCalled();
   });
 
-  it('recovers an existing Firebase account using its password', async () => {
-    firebaseMocks.createUserWithEmailAndPassword.mockRejectedValue({
-      code: 'auth/email-already-in-use',
-    });
+  it('rejects an existing Firebase email without signing in or onboarding', async () => {
+    const failure = { code: 'auth/email-already-in-use' };
+    firebaseMocks.createUserWithEmailAndPassword.mockRejectedValue(failure);
+    await expect(service.registerPatient(input)).rejects.toEqual(failure);
+    expect(firebaseMocks.signInWithEmailAndPassword).not.toHaveBeenCalled();
+    http.expectNone('http://localhost:8000/api/v1/me/onboard');
+  });
 
+  it('recovers an incomplete Firebase account with the existing password', async () => {
     firebaseMocks.signInWithEmailAndPassword.mockResolvedValue({ user });
-
-    const result = service.registerPatient(input);
+    const result = service.registerPatient({ ...input, recoverExisting: true });
     const request = await expectOnboardingRequest();
-
     expect(firebaseMocks.signInWithEmailAndPassword).toHaveBeenCalledWith(
       expect.anything(),
       input.email,
       input.password,
     );
-
     request.flush({});
     await result;
-  });
-
-  it('does not onboard when the existing account password is wrong', async () => {
-    firebaseMocks.createUserWithEmailAndPassword.mockRejectedValue({
-      code: 'auth/email-already-in-use',
-    });
-
-    const failure = {
-      code: 'auth/invalid-credential',
-    };
-
-    firebaseMocks.signInWithEmailAndPassword.mockRejectedValue(failure);
-
-    await expect(service.registerPatient(input)).rejects.toEqual(failure);
-
-    http.expectNone('http://localhost:8000/api/v1/me/onboard');
   });
 
   it('keeps the Firebase session when backend onboarding fails', async () => {
