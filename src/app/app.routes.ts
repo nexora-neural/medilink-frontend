@@ -25,6 +25,7 @@ import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-ac
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
+import { ClinicalCorrections } from './features/clinical-corrections/clinical-corrections';
 
 const rolePage = (
   path: string,
@@ -256,7 +257,59 @@ export const routes: Routes = [
           allowedRoles: ['Admin', 'Super Admin'],
         },
       },
+
+      {
+        path: 'patient/correction-request',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
+          mode: 'request',
+        },
+      },
+
+      {
+        path: 'patient/correction-history',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
+          mode: 'history',
+        },
+      },
+
+      {
+        path: 'doctor/correction-requests',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'decision',
+        },
+      },
+
+      {
+        path: 'doctor/corrections',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'correction',
+        },
+      },
+
+      {
+        path: 'doctor/correction-history',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'history',
+        },
+      },
+
       ...rolePages,
+
     ],
   },
 
