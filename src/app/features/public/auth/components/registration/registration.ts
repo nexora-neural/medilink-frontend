@@ -21,6 +21,7 @@ import { AuthService } from '../../../../../core/auth.service';
 export class RegistrationComponent implements OnChanges {
   @Input() page = '';
   @Input() role = 'Patient';
+  readonly countryDialCode = '+94';
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly changeDetector = inject(ChangeDetectorRef);
@@ -34,7 +35,7 @@ export class RegistrationComponent implements OnChanges {
   readonly registrationForm = this.formBuilder.nonNullable.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, Validators.pattern(/^(?:0[0-9]{9}|\+94[0-9]{9})$/)]],
+    phone: ['', [Validators.required, Validators.pattern(/^\d{9}$/)]],
     dateOfBirth: [
       '',
       [
@@ -91,18 +92,15 @@ export class RegistrationComponent implements OnChanges {
   }
 
   private normalizePhone(value: string): string {
-    if (value.startsWith('+94')) {
-      return `+94${value.slice(3).replace(/\D/g, '').slice(0, 9)}`;
-    }
-    if (value.startsWith('0')) return `0${value.slice(1).replace(/\D/g, '').slice(0, 9)}`;
-    return value;
+    return value.replace(/\D/g, '').slice(0, 9);
   }
 
   async checkAvailability(field: 'email' | 'phone'): Promise<boolean> {
     const control = this.registrationForm.controls[field];
     if (control.invalid) return false;
     const sequence = ++this.checkSequence[field];
-    const value = control.value.trim();
+    const value =
+      field === 'phone' ? `${this.countryDialCode}${control.value.trim()}` : control.value.trim();
     this.checking[field] = true;
     this.availabilityMessage[field] = '';
     try {
@@ -181,7 +179,7 @@ export class RegistrationComponent implements OnChanges {
           email: controls.email.value,
           password: controls.password.value,
           displayName: controls.fullName.value,
-          phone: controls.phone.value,
+          phone: `${this.countryDialCode}${controls.phone.value}`,
           dateOfBirth: controls.dateOfBirth.value,
           sex: controls.sex.value as 'female' | 'male',
           recoverExisting: this.recoverExisting,

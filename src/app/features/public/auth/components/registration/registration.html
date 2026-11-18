@@ -88,19 +88,25 @@
           </label
         ><label
           >Mobile number <span>*</span
-          ><input
-            name="phone"
-            type="tel"
-            formControlName="phone"
-            maxlength="12"
-            inputmode="tel"
-            (blur)="checkAvailability('phone')"
-            required
-            placeholder="Enter your mobile number"
-            autocomplete="tel"
-          />
+          ><div class="phone-input">
+            <select aria-label="Country calling code" value="+94">
+              <option value="+94" selected>🇱🇰 +94</option>
+            </select>
+            <input
+              name="phone"
+              type="tel"
+              formControlName="phone"
+              maxlength="9"
+              inputmode="numeric"
+              (blur)="checkAvailability('phone')"
+              required
+              pattern="[0-9]{9}"
+              placeholder="771234567"
+              autocomplete="tel-national"
+            />
+          </div>
           @if ((registerSubmitted || registrationForm.controls.phone.touched) && registrationForm.controls.phone.invalid) {
-            <small class="error">Enter a valid mobile number (10 digits or +94 followed by 9 digits).</small>
+            <small class="error">Enter 9 digits after the +94 country code.</small>
           }
           @if (checking.phone) { <small>Checking mobile number…</small> }
           @if (availabilityMessage.phone) { <small class="error" role="status">{{ availabilityMessage.phone }}</small> }
@@ -194,7 +200,7 @@
             <span>Email</span><strong>{{ registrationForm.controls.email.value }}</strong>
           </div>
           <div>
-            <span>Mobile</span><strong>{{ registrationForm.controls.phone.value }}</strong>
+            <span>Mobile</span><strong>{{ countryDialCode }}{{ registrationForm.controls.phone.value }}</strong>
           </div>
           @if (role !== 'Patient') {
             <div>

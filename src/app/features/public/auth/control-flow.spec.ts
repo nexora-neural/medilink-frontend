@@ -102,7 +102,7 @@ describe('Public authentication control flow', () => {
     for (const [name, value] of [
       ['fullName', 'Example User'],
       ['email', 'person@example.com'],
-      ['phone', '0771234567'],
+      ['phone', '771234567'],
     ]) {
       const input = element.querySelector(`input[name="${name}"]`) as HTMLInputElement;
       input.value = value;
@@ -123,7 +123,7 @@ describe('Public authentication control flow', () => {
     expect(element.querySelector('input[name="password"]')).not.toBeNull();
   });
 
-  it('limits Sri Lankan phone input to nine digits after +94 and rejects extended birth years', () => {
+  it('limits Sri Lankan phone input to nine digits after +94 and rejects extended birth years', async () => {
     const fixture = TestBed.createComponent(RegistrationComponent);
     fixture.componentInstance.page = 'register';
     fixture.detectChanges();
@@ -131,12 +131,20 @@ describe('Public authentication control flow', () => {
     const phoneInput = fixture.nativeElement.querySelector(
       'input[name="phone"]',
     ) as HTMLInputElement;
-    phoneInput.value = '+9477123456789';
+    phoneInput.value = '77123456789';
     phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
-    expect(phoneInput.value).toBe('+94771234567');
-    expect(component.registrationForm.controls.phone.value).toBe('+94771234567');
+    expect(phoneInput.value).toBe('771234567');
+    expect(component.registrationForm.controls.phone.value).toBe('771234567');
     expect(component.registrationForm.controls.phone.valid).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('select[aria-label="Country calling code"]')?.textContent,
+    ).toContain('+94');
+    expect(await component.checkAvailability('phone')).toBe(true);
+    expect(TestBed.inject(AuthService).registrationAvailable).toHaveBeenCalledWith(
+      'phone',
+      '+94771234567',
+    );
 
     component.registrationForm.controls.dateOfBirth.setValue('12000-01-01');
     expect(component.registrationForm.controls.dateOfBirth.hasError('invalidDate')).toBe(true);
@@ -180,7 +188,7 @@ describe('Public authentication control flow', () => {
     component.registrationForm.patchValue({
       fullName: 'Example',
       email: 'person@example.com',
-      phone: '0771234567',
+      phone: '771234567',
     });
     await component.registrationNext();
     expect(component.registerStep).toBe(2);
