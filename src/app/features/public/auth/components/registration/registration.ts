@@ -49,7 +49,7 @@ export class RegistrationComponent implements OnChanges {
             parsed.getFullYear() === Number(year) &&
             parsed.getMonth() === Number(month) - 1 &&
             parsed.getDate() === Number(day) &&
-            value <= new Date().toLocaleDateString('en-CA');
+            value <= this.maxBirthDate;
           return valid ? null : { invalidDate: true };
         },
       ],

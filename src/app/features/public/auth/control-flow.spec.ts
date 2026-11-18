@@ -134,6 +134,10 @@ describe('Public authentication control flow', () => {
 
     component.registrationForm.controls.dateOfBirth.setValue('12000-01-01');
     expect(component.registrationForm.controls.dateOfBirth.hasError('invalidDate')).toBe(true);
+    component.registrationForm.controls.dateOfBirth.setValue('2025-02-31');
+    expect(component.registrationForm.controls.dateOfBirth.hasError('invalidDate')).toBe(true);
+    component.registrationForm.controls.dateOfBirth.setValue('2000-01-01');
+    expect(component.registrationForm.controls.dateOfBirth.valid).toBe(true);
   });
 
   it('reports a registered email when the field loses focus', async () => {
