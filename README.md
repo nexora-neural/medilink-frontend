@@ -360,3 +360,15 @@ ML-74 connects the real API and verifies authorization and feature rules.
 - Manually verified patient condition entry, doctor diagnosis/note entry,
   validation, preview states, refresh reset and allergy-status handling.
 - Inspected the doctor records layout at a mobile viewport.
+
+
+### Lab upload request preview (ML-108)
+
+- Patients can create and revoke fictional requests for approved sample laboratories.
+- New requests have a seven-day lifetime.
+- Lab Staff can resolve active sample requests assigned to the fixed sample laboratory.
+- Requests provide no medical-history or patient-directory access.
+- Both screens support loading, empty, error and access-denied preview states.
+- Changes are temporary and reset when leaving or refreshing the page.
+- Patient and Lab Staff screens use independent sample data; changes are not shared.
+- Actual file uploads, API integration and backend authorization are outside this preview and tracked under ML-115.

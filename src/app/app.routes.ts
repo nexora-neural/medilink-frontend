@@ -26,6 +26,8 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
+import { PatientLabRequests } from './features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests';
+import { LabRequestResolution } from './features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution';
 
 const rolePage = (
   path: string,
@@ -40,6 +42,24 @@ const rolePage = (
 });
 
 const rolePages: Route[] = [
+  {
+    path: 'patient/lab-upload-requests',
+    component: PatientLabRequests,
+    canActivate: [roleGuard],
+    title: 'Lab upload requests | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
+  {
+    path: 'lab-staff/upload-requests',
+    component: LabRequestResolution,
+    canActivate: [roleGuard],
+    title: 'Resolve lab upload request | MediLink',
+    data: {
+      allowedRoles: ['Lab Staff'],
+    },
+  },
   rolePage(
     'patient/medications',
     ['Patient'],
