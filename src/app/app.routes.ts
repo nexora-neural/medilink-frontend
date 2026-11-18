@@ -315,7 +315,6 @@ export const routes: Routes = [
       },
 
       ...rolePages,
-
     ],
   },
 
