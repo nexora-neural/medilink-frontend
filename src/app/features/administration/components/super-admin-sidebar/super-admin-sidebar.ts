@@ -36,7 +36,7 @@ export class SuperAdminSidebar {
       icon: 'fact_check',
       route: '/super-admin/applications',
     },
-    { label: 'Integrations', icon: 'hub' },
+    { label: 'Integrations', icon: 'hub', route: '/super-admin/integrations' },
     { label: 'Security', icon: 'security' },
     { label: 'Privileged audit', icon: 'history' },
     {

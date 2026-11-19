@@ -1,6 +1,8 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
+  { path: 'super-admin/integrations', renderMode: RenderMode.Client },
+  { path: 'super-admin/integrations/submissions', renderMode: RenderMode.Client },
   {
     path: 'super-admin/organizations',
     renderMode: RenderMode.Client,

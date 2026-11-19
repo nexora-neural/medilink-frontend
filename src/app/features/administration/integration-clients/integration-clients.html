@@ -1,0 +1,402 @@
+<section class="integrations" aria-labelledby="integration-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">SUPER ADMIN / INTEGRATIONS</p>
+      <h1 id="integration-title">
+        {{ outcomesView ? 'Submission outcomes' : 'Integration clients' }}
+      </h1>
+      <p>Control approved laboratory connections and review operational outcomes.</p>
+    </div>
+    @if (canManage() && !outcomesView) {
+      <button
+        class="primary"
+        type="button"
+        [disabled]="state() !== 'ready' || saving()"
+        (click)="open('approve')"
+      >
+        Approve lab client
+      </button>
+    }
+  </header>
+  <nav class="tabs" aria-label="Integration views">
+    <a
+      routerLink="/super-admin/integrations"
+      [routerLinkActiveOptions]="{ exact: true }"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Clients</a
+    >
+    <a
+      routerLink="/super-admin/integrations/submissions"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Submission outcomes</a
+    >
+  </nav>
+  <p class="preview-note">
+    <strong>Sample preview.</strong> Changes apply only to sample data. Credentials shown here
+    cannot authenticate.
+  </p>
+
+  @if (!canManage()) {
+    <app-ui-state
+      kind="error"
+      title="Access restricted"
+      description="Only Super Admin can manage integration clients."
+    />
+  } @else {
+    @if (message()) {
+      <p class="success" role="status">{{ message() }}</p>
+    }
+    <aside class="scope-note">
+      <span class="material-symbols-outlined" aria-hidden="true">shield</span>
+      <p>
+        <strong>Limited to <code>reports:write</code>.</strong> Clients have an expiry and no
+        patient search or clinical read access. Suspended and revoked clients must be denied access
+        by the server.
+      </p>
+    </aside>
+    @if (state() === 'loading') {
+      <app-ui-state
+        kind="loading"
+        title="Loading integrations"
+        description="Preparing the client and submission lists."
+      />
+    } @else if (state() === 'error') {
+      <app-ui-state
+        kind="error"
+        title="Unable to load integrations"
+        description="Try loading the lists again."
+        actionLabel="Try again"
+        (action)="load()"
+      />
+    } @else {
+      <div class="toolbar">
+        <label class="search"
+          >{{
+            outcomesView ? 'Search submission or client ID' : 'Search client, organization or ID'
+          }}
+          <input
+            type="search"
+            maxlength="200"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+            placeholder="Search sample data"
+          />
+        </label>
+        @if (outcomesView) {
+          <label
+            >Status<select
+              [value]="outcomeFilter()"
+              (change)="outcomeFilter.set($any($event.target).value)"
+            >
+              <option value="">All outcomes</option>
+              @for (item of outcomeStatuses; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select></label
+          >
+        } @else {
+          <label
+            >Status<select [value]="filter()" (change)="filter.set($any($event.target).value)">
+              <option value="">All clients</option>
+              @for (item of statuses; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select></label
+          >
+        }
+        <button type="button" (click)="load()">Reload</button>
+      </div>
+      @if (outcomesView) {
+        <p class="result-count" role="status">{{ visibleOutcomes().length }} submission outcomes</p>
+        <p class="privacy-note">
+          Operational metadata only. Patient details, report contents, request tokens and
+          credentials are excluded.
+        </p>
+        @if (!visibleOutcomes().length) {
+          <app-ui-state
+            kind="empty"
+            title="No submission outcomes"
+            description="No submissions match the current search and status."
+          />
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">
+                Sanitized submission outcomes
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Submission ID</th>
+                  <th scope="col">Client ID</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Received</th>
+                  <th scope="col">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of visibleOutcomes(); track item.id) {
+                  <tr>
+                    <td data-label="Submission ID">
+                      <code>{{ item.id }}</code>
+                    </td>
+                    <td data-label="Client ID">
+                      <code>{{ item.clientId }}</code>
+                    </td>
+                    <td data-label="Status">
+                      <span class="badge" [class.good]="item.status === 'accepted'">{{
+                        item.status
+                      }}</span>
+                    </td>
+                    <td data-label="Received">{{ item.receivedAt | date: 'medium' }}</td>
+                    <td data-label="Outcome">{{ explain(item.errorCode) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      } @else {
+        <p class="result-count" role="status">{{ filtered().length }} integration clients</p>
+        @if (!filtered().length) {
+          <app-ui-state
+            kind="empty"
+            title="No integration clients"
+            description="Adjust your filters or approve a new laboratory client."
+          />
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">
+                Laboratory integration clients and available actions
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Client / organization</th>
+                  <th scope="col">Scope</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Expires</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (client of filtered(); track client.id) {
+                  <tr>
+                    <td data-label="Client / organization">
+                      <strong>{{ client.name }}</strong
+                      ><span class="secondary-text">{{ client.organizationName }}</span
+                      ><code>{{ client.id }}</code>
+                    </td>
+                    <td data-label="Scope"><code>reports:write</code></td>
+                    <td data-label="Status">
+                      <span
+                        class="badge"
+                        [class.good]="status(client) === 'active'"
+                        [class.danger-badge]="status(client) === 'revoked'"
+                        >{{ status(client) }}</span
+                      >
+                    </td>
+                    <td data-label="Expires">{{ client.expiresAt | date: 'medium' }}</td>
+                    <td data-label="Actions">
+                      <div class="row-actions">
+                        @if (canAct(client, 'rotate')) {
+                          <button
+                            type="button"
+                            [attr.aria-label]="'Rotate credential for ' + client.name"
+                            (click)="open('rotate', client)"
+                          >
+                            Rotate
+                          </button>
+                        }
+                        @if (canAct(client, 'suspend')) {
+                          <button
+                            type="button"
+                            [attr.aria-label]="'Suspend ' + client.name"
+                            (click)="open('suspend', client)"
+                          >
+                            Suspend
+                          </button>
+                        }
+                        @if (canAct(client, 'revoke')) {
+                          <button
+                            class="danger"
+                            type="button"
+                            [attr.aria-label]="'Revoke ' + client.name"
+                            (click)="open('revoke', client)"
+                          >
+                            Revoke
+                          </button>
+                        }
+                        @if (status(client) === 'revoked') {
+                          <span>Access revoked</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  }
+</section>
+
+@if (modal(); as action) {
+  <div class="backdrop" (keydown.escape)="close(); $event.stopPropagation()">
+    <section
+      #panel
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      aria-describedby="dialog-description"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      [attr.aria-busy]="saving()"
+    >
+      @if (action === 'credential') {
+        <p class="eyebrow">ONE-TIME DISPLAY</p>
+        <h2 id="dialog-title" tabindex="-1" cdkFocusInitial>
+          Credential for {{ credentialClient() }}
+        </h2>
+        <p id="dialog-description">
+          This sample credential is shown only in this dialog. Closing it clears it from the screen.
+          In production, save the real credential securely now; it cannot be retrieved later.
+        </p>
+        <label for="one-time-credential">Sample credential (not usable)</label>
+        <textarea
+          id="one-time-credential"
+          readonly
+          spellcheck="false"
+          autocomplete="off"
+          [value]="credential()"
+          aria-describedby="credential-note"
+        ></textarea>
+        <p id="credential-note">
+          Do not place real credentials in URLs, browser storage, logs or screenshots. Only a hash
+          is stored by the backend.
+        </p>
+        <button type="button" class="primary" (click)="close()">Close and clear credential</button>
+      } @else {
+        <h2 id="dialog-title" tabindex="-1" cdkFocusInitial>
+          {{
+            action === 'approve'
+              ? 'Approve laboratory client'
+              : action === 'rotate'
+                ? 'Rotate client credential'
+                : action === 'suspend'
+                  ? 'Suspend client'
+                  : 'Revoke client'
+          }}
+        </h2>
+        <p id="dialog-description">
+          @switch (action) {
+            @case ('approve') {
+              Approve a software client for an approved laboratory with reports:write access only.
+            }
+            @case ('rotate') {
+              The old credential must become invalid immediately when the server completes rotation.
+              A new credential is shown once.
+            }
+            @case ('suspend') {
+              The client must lose API access while suspended.
+            }
+            @case ('revoke') {
+              Revocation is permanent for this client. The client must lose API access.
+            }
+          }
+          @if (selected(); as client) {
+            <strong>{{ client.name }}</strong>
+          }
+        </p>
+        @if (actionError()) {
+          <p class="field-error" role="alert" tabindex="-1">{{ actionError() }}</p>
+        }
+        <form [formGroup]="form" (ngSubmit)="confirm()" novalidate>
+          <fieldset [disabled]="saving()">
+            @if (action === 'approve') {
+              <label for="client-organization">Approved laboratory *</label>
+              <select
+                id="client-organization"
+                formControlName="organizationId"
+                required
+                [attr.aria-invalid]="
+                  form.controls.organizationId.touched && !form.controls.organizationId.value
+                "
+                aria-describedby="lab-help"
+              >
+                <option value="">Select an approved laboratory</option>
+                @for (lab of labs(); track lab.id) {
+                  <option [value]="lab.id">{{ lab.name }}</option>
+                }
+              </select>
+              <small id="lab-help">Only approved laboratories are eligible.</small>
+              @if (!labs().length) {
+                <p class="field-error">No approved laboratories are available.</p>
+              }
+              <label for="client-name">Client name *</label
+              ><input
+                id="client-name"
+                formControlName="name"
+                maxlength="200"
+                required
+                [attr.aria-invalid]="
+                  form.controls.name.touched &&
+                  (!form.controls.name.value.trim() || form.controls.name.invalid)
+                "
+                aria-describedby="name-help"
+              /><small id="name-help">1–200 characters.</small>
+              <label for="client-scope">Scope</label
+              ><input id="client-scope" value="reports:write" readonly />
+            }
+            @if (action === 'approve' || action === 'rotate') {
+              <label for="client-expiry">Credential expiry *</label
+              ><input
+                id="client-expiry"
+                type="datetime-local"
+                formControlName="expiresAt"
+                required
+                aria-describedby="expiry-help"
+                [attr.aria-invalid]="form.controls.expiresAt.touched && !!actionError()"
+              /><small id="expiry-help"
+                >Choose a future date and time in your local timezone.</small
+              >
+            }
+            @if (action !== 'approve') {
+              <label for="client-reason">Reason *</label
+              ><textarea
+                id="client-reason"
+                formControlName="reason"
+                maxlength="1000"
+                required
+                aria-describedby="reason-help"
+                [attr.aria-invalid]="
+                  form.controls.reason.touched &&
+                  (!form.controls.reason.value.trim() || form.controls.reason.invalid)
+                "
+              ></textarea
+              ><small id="reason-help"
+                >Explain this change using 1–1,000 characters. Exclude patient data and
+                credentials.</small
+              >
+            }
+            <div class="dialog-actions">
+              <button type="button" (click)="close()">Cancel</button
+              ><button
+                type="submit"
+                [class.danger]="action === 'revoke'"
+                class="primary"
+                [disabled]="action === 'approve' && !labs().length"
+              >
+                {{ saving() ? 'Applying…' : 'Confirm sample change' }}
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      }
+    </section>
+  </div>
+}
