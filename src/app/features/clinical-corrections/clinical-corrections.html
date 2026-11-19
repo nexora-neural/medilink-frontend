@@ -1,0 +1,42 @@
+<section class="corrections" aria-labelledby="page-title">
+  <header class="page-heading">
+    <div><span class="eyebrow">CLINICAL RECORDS</span>
+      <h1 id="page-title">@switch (mode) { @case ('request') { Request a correction } @case ('decision') { Review correction requests } @case ('correction') { Correct a record } @default { Version history } }</h1>
+      <p>@switch (mode) { @case ('request') { Tell the record author what you believe needs to be corrected. } @case ('decision') { Review a patient's request and record your decision. } @case ('correction') { Add a reasoned correction to a record you authored. } @default { Review the original record and its correction history. } }</p>
+    </div>
+  </header>
+  @if (loading) { <div class="notice" role="status">Loading records…</div> }
+  @else {
+    @if (mode === 'history') {
+      <div class="card"><h2>Record history</h2><div class="empty"><h3>No history to display</h3><p>Record history will appear here when it is available.</p></div></div>
+    } @else {
+      @if (mode === 'decision') { <div class="notice">There are no correction requests to display yet.</div> }
+      <div class="card">
+        <h2>@if (mode === 'request') { Request details } @else if (mode === 'decision') { Decision details } @else { Correction details }</h2>
+        <p class="hint">The original record remains part of the history. A correction cannot change the source of a record.</p>
+        <form (ngSubmit)="submit()" novalidate>
+          <label for="record">@if (mode === 'decision') { Request ID } @else { Record ID } <span aria-hidden="true">*</span></label>
+          <input id="record" name="record" [(ngModel)]="recordId" [attr.aria-invalid]="submitted && !recordId.trim()" [attr.aria-describedby]="submitted && !recordId.trim() ? 'record-error' : null" autocomplete="off">
+          @if (submitted && !recordId.trim()) { <p class="field-error" id="record-error">Enter an ID.</p> }
+          @if (mode === 'decision') {
+            <label for="decision">Decision <span aria-hidden="true">*</span></label>
+            <select id="decision" name="decision" [(ngModel)]="decision" [attr.aria-invalid]="submitted && !decision" [attr.aria-describedby]="submitted && !decision ? 'decision-error' : null"><option value="">Select a decision</option><option value="approve">Approve</option><option value="decline">Decline</option></select>
+            @if (submitted && !decision) { <p class="field-error" id="decision-error">Select a decision.</p> }
+          } @else {
+            <label for="details">@if (mode === 'request') { What needs to be corrected? } @else { Corrected information } <span aria-hidden="true">*</span></label>
+            <textarea id="details" name="details" rows="4" [(ngModel)]="details" [attr.aria-invalid]="submitted && !details.trim()" [attr.aria-describedby]="submitted && !details.trim() ? 'details-error' : null"></textarea>
+            @if (submitted && !details.trim()) { <p class="field-error" id="details-error">Enter the details.</p> }
+          }
+          <label for="reason">@if (mode === 'decision') { Reason for decision } @else { Reason for change } <span aria-hidden="true">*</span></label>
+          <textarea id="reason" name="reason" rows="3" [(ngModel)]="reason" [attr.aria-invalid]="submitted && !reason.trim()" [attr.aria-describedby]="submitted && !reason.trim() ? 'reason-error' : null"></textarea>
+          @if (submitted && !reason.trim()) { <p class="field-error" id="reason-error">Enter a reason.</p> }
+          @if (error) { <p class="error" role="alert">{{ error }}</p> }
+          <div class="actions"><a class="secondary" routerLink="/workspace">Cancel</a><button type="submit">@if (mode === 'request') { Submit request } @else if (mode === 'decision') { Save decision } @else { Save correction }</button></div>
+        </form>
+      </div>
+    }
+    @if (mode === 'request') { <a class="history-link" routerLink="/workspace/patient/correction-history">View version history →</a> }
+    @else if (mode === 'history') { <a class="history-link" routerLink="/workspace">Back to workspace →</a> }
+    @else { <nav class="links" aria-label="Correction pages"><a routerLink="/workspace/doctor/correction-requests">Requests</a><a routerLink="/workspace/doctor/corrections">Correct a record</a><a routerLink="/workspace/doctor/correction-history">Version history</a></nav> }
+  }
+</section>

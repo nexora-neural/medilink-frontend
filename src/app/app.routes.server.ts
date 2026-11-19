@@ -60,6 +60,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/patient/measurements',
     renderMode: RenderMode.Client,
   },
+  { path: 'workspace/patient/correction-request', renderMode: RenderMode.Client },
+  { path: 'workspace/patient/correction-history', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/correction-requests', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/corrections', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/correction-history', renderMode: RenderMode.Client },
   {
     path: 'workspace/patient/history',
     renderMode: RenderMode.Client,

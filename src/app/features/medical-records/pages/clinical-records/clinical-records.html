@@ -14,13 +14,25 @@
     }
   </header>
 
+  @if (permitted() && pageState() !== 'denied') {
+    <nav class="correction-actions" aria-label="Clinical corrections">
+      @if (audience === 'patient') {
+        <a routerLink="/workspace/patient/correction-request">Request a correction</a>
+        <a routerLink="/workspace/patient/correction-history">Correction history</a>
+      } @else {
+        <a routerLink="/workspace/doctor/correction-requests">Correction requests</a>
+        <a routerLink="/workspace/doctor/correction-history">Correction history</a>
+      }
+    </nav>
+  }
+
   <p class="preview-notice">
     <strong>Sample preview only.</strong>
     All records and identities on this screen are fictional. Changes are temporary and disappear
     when you leave this page or refresh.
     @if (audience === 'doctor') {
       This demonstrates a sample authorized patient workspace. Real patient access must be verified
-      during API integration.
+        during API integration.
     }
   </p>
 

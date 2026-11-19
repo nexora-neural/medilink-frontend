@@ -29,6 +29,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/patient/prescriptions' },
     { label: 'Medical history', icon: 'clinical_notes', path: '/workspace/patient/history' },
+    {
+      label: 'Request a correction',
+      icon: 'edit_note',
+      path: '/workspace/patient/correction-request',
+    },
     { label: 'Reports', icon: 'description', path: '/workspace/patient/reports' },
     {
       label: 'Lab upload requests',
@@ -53,6 +58,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
     { label: 'Notifications', icon: 'notifications', path: '/workspace/doctor/notifications' },
     { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records' },
+    {
+      label: 'Correction requests',
+      icon: 'edit_note',
+      path: '/workspace/doctor/correction-requests',
+    },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
   ],
 
