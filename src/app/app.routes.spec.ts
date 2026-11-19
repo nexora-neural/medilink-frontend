@@ -40,6 +40,35 @@ describe('workspace routing', () => {
     TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
   });
 
+  it.each([
+    [
+      'patient',
+      'Medical history',
+      '/workspace/patient/history',
+      '/workspace/patient/correction-request',
+    ],
+    [
+      'doctor',
+      'Patient clinical records',
+      '/workspace/doctor/records',
+      '/workspace/doctor/correction-requests',
+    ],
+  ])(
+    'opens corrections from the %s record workflow',
+    async (role, heading, entryPath, targetPath) => {
+      TestBed.inject(ActiveRoleService).setAccountRoles('navigation-test', [role]);
+      const harness = await RouterTestingHarness.create(entryPath);
+      expect(harness.routeNativeElement?.textContent).toContain(heading);
+      const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
+        'main a[href="' + targetPath + '"]',
+      );
+      expect(link).toBeTruthy();
+      link!.click();
+      await harness.fixture.whenStable();
+      expect(TestBed.inject(Router).url).toBe(targetPath);
+    },
+  );
+
   it('redirects an unauthenticated session to login', async () => {
     vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
     const harness = await RouterTestingHarness.create();

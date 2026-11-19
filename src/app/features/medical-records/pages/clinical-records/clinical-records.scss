@@ -312,3 +312,27 @@ textarea {
     flex-wrap: wrap;
   }
 }
+
+.correction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid #193052;
+    border-radius: 8px;
+    color: #193052;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+  }
+
+  a:focus-visible {
+    outline: 3px solid #1689ba;
+    outline-offset: 3px;
+  }
+}
