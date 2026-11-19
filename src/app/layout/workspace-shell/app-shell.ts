@@ -30,6 +30,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/patient/prescriptions' },
     { label: 'Medical history', icon: 'clinical_notes', path: '/workspace/patient/history' },
     { label: 'Reports', icon: 'description', path: '/workspace/patient/reports' },
+    {
+      label: 'Lab upload requests',
+      icon: 'upload_file',
+      path: '/workspace/patient/lab-upload-requests',
+    },
     { label: 'Measurements', icon: 'monitor_heart', path: '/workspace/patient/measurements' },
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
@@ -59,6 +64,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   'Lab Staff': [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Laboratory reports', icon: 'science', path: '/workspace/lab-staff/reports' },
+    {
+      label: 'Resolve upload request',
+      icon: 'find_in_page',
+      path: '/workspace/lab-staff/upload-requests',
+    },
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
 };

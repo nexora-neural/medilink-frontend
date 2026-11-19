@@ -1,0 +1,190 @@
+<section class="requests-page" aria-labelledby="requests-title">
+  <header class="page-heading">
+    <h1 id="requests-title">Lab upload requests</h1>
+    <p>Choose an approved laboratory and create a request for uploading a lab report.</p>
+  </header>
+
+  <p class="preview-notice">
+    <strong>Sample preview only.</strong>
+    Laboratories, requests and references are fictional. Changes disappear when you leave this page
+    or refresh. These references cannot authorize real uploads.
+  </p>
+
+  @if (!permitted() || pageState() === 'denied') {
+    <section class="panel" aria-labelledby="access-title">
+      <h2 id="access-title">Access unavailable</h2>
+      <p>This patient workspace is unavailable for the current role or preview state.</p>
+    </section>
+  } @else if (pageState() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading upload requests"
+      description="Getting the sample laboratories and upload requests."
+    />
+  } @else if (pageState() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Upload requests unavailable"
+      description="The sample upload requests could not be loaded."
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else {
+    <section class="panel" aria-labelledby="create-request-title">
+      <h2 id="create-request-title">Create a sample request</h2>
+
+      <p id="request-scope-help" class="help-text">
+        Each request is tied to one patient and one laboratory and expires after seven days. It does
+        not provide patient-directory or medical-history access.
+      </p>
+
+      <form (submit)="$event.preventDefault(); createRequest()">
+        <div class="field">
+          <label for="approved-lab">Approved sample laboratory *</label>
+
+          <select
+            id="approved-lab"
+            [formControl]="labControl"
+            required
+            aria-describedby="request-scope-help lab-choice-help"
+            [attr.aria-invalid]="labControl.touched && !labControl.value"
+          >
+            <option value="">Select a laboratory</option>
+
+            @for (lab of labs; track lab.id) {
+              <option [value]="lab.id">{{ lab.name }}</option>
+            }
+          </select>
+
+          <small id="lab-choice-help">
+            Only the approved fictional laboratories listed here are available.
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button class="primary-button" type="submit" [disabled]="pendingRevoke() !== null">
+            Create sample request
+          </button>
+        </div>
+      </form>
+    </section>
+
+    @if (message()) {
+      <p class="status-message" role="status">{{ message() }}</p>
+    }
+
+    @if (error()) {
+      <p class="error-message" role="alert">{{ error() }}</p>
+    }
+
+    @if (selectedRevoke(); as request) {
+      <section class="panel confirmation-panel" aria-labelledby="revoke-title">
+        <h2 id="revoke-title">Revoke this sample request?</h2>
+
+        <p>
+          This will mark the request for
+          <strong>{{ labName(request.labId) }}</strong>
+          as revoked in this preview.
+        </p>
+
+        <p class="request-reference">{{ request.reference }}</p>
+
+        <div class="button-row">
+          <button class="secondary-button" type="button" (click)="cancelRevoke()">Cancel</button>
+
+          <button class="danger-button" type="button" (click)="confirmRevoke()">
+            Confirm revoke
+          </button>
+        </div>
+      </section>
+    }
+
+    <section class="panel" aria-labelledby="request-list-title">
+      <div class="section-heading">
+        <h2 id="request-list-title">Your sample requests</h2>
+
+        <span>
+          {{ visibleRequests().length }}
+          {{ visibleRequests().length === 1 ? 'request' : 'requests' }}
+        </span>
+      </div>
+
+      @if (visibleRequests().length === 0) {
+        <app-ui-state
+          kind="empty"
+          title="No upload requests yet"
+          description="Choose an approved sample laboratory above to create a request."
+        />
+      } @else {
+        <ul class="request-list">
+          @for (request of visibleRequests(); track request.id) {
+            <li>
+              <article class="request-card">
+                <header class="request-heading">
+                  <h3>{{ labName(request.labId) }}</h3>
+
+                  <span class="status-badge">
+                    {{ statusLabels[status(request)] }}
+                  </span>
+                </header>
+
+                <dl class="request-metadata">
+                  <div class="full-width">
+                    <dt>Sample request reference</dt>
+                    <dd class="request-reference">{{ request.reference }}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Created at</dt>
+                    <dd>
+                      <time [attr.datetime]="request.createdAt">
+                        {{ request.createdAt | date: 'medium' }}
+                      </time>
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt>Expires at</dt>
+                    <dd>
+                      <time [attr.datetime]="request.expiresAt">
+                        {{ request.expiresAt | date: 'medium' }}
+                      </time>
+                    </dd>
+                  </div>
+
+                  @if (request.revokedAt) {
+                    <div>
+                      <dt>Revoked at</dt>
+                      <dd>
+                        <time [attr.datetime]="request.revokedAt">
+                          {{ request.revokedAt | date: 'medium' }}
+                        </time>
+                      </dd>
+                    </div>
+                  }
+                </dl>
+
+                <p class="help-text">
+                  Limited to report upload for this sample patient and laboratory. No
+                  medical-history or directory access.
+                </p>
+
+                @if (status(request) === 'active') {
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [disabled]="pendingRevoke() !== null"
+                    [attr.aria-label]="'Revoke sample request for ' + labName(request.labId)"
+                    (click)="requestRevoke(request)"
+                  >
+                    Revoke request
+                  </button>
+                }
+              </article>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</section>

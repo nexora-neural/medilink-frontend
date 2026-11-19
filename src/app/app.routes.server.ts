@@ -67,6 +67,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/patient/lab-upload-requests',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/upload-requests',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },
