@@ -26,7 +26,6 @@ import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-ac
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
-import { ClinicalCorrections } from './features/clinical-corrections/clinical-corrections';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 import { PatientLabRequests } from './features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests';
 import { LabRequestResolution } from './features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution';
@@ -287,7 +286,10 @@ export const routes: Routes = [
 
       {
         path: 'patient/correction-request',
-        component: ClinicalCorrections,
+        loadComponent: () =>
+          import('./features/clinical-corrections/clinical-corrections').then(
+            (m) => m.ClinicalCorrections,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Patient'],
@@ -297,7 +299,10 @@ export const routes: Routes = [
 
       {
         path: 'patient/correction-history',
-        component: ClinicalCorrections,
+        loadComponent: () =>
+          import('./features/clinical-corrections/clinical-corrections').then(
+            (m) => m.ClinicalCorrections,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Patient'],
@@ -307,7 +312,10 @@ export const routes: Routes = [
 
       {
         path: 'doctor/correction-requests',
-        component: ClinicalCorrections,
+        loadComponent: () =>
+          import('./features/clinical-corrections/clinical-corrections').then(
+            (m) => m.ClinicalCorrections,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
@@ -317,7 +325,10 @@ export const routes: Routes = [
 
       {
         path: 'doctor/corrections',
-        component: ClinicalCorrections,
+        loadComponent: () =>
+          import('./features/clinical-corrections/clinical-corrections').then(
+            (m) => m.ClinicalCorrections,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
@@ -327,7 +338,10 @@ export const routes: Routes = [
 
       {
         path: 'doctor/correction-history',
-        component: ClinicalCorrections,
+        loadComponent: () =>
+          import('./features/clinical-corrections/clinical-corrections').then(
+            (m) => m.ClinicalCorrections,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
@@ -349,7 +363,55 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'organizations',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/administration/super-admin-dashboard/super-admin-dashboard').then(
+            (m) => m.SuperAdminDashboard,
+          ),
+        title: 'Platform overview | MediLink',
+      },
+      {
+        path: 'organizations/preview/:id',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'organization' },
+      },
+      {
+        path: 'integrations/preview/:id',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'integration-detail' },
+      },
+      {
+        path: 'security',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'security' },
+      },
+      {
+        path: 'audit',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'audit' },
+      },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'notifications' },
       },
       {
         path: 'organizations',

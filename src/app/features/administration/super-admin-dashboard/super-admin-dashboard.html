@@ -1,0 +1,33 @@
+<div class="heading"><div><div class="eyebrow">SUPER ADMIN WORKSPACE</div><h1>Platform overview</h1><p>Review your operational workload and activity.</p></div></div>
+<p class="preview">Sample preview. Data is fictional and live services are not connected.</p>
+<details class="preview-options"><summary>Preview display states</summary><div class="state-controls" role="group" aria-label="Preview display state">
+  <button type="button" [attr.aria-pressed]="state() === 'ready'" (click)="setState('ready')">Sample data</button>
+  <button type="button" [attr.aria-pressed]="state() === 'loading'" (click)="setState('loading')">Loading</button>
+  <button type="button" [attr.aria-pressed]="state() === 'empty'" (click)="setState('empty')">Empty</button>
+  <button type="button" [attr.aria-pressed]="state() === 'error'" (click)="setState('error')">Error</button>
+</div></details>
+@if (state() === 'loading') {
+  <p class="panel" role="status">Loading dashboard…</p>
+} @else if (state() === 'error') {
+  <section class="panel"><p role="alert">Dashboard information is unavailable.</p><button type="button" (click)="setState('ready')">Try again</button></section>
+} @else {
+  <div class="stats">
+    <app-dashboard-stat label="Pending organizations" [value]="state() === 'empty' ? 0 : pendingCount()" caption="Review queue · sample" [accent]="true" />
+    <app-dashboard-stat label="Integration clients" [value]="state() === 'empty' ? 0 : 1" caption="Operational records · sample" />
+    <app-dashboard-stat label="Admin accounts" [value]="state() === 'empty' ? 0 : 1" caption="Workspace records · sample" />
+    <app-dashboard-stat label="System status" value="Operational" caption="Sample status" [status]="true" />
+  </div>
+  <div class="grid">
+    <section class="panel"><h2>Organizations</h2><p>Items available for review.</p>
+      @if (state() === 'empty') { <p class="empty">No organizations to display.</p> }
+      @else { @for (organization of data.organizations(); track organization.id) {
+        <a class="patient-row" [routerLink]="['/super-admin/organizations/preview', organization.id]"><span class="grow"><strong>{{ organization.name }}</strong><small>{{ organization.type }}</small></span><span class="badge">{{ organization.status }}</span> ↗</a>
+      } }
+    </section>
+    <section class="panel"><h2>Recent activity</h2>
+      @if (state() === 'empty') { <p class="empty">No recent activity to display.</p> }
+      @else { @for (item of data.activity().slice(0, 3); track $index) { <div class="record"><div><strong>{{ item.event }}</strong><small>{{ item.actor }} · {{ item.date }}</small></div></div> } }
+      <a class="audit-link" routerLink="/super-admin/audit">View audit activity →</a>
+    </section>
+  </div>
+}

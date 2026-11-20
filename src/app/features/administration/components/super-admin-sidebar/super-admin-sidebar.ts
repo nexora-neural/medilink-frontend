@@ -19,7 +19,7 @@ export class SuperAdminSidebar {
   readonly closeSidebar = output<void>();
 
   readonly mainItems: NavigationItem[] = [
-    { label: 'Overview', icon: 'dashboard' },
+    { label: 'Overview', icon: 'dashboard', route: '/super-admin/dashboard' },
     {
       label: 'Admin accounts',
       icon: 'manage_accounts',
@@ -37,8 +37,9 @@ export class SuperAdminSidebar {
       route: '/super-admin/applications',
     },
     { label: 'Integrations', icon: 'hub', route: '/super-admin/integrations' },
-    { label: 'Security', icon: 'security' },
-    { label: 'Privileged audit', icon: 'history' },
+    { label: 'Security', icon: 'security', route: '/super-admin/security' },
+    { label: 'Privileged audit', icon: 'history', route: '/super-admin/audit' },
+
     {
       label: 'Account support',
       icon: 'support_agent',
