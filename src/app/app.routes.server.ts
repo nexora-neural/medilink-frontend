@@ -9,6 +9,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'super-admin/audit', renderMode: RenderMode.Client },
   { path: 'super-admin/notifications', renderMode: RenderMode.Client },
 
+  { path: 'super-admin/integrations/submissions', renderMode: RenderMode.Client },
+
   {
     path: 'super-admin/organizations',
     renderMode: RenderMode.Client,
@@ -66,6 +68,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/patient/measurements',
     renderMode: RenderMode.Client,
   },
+  { path: 'workspace/patient/correction-request', renderMode: RenderMode.Client },
+  { path: 'workspace/patient/correction-history', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/correction-requests', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/corrections', renderMode: RenderMode.Client },
+  { path: 'workspace/doctor/correction-history', renderMode: RenderMode.Client },
   {
     path: 'workspace/patient/history',
     renderMode: RenderMode.Client,

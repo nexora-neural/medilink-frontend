@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 
@@ -15,6 +15,7 @@ describe('ClinicalRecords preview', () => {
     await TestBed.configureTestingModule({
       imports: [ClinicalRecords],
       providers: [
+        provideRouter([]),
         {
           provide: ActivatedRoute,
           useValue: {
@@ -51,6 +52,22 @@ describe('ClinicalRecords preview', () => {
     expect(fixture.nativeElement.textContent).toContain('Dr. Sample Silva');
     expect(fixture.nativeElement.textContent).toContain('Example Care Clinic');
   });
+
+  it.each(['patient', 'doctor'] as const)(
+    'links the %s records workflow to corrections',
+    async (audience) => {
+      const { fixture } = await setup(audience);
+      const path =
+        audience === 'patient' ? 'patient/correction-request' : 'doctor/correction-requests';
+      const link = fixture.nativeElement.querySelector('a[href="/workspace/' + path + '"]');
+      expect(link).not.toBeNull();
+      expect(
+        fixture.nativeElement.querySelector(
+          'a[href="/workspace/' + audience + '/correction-history"]',
+        ),
+      ).not.toBeNull();
+    },
+  );
 
   it('rejects a whitespace-only title', async () => {
     const { page } = await setup();

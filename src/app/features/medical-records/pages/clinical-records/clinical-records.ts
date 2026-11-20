@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { UiState } from '../../../../shared/components/ui-state/ui-state';
@@ -23,7 +23,7 @@ import {
 @Component({
   selector: 'app-clinical-records',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, UiState],
+  imports: [DatePipe, ReactiveFormsModule, UiState, RouterLink],
   templateUrl: './clinical-records.html',
   styleUrl: './clinical-records.scss',
 })

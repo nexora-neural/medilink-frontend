@@ -39,6 +39,7 @@ export class SuperAdminSidebar {
     { label: 'Integrations', icon: 'hub', route: '/super-admin/integrations' },
     { label: 'Security', icon: 'security', route: '/super-admin/security' },
     { label: 'Privileged audit', icon: 'history', route: '/super-admin/audit' },
+
     {
       label: 'Account support',
       icon: 'support_agent',

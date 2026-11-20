@@ -1,4 +1,5 @@
 import { Route, Routes } from '@angular/router';
+import { integrationClientsPreviewProviders } from './features/administration/integration-clients/integration-clients.store';
 import { roleGuard } from './core/guards/role.guard';
 import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
@@ -25,6 +26,7 @@ import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-ac
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
+import { ClinicalCorrections } from './features/clinical-corrections/clinical-corrections';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 import { PatientLabRequests } from './features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests';
 import { LabRequestResolution } from './features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution';
@@ -282,6 +284,57 @@ export const routes: Routes = [
           allowedRoles: ['Admin', 'Super Admin'],
         },
       },
+
+      {
+        path: 'patient/correction-request',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
+          mode: 'request',
+        },
+      },
+
+      {
+        path: 'patient/correction-history',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Patient'],
+          mode: 'history',
+        },
+      },
+
+      {
+        path: 'doctor/correction-requests',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'decision',
+        },
+      },
+
+      {
+        path: 'doctor/corrections',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'correction',
+        },
+      },
+
+      {
+        path: 'doctor/correction-history',
+        component: ClinicalCorrections,
+        canActivate: [roleGuard],
+        data: {
+          allowedRoles: ['Doctor'],
+          mode: 'history',
+        },
+      },
+
       ...rolePages,
     ],
   },
@@ -289,6 +342,7 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
+    providers: integrationClientsPreviewProviders,
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [
@@ -312,14 +366,6 @@ export const routes: Routes = [
             (m) => m.SuperAdminPreview,
           ),
         data: { previewPage: 'organization' },
-      },
-      {
-        path: 'integrations',
-        loadComponent: () =>
-          import('./features/administration/super-admin-preview/super-admin-preview').then(
-            (m) => m.SuperAdminPreview,
-          ),
-        data: { previewPage: 'integrations' },
       },
       {
         path: 'integrations/preview/:id',
@@ -384,6 +430,23 @@ export const routes: Routes = [
       {
         path: 'admin-accounts',
         component: AdminAccounts,
+      },
+      {
+        path: 'integrations',
+        loadComponent: () =>
+          import('./features/administration/integration-clients/integration-clients').then(
+            (module) => module.IntegrationClients,
+          ),
+        title: 'Integration clients | MediLink',
+      },
+      {
+        path: 'integrations/submissions',
+        loadComponent: () =>
+          import('./features/administration/integration-clients/integration-clients').then(
+            (module) => module.IntegrationClients,
+          ),
+        title: 'Submission outcomes | MediLink',
+        data: { view: 'outcomes' },
       },
       {
         path: 'medicine-catalogue',

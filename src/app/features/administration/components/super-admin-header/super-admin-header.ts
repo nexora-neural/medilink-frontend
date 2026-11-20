@@ -16,12 +16,14 @@ export class SuperAdminHeader {
 
   get pageTitle(): string {
     const url = this.router.url;
-    if (url.includes('/integrations')) return 'Integrations';
+    if (url.includes('/integrations/submissions')) return 'Submission outcomes';
+    if (url.includes('/integrations')) return 'Integration clients';
     if (url.includes('/security')) return 'Security';
     if (url.includes('/audit')) return 'Privileged audit';
     if (url.includes('/notifications')) return 'Notifications';
     if (url.includes('/dashboard')) return 'Dashboard';
     if (url.includes('/medicine-catalogue')) return 'Medicine catalogue';
+
     if (url.includes('/admin-accounts')) return 'Admin accounts';
     if (url.includes('/account-support')) return 'Account support';
     if (/\/applications\/[^/?#]+/.test(url)) return 'Application review';
