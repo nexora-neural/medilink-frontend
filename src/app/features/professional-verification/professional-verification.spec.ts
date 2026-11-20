@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -93,6 +94,15 @@ describe('ProfessionalVerification', () => {
     expect(component.showStatus).toBe(true);
   });
 
+  it('shows the organization membership request link', () => {
+    const link: HTMLAnchorElement | null = fixture.nativeElement.querySelector(
+      'a[routerLink="/workspace/professional-verification/membership-request"]',
+    );
+
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toContain('Request organization membership');
+  });
+
   it('requires professional details and an evidence document', async () => {
     await component.submitApplication();
 
@@ -136,7 +146,7 @@ describe('ProfessionalVerification', () => {
     expect(component.application?.status).toBe('pending');
   });
 
-  it('reuses successfully uploaded evidence when application submission is retried', async () => {
+  it('keeps the application unsubmitted after a service failure and retries successfully', async () => {
     api.submit.mockRejectedValueOnce(new Error('temporary failure'));
 
     component.verificationForm.patchValue({
@@ -146,12 +156,23 @@ describe('ProfessionalVerification', () => {
 
     component.selectedFiles = [new File(['content'], 'evidence.pdf')];
 
+    // First attempt: submission fails.
     await component.submitApplication();
+
+    expect(component.application).toBeNull();
+    expect(component.applicationSubmitted).toBe(false);
+    expect(component.submissionError).toBeTruthy();
+    expect(component.busy).toBe(false);
+
+    // Second attempt: submission succeeds.
     await component.submitApplication();
 
     expect(api.uploadEvidence).toHaveBeenCalledOnce();
     expect(api.submit).toHaveBeenCalledTimes(2);
+    expect(component.application?.status).toBe('pending');
     expect(component.applicationSubmitted).toBe(true);
+    expect(component.submissionError).toBe('');
+    expect(component.busy).toBe(false);
   });
 
   it('restores persisted application and document metadata on load', async () => {
@@ -200,6 +221,50 @@ describe('ProfessionalVerification', () => {
     expect(component.statusLabel).toBe('Suspended');
     expect(component.statusHeadingText).toBe('Application suspended');
     expect(component.statusLabel).not.toContain('Pending');
+  });
+
+  it('shows the session expired message when the API returns 401', async () => {
+    api.listOwn.mockRejectedValueOnce(
+      new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' }),
+    );
+
+    await component.loadApplication();
+
+    expect(component.loadError).toBe('Your session has expired. Sign in again and retry.');
+    expect(component.loading).toBe(false);
+  });
+
+  it('shows the access denied message when the API returns 403', async () => {
+    api.listOwn.mockRejectedValueOnce(
+      new HttpErrorResponse({ status: 403, statusText: 'Forbidden' }),
+    );
+
+    await component.loadApplication();
+
+    expect(component.loadError).toBe('You are not permitted to access this verification resource.');
+    expect(component.loading).toBe(false);
+  });
+
+  it('shows the service unavailable message for a network failure', async () => {
+    api.listOwn.mockRejectedValueOnce(
+      new HttpErrorResponse({ status: 0, statusText: 'Network Error' }),
+    );
+
+    await component.loadApplication();
+
+    expect(component.loadError).toBe('The service is unavailable. Please try again later.');
+    expect(component.loading).toBe(false);
+  });
+
+  it('shows the service unavailable message when the API returns 500', async () => {
+    api.listOwn.mockRejectedValueOnce(
+      new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' }),
+    );
+
+    await component.loadApplication();
+
+    expect(component.loadError).toBe('The service is unavailable. Please try again later.');
+    expect(component.loading).toBe(false);
   });
 
   it('shows backend failures and allows retry', async () => {

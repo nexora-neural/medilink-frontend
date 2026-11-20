@@ -20,7 +20,7 @@ const nonblank = (control: AbstractControl) =>
 @Component({
   selector: 'app-professional-verification',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, DocumentUpload, DocumentDownload],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, DocumentUpload, DocumentDownload],
   templateUrl: './professional-verification.html',
   styleUrl: './professional-verification.scss',
 })
@@ -115,16 +115,12 @@ export class ProfessionalVerification implements OnInit {
     switch (this.application?.status) {
       case 'approved':
         return 'Application approved';
-
       case 'rejected':
         return 'Application rejected';
-
       case 'suspended':
         return 'Application suspended';
-
       case 'more_info_requested':
         return 'More information requested';
-
       default:
         return 'Your application is pending review';
     }
@@ -284,7 +280,6 @@ export class ProfessionalVerification implements OnInit {
       this.downloadMessage = 'Document downloaded.';
     } catch (error) {
       this.downloadError = this.describeError(error, 'The document could not be downloaded.');
-
       this.downloadResultId = documentId;
     } finally {
       this.downloadingId = '';

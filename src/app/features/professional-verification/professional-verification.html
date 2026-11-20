@@ -7,10 +7,20 @@
       <p>Submit your professional information and supporting documents to request verification.</p>
     </div>
 
-    <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
-      <span class="material-symbols-outlined">fact_check</span>
-      Application status
-    </button>
+    <div class="heading-actions">
+      <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
+        <span class="material-symbols-outlined">fact_check</span>
+        Application status
+      </button>
+
+      <a
+        routerLink="/workspace/professional-verification/membership-request"
+        class="secondary-button"
+      >
+        <span class="material-symbols-outlined">group_add</span>
+        Request organization membership
+      </a>
+    </div>
   </header>
 
   <nav class="verification-nav" aria-label="Verification sections">
