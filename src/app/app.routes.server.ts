@@ -1,6 +1,14 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
+  { path: 'super-admin/dashboard', renderMode: RenderMode.Client },
+  { path: 'super-admin/organizations/preview/:id', renderMode: RenderMode.Client },
+  { path: 'super-admin/integrations', renderMode: RenderMode.Client },
+  { path: 'super-admin/integrations/preview/:id', renderMode: RenderMode.Client },
+  { path: 'super-admin/security', renderMode: RenderMode.Client },
+  { path: 'super-admin/audit', renderMode: RenderMode.Client },
+  { path: 'super-admin/notifications', renderMode: RenderMode.Client },
+
   {
     path: 'super-admin/organizations',
     renderMode: RenderMode.Client,
@@ -20,7 +28,7 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'super-admin/applications/:id',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'workspace/doctor/medicines',

@@ -7,14 +7,14 @@ import {
   Injector,
   viewChild,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SuperAdminSidebar } from '../components/super-admin-sidebar/super-admin-sidebar';
 import { SuperAdminHeader } from '../components/super-admin-header/super-admin-header';
 
 @Component({
   selector: 'app-super-admin-shell',
   standalone: true,
-  imports: [RouterOutlet, SuperAdminSidebar, SuperAdminHeader],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, SuperAdminSidebar, SuperAdminHeader],
   templateUrl: './super-admin-shell.html',
   styleUrl: './super-admin-shell.scss',
 })

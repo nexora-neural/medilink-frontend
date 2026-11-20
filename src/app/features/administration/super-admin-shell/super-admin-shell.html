@@ -7,4 +7,11 @@
     <app-super-admin-header [sidebarOpen]="sidebarOpen" (menuToggle)="toggleSidebar($event)" />
     <main class="page-content"><router-outlet /></main>
   </div>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a routerLink="/super-admin/dashboard" routerLinkActive="active"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span>Home</a>
+    <a routerLink="/super-admin/organizations" routerLinkActive="active"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span>Review</a>
+    <a routerLink="/super-admin/audit" routerLinkActive="active"><span class="material-symbols-outlined" aria-hidden="true">history</span>Audit</a>
+    <a routerLink="/super-admin/notifications" routerLinkActive="active"><span class="material-symbols-outlined" aria-hidden="true">notifications</span>Updates</a>
+    <button type="button" (click)="toggleSidebar($any($event.currentTarget))"><span class="material-symbols-outlined" aria-hidden="true">menu</span>More</button>
+  </nav>
 </div>

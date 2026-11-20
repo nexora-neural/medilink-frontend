@@ -295,7 +295,63 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'organizations',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/administration/super-admin-dashboard/super-admin-dashboard').then(
+            (m) => m.SuperAdminDashboard,
+          ),
+        title: 'Platform overview | MediLink',
+      },
+      {
+        path: 'organizations/preview/:id',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'organization' },
+      },
+      {
+        path: 'integrations',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'integrations' },
+      },
+      {
+        path: 'integrations/preview/:id',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'integration-detail' },
+      },
+      {
+        path: 'security',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'security' },
+      },
+      {
+        path: 'audit',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'audit' },
+      },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/administration/super-admin-preview/super-admin-preview').then(
+            (m) => m.SuperAdminPreview,
+          ),
+        data: { previewPage: 'notifications' },
       },
       {
         path: 'organizations',
