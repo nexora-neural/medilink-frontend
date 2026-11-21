@@ -22,8 +22,34 @@
     } @else {
       <label>
         {{ kind === 'weight' ? 'Weight (' + weightUnit + ')' : 'Glucose (' + glucoseUnit + ')' }}
-        <input name="value" type="number" [(ngModel)]="value" min="0.01" max="10000" step="any" required />
+        <input
+          name="value"
+          type="number"
+          [(ngModel)]="value"
+          min="0.01"
+          max="10000"
+          step="any"
+          required
+        />
       </label>
+
+      @if (kind === 'weight') {
+        <label>
+          Unit
+          <select name="weightUnit" [(ngModel)]="weightUnit" required>
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+        </label>
+      } @else {
+        <label>
+          Unit
+          <select name="glucoseUnit" [(ngModel)]="glucoseUnit" required>
+            <option value="mg/dL">mg/dL</option>
+            <option value="mmol/L">mmol/L</option>
+          </select>
+        </label>
+      }
     }
     <label>Source
       <select name="source" [ngModel]="'patient'" disabled>
