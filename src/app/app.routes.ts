@@ -17,6 +17,8 @@ import { MembershipRequest } from './features/administration/membership-request/
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
 import { ProfessionalVerification } from './features/professional-verification/professional-verification';
 import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
+import { DoctorPatientQueue } from './features/doctors/pages/doctor-patient-queue/doctor-patient-queue';
+
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
@@ -200,11 +202,15 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
-      doctorPreview(
-        'doctor/patients',
-        'Patient queue',
-        'Patients who have shared access will appear here.',
-      ),
+      {
+        path: 'doctor/patients',
+        component: DoctorPatientQueue,
+        canActivate: [roleGuard],
+        title: 'Patient queue | MediLink',
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
       doctorPreview(
         'doctor/patients/:id',
         'Patient details',

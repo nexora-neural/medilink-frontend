@@ -1,0 +1,178 @@
+<main class="queue-page">
+  <header class="page-header">
+    <div class="header-copy">
+      <p class="eyebrow">DOCTOR WORKSPACE</p>
+      <h1>Patient queue</h1>
+      <p class="page-description">
+        View patients who have shared active access with you.
+      </p>
+    </div>
+
+    <div class="queue-count" aria-label="Number of patients with active access">
+      <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+      <div>
+        <strong>{{ totalPatients() }}</strong>
+        <span>Patients with access</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="queue-panel" aria-labelledby="queue-heading">
+    <div class="panel-heading">
+      <div>
+        <h2 id="queue-heading">Your patients</h2>
+        <p>Only patients with active access are shown.</p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="search-field">
+        <label for="patient-search" class="visually-hidden">
+          Search patients
+        </label>
+
+        <span class="material-symbols-outlined" aria-hidden="true">
+          search
+        </span>
+
+        <input
+          id="patient-search"
+          type="search"
+          placeholder="Search by patient name, ID or condition..."
+          [value]="searchTerm()"
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="patient-filter">Filter patients</label>
+        <select
+          id="patient-filter"
+          [value]="activeFilter()"
+          (change)="onFilterChange($any($event.target).value)"
+        >
+          <option value="all">All patients</option>
+          <option value="consultation">Consultation permitted</option>
+        </select>
+      </div>
+    </div>
+
+    @if (state() === 'loading') {
+      <div class="state-container" role="status" aria-live="polite">
+        <span class="material-symbols-outlined state-icon spin" aria-hidden="true">
+          progress_activity
+        </span>
+        <h3>Loading patient queue</h3>
+        <p>Please wait while the patient list is being loaded.</p>
+      </div>
+    } @else if (state() === 'error') {
+      <div class="state-container error-state" role="alert">
+        <span class="material-symbols-outlined state-icon" aria-hidden="true">
+          cloud_off
+        </span>
+        <h3>Unable to load patients</h3>
+        <p>Something went wrong while loading the patient queue.</p>
+        <button type="button" class="primary-button" (click)="retry()">
+          <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+          Try again
+        </button>
+      </div>
+    } @else if (state() === 'empty') {
+      <div class="state-container">
+        <span class="material-symbols-outlined state-icon" aria-hidden="true">
+          group_off
+        </span>
+        <h3>No patients available</h3>
+        <p>Patients who grant you access will appear here.</p>
+      </div>
+    } @else if (patients().length === 0) {
+      <div class="state-container">
+        <span class="material-symbols-outlined state-icon" aria-hidden="true">
+          search_off
+        </span>
+        <h3>No matching patients</h3>
+        <p>Try changing your search term or filter.</p>
+        <button type="button" class="secondary-button" (click)="clearSearch()">
+          Clear search and filters
+        </button>
+      </div>
+    } @else {
+      <div class="patient-list" aria-live="polite">
+        @for (patient of patients(); track patient.id) {
+          <article class="patient-card">
+            <div class="patient-main">
+              <div class="patient-avatar" aria-hidden="true">
+                {{ patient.initials }}
+              </div>
+
+              <div class="patient-info">
+                <h3>{{ patient.name }}</h3>
+                <p class="patient-meta">
+                  {{ patient.id }} <span aria-hidden="true">·</span>
+                  {{ patient.ageLabel }}
+                </p>
+                <p class="patient-condition">
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    medical_information
+                  </span>
+                  {{ patient.detail }}
+                </p>
+              </div>
+            </div>
+
+            <div class="patient-access">
+              <span class="access-status">
+                <span class="status-dot" aria-hidden="true"></span>
+                {{ patient.accessLabel }}
+              </span>
+              <span class="expiry-label">
+                Expires in {{ patient.accessExpiresAt }}
+              </span>
+            </div>
+
+            <div class="patient-permissions">
+              <span class="permission-label">Consultation</span>
+
+              @if (patient.consultationAllowed) {
+                <span class="permission-value allowed">
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    check_circle
+                  </span>
+                  Permitted
+                </span>
+              } @else {
+                <span class="permission-value denied">
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    lock
+                  </span>
+                  Not permitted
+                </span>
+              }
+            </div>
+
+            <div class="patient-action">
+              <a
+                class="view-button"
+                [routerLink]="['/workspace/doctor/patients', patient.id]"
+                [attr.aria-label]="'View patient details for ' + patient.name"
+              >
+                View patient
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  arrow_forward
+                </span>
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    <footer class="queue-footer">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      <p>
+        Patient information is displayed according to the access permissions
+        shared by each patient.
+      </p>
+    </footer>
+  </section>
+</main>
