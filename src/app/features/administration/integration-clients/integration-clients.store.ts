@@ -9,7 +9,7 @@ import {
   SubmissionOutcome,
 } from './integration-clients.models';
 
-/** ML-114 replaces this port with authenticated API calls and paged server data. */
+/** Operations used by the integration client and submission screens. */
 export interface IntegrationClientsPort {
   listClients(): Promise<IntegrationClient[]>;
   listApprovedLabs(): Promise<ApprovedLab[]>;
@@ -143,9 +143,3 @@ export class IntegrationClientsPreviewStore implements IntegrationClientsPort {
     return !!value && Number.isFinite(Date.parse(value)) && Date.parse(value) > Date.now();
   }
 }
-
-/** Route-scoped preview state; ML-114 replaces this provider, without changing templates. */
-export const integrationClientsPreviewProviders = [
-  IntegrationClientsPreviewStore,
-  { provide: INTEGRATION_CLIENTS, useExisting: IntegrationClientsPreviewStore },
-];
