@@ -48,6 +48,13 @@ export function readingText(reading: MeasurementReading): string {
     : `${reading.value} ${reading.unit}`;
 }
 
+const measurementQuantityError =
+  'Enter a positive number with up to 8 digits before the decimal point and 4 after it.';
+
+function isValidMeasurementQuantity(value: number): boolean {
+  return Number.isFinite(value) && value > 0 && /^\d{1,8}(?:\.\d{1,4})?$/.test(String(value));
+}
+
 export function validateDraft(draft: MeasurementDraft): string | null {
   const timestamp = Date.parse(draft.recordedAt);
 
@@ -59,33 +66,31 @@ export function validateDraft(draft: MeasurementDraft): string | null {
     return 'Only patient entries can be added here.';
   }
 
-  const r = draft.reading;
+  const reading = draft.reading;
 
-  if (r.kind === 'blood_pressure') {
+  if (reading.kind === 'blood_pressure') {
     if (
-      !Number.isInteger(r.systolic) ||
-      !Number.isInteger(r.diastolic) ||
-      r.systolic <= 0 ||
-      r.diastolic <= 0 ||
-      r.systolic > 400 ||
-      r.diastolic > 400
+      !isValidMeasurementQuantity(reading.systolic) ||
+      !isValidMeasurementQuantity(reading.diastolic)
     ) {
-      return 'Enter positive whole-number blood pressure values up to 400.';
+      return measurementQuantityError;
     }
 
-    if (r.unit !== 'mmHg') {
+    if (reading.unit !== 'mmHg') {
       return 'Blood pressure must use mmHg.';
     }
-  } else {
-    if (!Number.isFinite(r.value) || r.value <= 0 || r.value > 10000) {
-      return 'Enter a positive measurement value (maximum 10000).';
-    }
 
-    if (
-      r.kind === 'weight' ? !['kg', 'lb'].includes(r.unit) : !['mg/dL', 'mmol/L'].includes(r.unit)
-    ) {
-      return 'Invalid unit for this measurement.';
-    }
+    return null;
+  }
+
+  if (!isValidMeasurementQuantity(reading.value)) {
+    return measurementQuantityError;
+  }
+
+  const validUnits = reading.kind === 'weight' ? ['kg', 'lb'] : ['mg/dL', 'mmol/L'];
+
+  if (!validUnits.includes(reading.unit)) {
+    return 'Invalid unit for this measurement.';
   }
 
   return null;
