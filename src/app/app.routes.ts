@@ -44,6 +44,16 @@ const rolePage = (
 
 const rolePages: Route[] = [
   {
+    path: 'doctor/prescriptions/:id/issue',
+    loadChildren: () =>
+      import('./features/doctors/pages/prescription-issue/prescription-issue.routes').then(
+        (m) => m.PRESCRIPTION_ISSUE_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Review & issue prescription | MediLink',
+    data: { allowedRoles: ['Doctor'] },
+  },
+  {
     path: 'patient/lab-upload-requests',
     component: PatientLabRequests,
     canActivate: [roleGuard],
