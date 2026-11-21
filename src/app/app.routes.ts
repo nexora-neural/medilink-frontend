@@ -27,8 +27,6 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
-import { PatientLabRequests } from './features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests';
-import { LabRequestResolution } from './features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution';
 
 const rolePage = (
   path: string,
@@ -55,7 +53,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/lab-upload-requests',
-    component: PatientLabRequests,
+    loadComponent: () =>
+      import('./features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests').then(
+        (module) => module.PatientLabRequests,
+      ),
     canActivate: [roleGuard],
     title: 'Lab upload requests | MediLink',
     data: {
@@ -64,7 +65,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'lab-staff/upload-requests',
-    component: LabRequestResolution,
+    loadComponent: () =>
+      import('./features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution').then(
+        (module) => module.LabRequestResolution,
+      ),
     canActivate: [roleGuard],
     title: 'Resolve lab upload request | MediLink',
     data: {
@@ -123,12 +127,17 @@ const rolePages: Route[] = [
       audience: 'doctor',
     },
   },
-  rolePage(
-    'doctor/prescriptions',
-    ['Doctor'],
-    'Prescriptions',
-    'A protected doctor route for the prescription workspace.',
-  ),
+  {
+    path: 'doctor/prescriptions',
+    canActivate: [roleGuard],
+    data: {
+      allowedRoles: ['Doctor'],
+    },
+    loadChildren: () =>
+      import('./features/prescriptions/prescription.routes').then(
+        (module) => module.PRESCRIPTION_ROUTES,
+      ),
+  },
   rolePage(
     'pharmacist/dispensing',
     ['Pharmacist'],
