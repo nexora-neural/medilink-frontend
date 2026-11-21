@@ -1,0 +1,50 @@
+<section class="prescriptions">
+  <header class="page-heading"><div><p class="eyebrow">YOUR HEALTH RECORD</p><h1>My prescriptions</h1><p>Keep the prescription details you received in one place.</p></div>
+    @if (view() === 'list') { <button type="button" class="primary" (click)="add()">+ Add prescription</button> }
+  </header>
+  <aside class="preview" role="note">Preview only. Entries and selected evidence stay in this session and clear when you refresh. Nothing is uploaded or saved to your health record.</aside>
+  <aside class="safety"><strong>Patient-added · Not clinically verified</strong><p>Your confirmation records what you entered. It does not verify the doctor or clinic and does not authorize clinical issuing or medicine dispensing.</p></aside>
+  @if (message()) { <p class="success" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (view() === 'list') {
+    <h2 tabindex="-1">Prescription records</h2>
+    @if (state() === 'loading') { <app-ui-state kind="loading" title="Loading prescriptions" description="Please wait." /> }
+    @else if (state() === 'error') { <app-ui-state kind="error" title="Prescriptions are unavailable" description="Please try again." actionLabel="Retry" (action)="load()" /> }
+    @else if (records().length === 0) { <app-ui-state kind="empty" title="No patient-added prescriptions" description="Add details from a prescription you have received." actionLabel="Add prescription" (action)="add()" /> }
+    @else { <div class="records">@for (record of records(); track record.id) { <article class="card record"><div><span class="badge">Patient-added</span> <span class="badge warning">Not clinically verified</span><h3>{{ record.prescriber }}</h3><p>{{ record.clinic }} · {{ record.prescribedOn }}</p><p>{{ record.medicines.length }} medicine(s)</p></div><button type="button" (click)="details(record)" [attr.aria-label]="'View prescription from ' + record.prescriber">View details</button></article> }</div> }
+  }
+  @if (view() === 'form') {
+    <form [formGroup]="form" (ngSubmit)="review()" novalidate class="card">
+      <h2 tabindex="-1">Add prescription details</h2><p>Enter the information as written on your prescription. Required fields are marked *.</p>
+      <div class="grid">
+        <div><label for="prescribed-on">Prescription date *</label><input id="prescribed-on" type="date" formControlName="prescribedOn" [max]="today" [attr.aria-invalid]="fieldError(form.controls.prescribedOn)" aria-describedby="date-error" />@if (fieldError(form.controls.prescribedOn)) { <small id="date-error" class="error">Enter a valid date that is not in the future.</small> }</div>
+        <div><label for="prescriber">Claimed prescriber name *</label><input id="prescriber" formControlName="prescriber" maxlength="160" [attr.aria-invalid]="fieldError(form.controls.prescriber)" aria-describedby="prescriber-error" />@if (fieldError(form.controls.prescriber)) { <small id="prescriber-error" class="error">Enter the prescriber name.</small> }</div>
+        <div><label for="clinic">Claimed clinic / hospital *</label><input id="clinic" formControlName="clinic" maxlength="160" [attr.aria-invalid]="fieldError(form.controls.clinic)" aria-describedby="clinic-error" />@if (fieldError(form.controls.clinic)) { <small id="clinic-error" class="error">Enter the clinic or hospital name.</small> }</div>
+      </div><p class="hint">Doctor and clinic details are patient-reported and have not been verified.</p>
+      <div><h3>Medicines</h3>@for (group of medicines; track group; let i = $index) {
+        <fieldset [formGroup]="group"><legend>Medicine {{ i + 1 }}</legend><div class="grid">
+          <div><label [for]="'medicine-' + i">Medicine name *</label><input [id]="'medicine-' + i" formControlName="name" maxlength="160" [attr.aria-invalid]="fieldError(group.controls.name)" [attr.aria-describedby]="'medicine-error-' + i" />@if (fieldError(group.controls.name)) { <small [id]="'medicine-error-' + i" class="error">Enter the medicine name.</small> }</div>
+          <div><label [for]="'strength-' + i">Strength (optional)</label><input [id]="'strength-' + i" formControlName="strength" maxlength="80" placeholder="As written on the prescription" /></div>
+          <div class="wide"><label [for]="'instructions-' + i">Directions / dosage as written *</label><textarea [id]="'instructions-' + i" formControlName="instructions" maxlength="500" rows="2" [attr.aria-invalid]="fieldError(group.controls.instructions)" [attr.aria-describedby]="'instructions-error-' + i"></textarea>@if (fieldError(group.controls.instructions)) { <small [id]="'instructions-error-' + i" class="error">Enter the written directions.</small> }</div>
+        </div><button type="button" (click)="removeMedicine(i)" [disabled]="medicines.length === 1" [attr.aria-label]="'Remove medicine ' + (i + 1)">Remove medicine</button></fieldset>
+      }</div><button type="button" (click)="addMedicine()" [disabled]="medicines.length >= 20">+ Add another medicine</button>
+      <h3>Supporting evidence</h3><app-document-upload inputId="prescription-evidence" label="Prescription image or PDF (optional)" [files]="files()" (filesChange)="files.set($event)" />
+      <p class="hint">Evidence selection is for preview only. It does not verify the prescription.</p>
+      <label for="notes">Additional notes (optional)</label><textarea id="notes" formControlName="notes" maxlength="1000" rows="3"></textarea>
+      <label class="confirmation"><input id="confirmation" type="checkbox" formControlName="confirmation" [attr.aria-invalid]="fieldError(form.controls.confirmation)" aria-describedby="confirmation-error" /><span>I confirm that these details reflect my prescription and any selected evidence. I understand this remains Patient-added / Not clinically verified.</span></label>
+      @if (fieldError(form.controls.confirmation)) { <small id="confirmation-error" class="error">Confirm the information before continuing.</small> }
+      <footer><button type="button" (click)="cancel()">Cancel</button><button type="submit" class="primary">Review details</button></footer>
+    </form>
+  }
+  @if (view() === 'review' || view() === 'detail') {
+    @let record = view() === 'review' ? draft() : selected();
+    @if (record) { <article class="card" [attr.aria-busy]="saving()"><h2 tabindex="-1">{{ view() === 'review' ? 'Review your prescription' : 'Prescription details' }}</h2><span class="badge">Patient-added</span> <span class="badge warning">Not clinically verified</span>
+      <dl class="grid"><div><dt>Prescription date</dt><dd>{{ record.prescribedOn }}</dd></div><div><dt>Claimed prescriber</dt><dd>{{ record.prescriber }}</dd></div><div><dt>Claimed clinic / hospital</dt><dd>{{ record.clinic }}</dd></div></dl>
+      <h3>Medicines as entered</h3>@for (item of record.medicines; track $index) { <div class="medicine"><strong>{{ item.name }}</strong><p>{{ item.strength || 'Strength not provided' }}</p><p>{{ item.instructions }}</p></div> }
+      <h3>Selected evidence</h3>@if (record.evidence.length === 0) { <p>No evidence selected.</p> } @else { <ul>@for (file of record.evidence; track $index) { <li>{{ file.name }}</li> }</ul> }
+      @if (record.notes) { <h3>Notes</h3><p class="notes">{{ record.notes }}</p> }
+      @if (view() === 'review') { <p>Your confirmation does not make this a clinically verified prescription.</p><footer><button type="button" (click)="edit()" [disabled]="saving()">Back to edit</button><button type="button" (click)="cancel()" [disabled]="saving()">Cancel</button><button class="primary" type="button" (click)="save()" [disabled]="saving()">{{ saving() ? 'Adding…' : 'Confirm and add to preview' }}</button></footer> }
+      @else { <footer><button type="button" (click)="cancel()">Back to prescriptions</button><a routerLink="/workspace/patient/history">View medical history</a></footer> }
+    </article> }
+  }
+</section>
