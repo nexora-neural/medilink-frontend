@@ -90,6 +90,18 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/doctor/prescriptions',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions/:id/edit',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },
