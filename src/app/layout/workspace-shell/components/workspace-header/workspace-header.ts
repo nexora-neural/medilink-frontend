@@ -49,6 +49,8 @@ export class WorkspaceHeader {
         return 'Laboratory reports';
 
       default:
+        if (/^\/workspace\/doctor\/prescriptions\/[^/]+\/issue$/.test(url))
+          return 'Review & issue prescription';
         if (url.startsWith('/workspace/doctor/patients/')) return 'Patient details';
         return 'Workspace';
     }
