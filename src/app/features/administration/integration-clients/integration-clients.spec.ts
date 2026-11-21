@@ -64,9 +64,12 @@ describe('ML-107 integration-client screens', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { data: { view: outcomes ? 'outcomes' : 'clients' } } },
         },
-        { provide: INTEGRATION_CLIENTS, useValue: port },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(IntegrationClients, {
+        set: { providers: [{ provide: INTEGRATION_CLIENTS, useValue: port }] },
+      })
+      .compileComponents();
     roles = TestBed.inject(ActiveRoleService);
     roles.setAccountRoles('test-user', [role]);
     fixture = TestBed.createComponent(IntegrationClients);
@@ -87,9 +90,9 @@ describe('ML-107 integration-client screens', () => {
     });
   }
 
-  it('shows sample data, narrow scope, expiry and connected navigation', async () => {
+  it('shows clients, narrow scope, expiry and connected navigation', async () => {
     await setup();
-    expect(text()).toContain('Sample preview.');
+    expect(text()).not.toContain('Sample preview.');
     expect(text()).toContain('Sample uploader');
     expect(text()).toContain('reports:write');
     expect(

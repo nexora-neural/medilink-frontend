@@ -7,13 +7,21 @@ import { serverRoutes } from '../../../app.routes.server';
 import { AuthService } from '../../../core/auth.service';
 import { ActiveRoleService } from '../../../core/context/active-role.service';
 
-describe('ML-107 guarded navigation', () => {
+describe('Integration client guarded navigation', () => {
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
-        { provide: AuthService, useValue: { restoreSession: vi.fn().mockResolvedValue(true) } },
+        {
+          provide: AuthService,
+          useValue: {
+            restoreSession: vi.fn().mockResolvedValue(true),
+            getAuthorized: vi
+              .fn()
+              .mockResolvedValue({ items: [], page: 1, page_size: 100, total: 0 }),
+          },
+        },
       ],
     });
   });
@@ -25,8 +33,17 @@ describe('ML-107 guarded navigation', () => {
       await harness.navigateByUrl(path);
       await vi.waitFor(() => {
         harness.detectChanges();
-        expect(harness.routeNativeElement?.textContent).toContain('Sample preview.');
+        expect(harness.routeNativeElement?.textContent).toContain(
+          path.endsWith('/submissions') ? 'No submission outcomes' : 'No integration clients',
+        );
       });
+      const auth = TestBed.inject(AuthService);
+      expect(auth.getAuthorized).toHaveBeenCalledWith(
+        '/admin/integration-clients?page=1&page_size=100',
+      );
+      expect(auth.getAuthorized).toHaveBeenCalledWith(
+        '/admin/integration-submissions?page=1&page_size=100',
+      );
       expect(TestBed.inject(Router).url).toBe(path);
       expect(serverRoutes.find((item) => item.path === path.slice(1))?.renderMode).toBe(
         RenderMode.Client,
