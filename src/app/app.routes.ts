@@ -54,8 +54,8 @@ const rolePages: Route[] = [
   {
     path: 'patient/lab-upload-requests',
     loadComponent: () =>
-      import('./features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests').then(
-        (module) => module.PatientLabRequests,
+      import('./features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests-live').then(
+        (module) => module.PatientLabRequestsLive,
       ),
     canActivate: [roleGuard],
     title: 'Lab upload requests | MediLink',
@@ -66,8 +66,8 @@ const rolePages: Route[] = [
   {
     path: 'lab-staff/upload-requests',
     loadComponent: () =>
-      import('./features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution').then(
-        (module) => module.LabRequestResolution,
+      import('./features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution-live').then(
+        (module) => module.LabRequestResolutionLive,
       ),
     canActivate: [roleGuard],
     title: 'Resolve lab upload request | MediLink',

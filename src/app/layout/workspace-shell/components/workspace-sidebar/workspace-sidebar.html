@@ -56,7 +56,7 @@
       (change)="selectRole($event)"
     >
       @for (role of roles; track role) {
-        <option [value]="role">
+        <option [value]="role" [selected]="role === activeRole">
           {{ role }}
         </option>
       }
