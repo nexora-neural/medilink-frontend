@@ -1,0 +1,247 @@
+
+<section class="reports-page" aria-labelledby="reports-title">
+  <header class="page-heading">
+    <div>
+      <h1 id="reports-title">Laboratory reports</h1>
+      <p>Review reports submitted for your assigned laboratory.</p>
+    </div>
+  </header>
+
+  <p class="preview-notice">
+    <strong>Sample preview only.</strong>
+    This workspace uses fictional reports and a fixed sample laboratory.
+    It does not verify real staff membership, upload files to a server,
+    or send patient notifications.
+  </p>
+
+  @if (!permitted() || pageState() === 'denied') {
+    <section class="panel" aria-labelledby="access-title">
+      <h2 id="access-title">Access unavailable</h2>
+      <p>This workspace is available only to the Lab Staff role.</p>
+    </section>
+  } @else if (pageState() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading laboratory reports"
+      description="Getting the sample reports for your laboratory."
+    />
+  } @else if (pageState() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Reports unavailable"
+      description="The sample report workspace could not be loaded."
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else if (pageState() === 'empty') {
+    <app-ui-state
+      kind="empty"
+      title="No reports available"
+      description="There are no sample reports to display in this preview."
+    />
+  } @else {
+    <section class="panel laboratory-summary" aria-labelledby="laboratory-title">
+      <h2 id="laboratory-title">Assigned sample laboratory</h2>
+      <p>{{ laboratoryName() }}</p>
+      <small>Only reports matching this laboratory and an active upload request are shown.</small>
+    </section>
+
+    @if (message()) {
+      <p class="success-message" role="status">{{ message() }}</p>
+    }
+
+    <section class="panel" aria-labelledby="pending-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="pending-title">Pending review</h2>
+          <p>Reports awaiting a laboratory decision.</p>
+        </div>
+        <span class="count-badge">{{ pendingReports().length }}</span>
+      </div>
+
+      @if (pendingReports().length > 0) {
+        <div class="report-list">
+          @for (report of pendingReports(); track report.id) {
+            <article class="report-card">
+              <div class="report-card-heading">
+                <div>
+                  <h3>{{ report.reportType }}</h3>
+                  <p class="report-reference">{{ report.reference }}</p>
+                </div>
+                <span class="status-badge pending">Pending review</span>
+              </div>
+
+              <dl class="report-metadata">
+                <div>
+                  <dt>Patient</dt>
+                  <dd>{{ report.patientName }}</dd>
+                </div>
+                <div>
+                  <dt>Report date</dt>
+                  <dd>
+                    <time [attr.datetime]="report.reportDate">
+                      {{ report.reportDate | date: 'mediumDate' }}
+                    </time>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Uploaded</dt>
+                  <dd>{{ report.uploadedAt | date: 'medium' }}</dd>
+                </div>
+                <div>
+                  <dt>Source</dt>
+                  <dd>{{ report.source === 'patient' ? 'Patient upload' : 'Laboratory upload' }}</dd>
+                </div>
+              </dl>
+
+              <button
+                class="primary-button"
+                type="button"
+                (click)="selectReport(report)"
+                [attr.aria-label]="'Review report ' + report.reference"
+              >
+                Review report
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="empty-message">There are no pending reports for this sample laboratory.</p>
+      }
+    </section>
+
+    @if (selectedReport(); as report) {
+      <section class="panel review-panel" aria-labelledby="review-title">
+        <h2 id="review-title">Review report details</h2>
+
+        <dl class="report-metadata">
+          <div>
+            <dt>Report reference</dt>
+            <dd>{{ report.reference }}</dd>
+          </div>
+          <div>
+            <dt>Upload request reference</dt>
+            <dd class="request-reference">{{ report.uploadRequestReference }}</dd>
+          </div>
+          <div>
+            <dt>Patient</dt>
+            <dd>{{ report.patientName }}</dd>
+          </div>
+          <div>
+            <dt>Patient ID</dt>
+            <dd>{{ report.patientId }}</dd>
+          </div>
+          <div>
+            <dt>Assigned laboratory</dt>
+            <dd>{{ report.labName }}</dd>
+          </div>
+          <div>
+            <dt>Laboratory ID</dt>
+            <dd>{{ report.labId }}</dd>
+          </div>
+          <div>
+            <dt>Report type</dt>
+            <dd>{{ report.reportType }}</dd>
+          </div>
+          <div>
+            <dt>Report date</dt>
+            <dd>{{ report.reportDate | date: 'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt>File</dt>
+            <dd>{{ report.fileName }}</dd>
+          </div>
+          <div>
+            <dt>File type</dt>
+            <dd>{{ report.fileType }}</dd>
+          </div>
+          <div class="full-width">
+            <dt>Notes</dt>
+            <dd>{{ report.notes || 'No additional notes' }}</dd>
+          </div>
+        </dl>
+
+        <p class="help-text">
+          Confirm that the patient and assigned laboratory details are correct before making a decision.
+        </p>
+
+        <label class="confirmation-control">
+          <input
+            type="checkbox"
+            [checked]="patientAndLabConfirmed()"
+            (change)="confirmPatientAndLab($any($event.target).checked)"
+          />
+          I confirm that this report belongs to the displayed patient and assigned laboratory.
+        </label>
+
+        @if (error()) {
+          <p class="error-message" role="alert">{{ error() }}</p>
+        }
+
+        <div class="button-row review-actions">
+          <button
+            class="primary-button"
+            type="button"
+            [disabled]="!canSubmitReview()"
+            (click)="reviewReport('accepted')"
+          >
+            Accept report
+          </button>
+
+          <button
+            class="danger-button"
+            type="button"
+            [disabled]="!canSubmitReview()"
+            (click)="reviewReport('rejected')"
+          >
+            Reject report
+          </button>
+
+          <button class="secondary-button" type="button" (click)="clearSelection()">
+            Cancel
+          </button>
+        </div>
+
+        <p class="help-text">
+          These actions update sample preview data only. Actual report processing and patient notification
+          are not connected.
+        </p>
+      </section>
+    }
+
+    <section class="panel" aria-labelledby="reviewed-title">
+      <h2 id="reviewed-title">Previously reviewed reports</h2>
+
+      @if (reviewedReports().length > 0) {
+        <div class="report-list">
+          @for (report of reviewedReports(); track report.id) {
+            <article class="report-card">
+              <div class="report-card-heading">
+                <div>
+                  <h3>{{ report.reportType }}</h3>
+                  <p class="report-reference">{{ report.reference }}</p>
+                </div>
+                <span
+                  class="status-badge"
+                  [class.accepted]="report.status === 'accepted'"
+                  [class.rejected]="report.status === 'rejected'"
+                >
+                  {{ report.status === 'accepted' ? 'Accepted' : 'Rejected' }}
+                </span>
+              </div>
+
+              <p>Patient: {{ report.patientName }}</p>
+              <p>Report date: {{ report.reportDate | date: 'mediumDate' }}</p>
+
+              @if (report.reviewedAt) {
+                <p>Reviewed: {{ report.reviewedAt | date: 'medium' }}</p>
+              }
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="empty-message">No reports have been reviewed yet.</p>
+      }
+    </section>
+  }
+</section>

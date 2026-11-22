@@ -98,12 +98,18 @@ const rolePages: Route[] = [
       audience: 'patient',
     },
   },
-  rolePage(
-    'patient/reports',
-    ['Patient'],
-    'Reports',
-    'A protected patient route for the reports workspace.',
-  ),
+  {
+    path: 'patient/reports',
+    loadComponent: () =>
+      import('./features/reports/pages/patient-reports/patient-reports').then(
+        (module) => module.PatientReports,
+      ),
+    canActivate: [roleGuard],
+    title: 'Patient reports | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
   rolePage(
     'patient/vaccinations',
     ['Patient'],
@@ -145,12 +151,18 @@ const rolePages: Route[] = [
     'Dispensing',
     'A protected pharmacist route for the dispensing workspace.',
   ),
-  rolePage(
-    'lab-staff/reports',
-    ['Lab Staff'],
-    'Laboratory reports',
-    'A protected lab staff route for the report workspace.',
-  ),
+  {
+    path: 'lab-staff/reports',
+    loadComponent: () =>
+      import('./features/reports/pages/lab-staff-reports/lab-staff-reports').then(
+        (module) => module.LabStaffReports,
+      ),
+    canActivate: [roleGuard],
+    title: 'Laboratory reports | MediLink',
+    data: {
+      allowedRoles: ['Lab Staff'],
+    },
+  },
 ];
 
 const doctorPreview = (path: string, title: string, description: string, qr = false): Route => ({
