@@ -1,0 +1,123 @@
+<section class="prescription-page" aria-labelledby="prescription-heading">
+  <header>
+    <p class="eyebrow">Doctor workspace</p>
+    <h1 id="prescription-heading">Prescriptions</h1>
+    <p>View sample prescriptions and edit your draft before review.</p>
+  </header>
+
+  <aside class="preview-notice" aria-label="Sample preview information">
+    <strong>Sample preview only.</strong>
+    All patients, medicines and instructions are fictional. Changes are temporary and disappear
+    after refresh. This preview cannot issue a real prescription.
+  </aside>
+
+  @if (!permitted() || pageState() === 'denied') {
+    <section class="panel" aria-labelledby="denied-heading">
+      <h2 id="denied-heading">Access unavailable</h2>
+      <p>Select an available Doctor role to open this workspace.</p>
+    </section>
+  } @else if (pageState() === 'loading') {
+    <section class="panel" role="status">
+      <h2>Loading prescriptions</h2>
+      <p>Please wait while the prescription list loads.</p>
+    </section>
+  } @else if (pageState() === 'error') {
+    <section class="panel" role="alert">
+      <h2>Unable to load prescriptions</h2>
+      <p>Try loading the sample list again.</p>
+      <button type="button" (click)="retry()">Try again</button>
+    </section>
+  } @else if (pageState() === 'empty') {
+    <section class="panel empty-state">
+      <h2>No prescriptions yet</h2>
+      <p>Prescriptions will appear here when they are available.</p>
+    </section>
+  } @else {
+    <section class="panel" aria-labelledby="list-heading">
+      <h2 id="list-heading">Sample prescriptions</h2>
+
+      <div class="filters">
+        <div class="field">
+          <label for="prescription-search">Search prescriptions</label>
+          <input
+            id="prescription-search"
+            type="search"
+            placeholder="Patient name, reference or prescription ID"
+            [value]="searchTerm()"
+            (input)="search($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="prescription-status">Status</label>
+          <select id="prescription-status" [value]="statusFilter()" (change)="filterStatus($event)">
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="active">Active</option>
+          </select>
+        </div>
+      </div>
+
+      <p role="status">{{ prescriptions().length }} prescription(s) shown</p>
+
+      <div class="prescription-list">
+        @for (prescription of prescriptions(); track prescription.id) {
+          <article class="prescription-card">
+            <div class="card-heading">
+              <h3>{{ prescription.patientName }}</h3>
+              <span class="badge">
+                {{ prescription.status === 'draft' ? 'Draft' : 'Active' }}
+              </span>
+            </div>
+
+            <dl>
+              <div>
+                <dt>Patient reference</dt>
+                <dd>{{ prescription.patientReference }}</dd>
+              </div>
+              <div>
+                <dt>Prescription ID</dt>
+                <dd>{{ prescription.id }}</dd>
+              </div>
+              <div>
+                <dt>Medicines</dt>
+                <dd>{{ prescription.items.length }}</dd>
+              </div>
+              <div>
+                <dt>Updated</dt>
+                <dd>{{ prescription.updatedAt | date: 'medium' }}</dd>
+              </div>
+            </dl>
+
+            @if (prescription.status === 'draft' && !canEdit(prescription)) {
+              <p>Read-only sample: this draft belongs to another doctor.</p>
+            }
+
+            <div class="actions">
+              <a
+                [routerLink]="['/workspace/doctor/prescriptions', prescription.id]"
+                [attr.aria-label]="'View prescription ' + prescription.id"
+              >
+                View details
+              </a>
+
+              @if (canEdit(prescription)) {
+                <a
+                  [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'edit']"
+                  [attr.aria-label]="'Edit draft ' + prescription.id"
+                >
+                  Edit draft
+                </a>
+              }
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state">
+            <h3>No matching prescriptions</h3>
+            <p>Try another search term or status.</p>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</section>

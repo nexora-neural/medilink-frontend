@@ -42,6 +42,16 @@ const rolePage = (
 
 const rolePages: Route[] = [
   {
+    path: 'doctor/prescriptions/:id/issue',
+    loadChildren: () =>
+      import('./features/doctors/pages/prescription-issue/prescription-issue.routes').then(
+        (m) => m.PRESCRIPTION_ISSUE_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Review & issue prescription | MediLink',
+    data: { allowedRoles: ['Doctor'] },
+  },
+  {
     path: 'patient/lab-upload-requests',
     loadComponent: () =>
       import('./features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests-live').then(
@@ -117,12 +127,17 @@ const rolePages: Route[] = [
       audience: 'doctor',
     },
   },
-  rolePage(
-    'doctor/prescriptions',
-    ['Doctor'],
-    'Prescriptions',
-    'A protected doctor route for the prescription workspace.',
-  ),
+  {
+    path: 'doctor/prescriptions',
+    canActivate: [roleGuard],
+    data: {
+      allowedRoles: ['Doctor'],
+    },
+    loadChildren: () =>
+      import('./features/prescriptions/prescription.routes').then(
+        (module) => module.PRESCRIPTION_ROUTES,
+      ),
+  },
   rolePage(
     'pharmacist/dispensing',
     ['Pharmacist'],

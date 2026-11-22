@@ -1,0 +1,218 @@
+<section class="prescription-page" aria-labelledby="editor-heading">
+  <header>
+    <p class="eyebrow">Doctor workspace</p>
+    <h1 id="editor-heading">Edit prescription draft</h1>
+    <a routerLink="/workspace/doctor/prescriptions"> Back to prescriptions </a>
+  </header>
+
+  <aside class="preview-notice" aria-label="Sample preview information">
+    <strong>Sample preview only.</strong>
+    Use fictional medicine instructions. Saving changes this preview only; refresh restores the
+    samples. No real prescription is issued.
+  </aside>
+
+  @if (!permitted() || pageState() === 'denied') {
+    <section class="panel">
+      <h2>Access unavailable</h2>
+      <p>Select an available Doctor role to open this workspace.</p>
+    </section>
+  } @else if (pageState() === 'loading') {
+    <section class="panel" role="status">
+      <h2>Loading draft</h2>
+      <p>Please wait while the sample draft loads.</p>
+    </section>
+  } @else if (pageState() === 'error') {
+    <section class="panel" role="alert">
+      <h2>Unable to load draft</h2>
+      <button type="button" (click)="retry()">Try again</button>
+    </section>
+  } @else if (!prescription()) {
+    <section class="panel">
+      <h2>Draft unavailable</h2>
+      <p>No sample prescription was found for this reference.</p>
+    </section>
+  } @else if (!editable()) {
+    <section class="panel">
+      <h2>This prescription is read-only</h2>
+      <p>Only the owner doctor can edit a doctor-source draft.</p>
+    </section>
+  } @else {
+    <section class="panel">
+      <h2>{{ prescription()?.patientName }}</h2>
+      <p>Patient reference: {{ prescription()?.patientReference }}</p>
+      <p>Consultation: {{ prescription()?.consultationId }}</p>
+    </section>
+
+    @if (errors().length > 0) {
+      <section class="panel validation-errors" role="alert">
+        <h2>Check the draft</h2>
+        <ul>
+          @for (error of errors(); track error) {
+            <li>{{ error }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (review(); as summary) {
+      <section class="panel" aria-labelledby="review-heading">
+        <h2 id="review-heading">Review sample draft</h2>
+        <p>Dates: {{ summary.startsOn }} to {{ summary.endsOn }}</p>
+
+        <div class="prescription-list">
+          @for (item of summary.items; track item.id) {
+            <article class="prescription-card">
+              <h3>{{ $index + 1 }}. {{ item.medicineName }}</h3>
+              <dl>
+                <div>
+                  <dt>Dose</dt>
+                  <dd>{{ item.dose }}</dd>
+                </div>
+                <div>
+                  <dt>Route</dt>
+                  <dd>{{ item.route }}</dd>
+                </div>
+                <div>
+                  <dt>Frequency</dt>
+                  <dd>{{ item.frequency }}</dd>
+                </div>
+                <div>
+                  <dt>Duration</dt>
+                  <dd>{{ item.durationDays }} day(s)</dd>
+                </div>
+                <div>
+                  <dt>Quantity</dt>
+                  <dd>{{ item.quantity }} {{ item.quantityUnit }}</dd>
+                </div>
+                <div>
+                  <dt>As needed (PRN)</dt>
+                  <dd>{{ item.isPrn ? 'Yes' : 'No' }}</dd>
+                </div>
+                <div>
+                  <dt>Instructions</dt>
+                  <dd>{{ item.instructions || 'No additional instructions.' }}</dd>
+                </div>
+              </dl>
+            </article>
+          }
+        </div>
+
+        <div class="actions editor-actions">
+          <button type="button" (click)="backToEditing()">Back to editing</button>
+          <button type="button" (click)="saveDraft()">Save sample draft</button>
+        </div>
+      </section>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="reviewDraft()" novalidate>
+        <section class="panel">
+          <h2>Prescription dates</h2>
+
+          <div class="filters">
+            <div class="field">
+              <label for="draft-start">Starts on *</label>
+              <input id="draft-start" type="date" formControlName="startsOn" required />
+            </div>
+            <div class="field">
+              <label for="draft-end">Ends on *</label>
+              <input id="draft-end" type="date" formControlName="endsOn" required />
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="items-heading">
+          <h2 id="items-heading">Medicines</h2>
+          <p>Fields marked * are required. Use sample values only.</p>
+
+          <div formArrayName="items" class="prescription-list">
+            @for (group of items.controls; track group; let i = $index) {
+              <fieldset [formGroupName]="i" class="prescription-card">
+                <legend>Medicine {{ i + 1 }}</legend>
+
+                <div class="medicine-fields">
+                  @for (field of textFields; track field.key) {
+                    <div class="field">
+                      <label [for]="field.key + '-' + i"> {{ field.label }} * </label>
+                      <input
+                        [id]="field.key + '-' + i"
+                        type="text"
+                        [formControlName]="field.key"
+                        [attr.maxlength]="field.max"
+                        [attr.aria-invalid]="
+                          group.controls[field.key].touched && group.controls[field.key].invalid
+                        "
+                        required
+                      />
+                    </div>
+                  }
+
+                  <div class="field">
+                    <label [for]="'duration-' + i">Duration in days *</label>
+                    <input
+                      [id]="'duration-' + i"
+                      type="number"
+                      min="1"
+                      step="1"
+                      formControlName="durationDays"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label [for]="'quantity-' + i">Quantity *</label>
+                    <input
+                      [id]="'quantity-' + i"
+                      type="number"
+                      min="0"
+                      step="any"
+                      formControlName="quantity"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label [for]="'unit-' + i">Quantity unit *</label>
+                    <select [id]="'unit-' + i" formControlName="quantityUnit" required>
+                      <option value="tablet">tablet</option>
+                      <option value="capsule">capsule</option>
+                      <option value="mL">mL</option>
+                    </select>
+                  </div>
+
+                  <div class="field instructions-field">
+                    <label [for]="'instructions-' + i"> Instructions (optional) </label>
+                    <textarea
+                      [id]="'instructions-' + i"
+                      rows="3"
+                      maxlength="2000"
+                      formControlName="instructions"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <label class="checkbox-field">
+                  <input type="checkbox" formControlName="isPrn" />
+                  As needed (PRN)
+                </label>
+
+                <button
+                  type="button"
+                  (click)="removeMedicine(i)"
+                  [attr.aria-label]="'Remove medicine ' + (i + 1)"
+                >
+                  Remove medicine
+                </button>
+              </fieldset>
+            } @empty {
+              <p>No medicines added. Add at least one before review.</p>
+            }
+          </div>
+
+          <div class="actions editor-actions">
+            <button type="button" (click)="addMedicine()">Add medicine</button>
+            <button type="submit">Review draft</button>
+          </div>
+        </section>
+      </form>
+    }
+  }
+</section>
