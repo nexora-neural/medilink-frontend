@@ -76,6 +76,14 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/patient/measurements',
     renderMode: RenderMode.Client,
   },
+  {
+    path: 'workspace/patient/vaccinations',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/vaccinations',
+    renderMode: RenderMode.Client,
+  },
   { path: 'workspace/patient/correction-request', renderMode: RenderMode.Client },
   { path: 'workspace/patient/correction-history', renderMode: RenderMode.Client },
   { path: 'workspace/doctor/correction-requests', renderMode: RenderMode.Client },

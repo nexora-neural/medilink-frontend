@@ -1,0 +1,145 @@
+﻿<div class="vaccination-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">PATIENT HEALTH RECORD</p>
+      <h1>Vaccination History</h1>
+      <p class="subtitle">View your vaccination records and previous corrections.</p>
+    </div>
+
+    <div class="record-count" aria-label="Total vaccination records">
+      <span class="count">{{ total() }}</span>
+      <span class="count-label">Records</span>
+    </div>
+  </header>
+
+  @if (pageState() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading vaccination history"
+      description="Please wait while your records are loaded."
+    />
+  } @else if (pageState() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Unable to load vaccination history"
+      [description]="error()"
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else if (pageState() === 'empty') {
+    <app-ui-state
+      kind="empty"
+      title="No vaccination records yet"
+      description="Your vaccination records will appear here when they are available."
+    />
+  } @else {
+    <section class="history-section" aria-labelledby="current-heading">
+      <div class="section-heading">
+        <div>
+          <h2 id="current-heading">Current records</h2>
+          <p>Your latest vaccination information.</p>
+        </div>
+        <span class="section-count">{{ vaccinations().length }}</span>
+      </div>
+
+      <div class="record-list">
+        @for (record of sortedVaccinations(); track record.id) {
+          <article class="vaccination-card">
+            <div class="card-main">
+              <div class="vaccine-icon" aria-hidden="true">
+                <span class="material-symbols-outlined">vaccines</span>
+              </div>
+
+              <div class="record-details">
+                <h3>{{ record.vaccineName }}</h3>
+                <p class="administered-date">
+                  Administered {{ formatDate(record.administeredOn) }}
+                </p>
+
+                @if (record.doseDetails) {
+                  <p class="dose-details">{{ record.doseDetails }}</p>
+                }
+
+                <div class="record-meta">
+                  <span class="source-label">
+                    Source: {{ sourceLabel(record.source) }}
+                  </span>
+                  @if (record.supersedesId) {
+                    <span class="corrected-label">Corrected record</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            @if (record.nextDoseOn) {
+              <div class="next-dose">
+                <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                <div>
+                  <span class="next-dose-label">Next dose</span>
+                  <strong>{{ formatDate(record.nextDoseOn) }}</strong>
+                </div>
+              </div>
+            }
+
+            @if (record.notes) {
+              <p class="record-notes">{{ record.notes }}</p>
+            }
+
+            @if (record.correctionReason) {
+              <p class="correction-reason">
+                <strong>Correction reason:</strong> {{ record.correctionReason }}
+              </p>
+            }
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="previous-section" aria-labelledby="previous-heading">
+      <button
+        class="history-toggle"
+        type="button"
+        [attr.aria-expanded]="showHistory()"
+        aria-controls="previous-records"
+        (click)="toggleHistory()"
+      >
+        <span>
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          <span>
+            <strong id="previous-heading">Previous versions</strong>
+            <small>{{ history().length }} previous records</small>
+          </span>
+        </span>
+        <span class="material-symbols-outlined" aria-hidden="true">
+          {{ showHistory() ? 'expand_less' : 'expand_more' }}
+        </span>
+      </button>
+
+      @if (showHistory()) {
+        <div id="previous-records" class="previous-records">
+          @if (sortedHistory().length === 0) {
+            <p class="no-history">No previous versions are available.</p>
+          } @else {
+            @for (record of sortedHistory(); track record.id) {
+              <article class="previous-card">
+                <div>
+                  <h3>{{ record.vaccineName }}</h3>
+                  <p>Administered {{ formatDate(record.administeredOn) }}</p>
+                  @if (record.doseDetails) {
+                    <p>{{ record.doseDetails }}</p>
+                  }
+                  @if (record.correctionReason) {
+                    <p class="correction-reason">
+                      <strong>Correction reason:</strong> {{ record.correctionReason }}
+                    </p>
+                  }
+                </div>
+                <span class="archived-label">Previous version</span>
+              </article>
+            }
+          }
+        </div>
+      }
+    </section>
+  }
+</div>
