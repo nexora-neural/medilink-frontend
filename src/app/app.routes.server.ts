@@ -24,7 +24,14 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/patient/profile',
     renderMode: RenderMode.Client,
   },
-  { path: 'workspace/doctor/patients/:id', renderMode: RenderMode.Server },
+  {
+    path: 'workspace/doctor/patients',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/patients/:id',
+    renderMode: RenderMode.Server,
+  },
   {
     path: 'super-admin/organizations/:id',
     renderMode: RenderMode.Client,
@@ -88,6 +95,18 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/lab-staff/upload-requests',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions/:id/edit',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions/:id',
     renderMode: RenderMode.Client,
   },
   {

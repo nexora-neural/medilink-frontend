@@ -17,6 +17,7 @@ import { MembershipRequest } from './features/administration/membership-request/
 import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
 import { ProfessionalVerification } from './features/professional-verification/professional-verification';
 import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
+import { DoctorPatientQueue } from './features/doctors/pages/doctor-patient-queue/doctor-patient-queue';
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
@@ -27,8 +28,6 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
-import { PatientLabRequests } from './features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests';
-import { LabRequestResolution } from './features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution';
 
 const rolePage = (
   path: string,
@@ -55,7 +54,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/lab-upload-requests',
-    component: PatientLabRequests,
+    loadComponent: () =>
+      import('./features/lab-upload-requests/pages/patient-lab-requests/patient-lab-requests-live').then(
+        (module) => module.PatientLabRequestsLive,
+      ),
     canActivate: [roleGuard],
     title: 'Lab upload requests | MediLink',
     data: {
@@ -64,7 +66,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'lab-staff/upload-requests',
-    component: LabRequestResolution,
+    loadComponent: () =>
+      import('./features/lab-upload-requests/pages/lab-request-resolution/lab-request-resolution-live').then(
+        (module) => module.LabRequestResolutionLive,
+      ),
     canActivate: [roleGuard],
     title: 'Resolve lab upload request | MediLink',
     data: {
@@ -128,12 +133,17 @@ const rolePages: Route[] = [
       audience: 'doctor',
     },
   },
-  rolePage(
-    'doctor/prescriptions',
-    ['Doctor'],
-    'Prescriptions',
-    'A protected doctor route for the prescription workspace.',
-  ),
+  {
+    path: 'doctor/prescriptions',
+    canActivate: [roleGuard],
+    data: {
+      allowedRoles: ['Doctor'],
+    },
+    loadChildren: () =>
+      import('./features/prescriptions/prescription.routes').then(
+        (module) => module.PRESCRIPTION_ROUTES,
+      ),
+  },
   rolePage(
     'pharmacist/dispensing',
     ['Pharmacist'],
@@ -214,11 +224,15 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
-      doctorPreview(
-        'doctor/patients',
-        'Patient queue',
-        'Patients who have shared access will appear here.',
-      ),
+      {
+        path: 'doctor/patients',
+        component: DoctorPatientQueue,
+        canActivate: [roleGuard],
+        title: 'Patient queue | MediLink',
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
       doctorPreview(
         'doctor/patients/:id',
         'Patient details',
@@ -277,7 +291,10 @@ export const routes: Routes = [
         path: 'professional-verification/membership-request',
         component: MembershipRequest,
         canActivate: [roleGuard],
-        data: { allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'] },
+        data: {
+          allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'],
+          allowPendingProfessionalApplicant: true,
+        },
       },
 
       {

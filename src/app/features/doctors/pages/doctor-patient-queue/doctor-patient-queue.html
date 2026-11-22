@@ -1,0 +1,232 @@
+
+<div class="queue-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">DOCTOR WORKSPACE</span>
+      <h1>Patient Queue</h1>
+      <p>Manage your patients and consultation activities.</p>
+    </div>
+  </header>
+
+  <div class="queue-layout">
+    <main class="queue-main">
+      <section class="queue-card">
+        <div class="section-heading">
+          <div>
+            <h2>Patient Queue</h2>
+            <p>View and manage patients who have shared access.</p>
+          </div>
+        </div>
+
+        <div class="preview-notice" role="note">
+          <span class="material-symbols-outlined">info</span>
+          <p>
+            Preview mode: Patient records and permission statuses shown here
+            are sample data. Verified access will be connected through ML-70.
+          </p>
+        </div>
+
+        @if (validationMessage()) {
+          <div class="validation-message" role="alert">
+            <span class="material-symbols-outlined">warning</span>
+            <p>{{ validationMessage() }}</p>
+          </div>
+        }
+
+        <div class="queue-controls">
+          <label class="field search-field">
+            <span>Search patients</span>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined" aria-hidden="true">search</span>
+              <input
+                type="search"
+                placeholder="Search by name or reference number"
+                [value]="searchTerm()"
+                (input)="updateSearch($any($event.target).value)"
+              />
+            </div>
+          </label>
+
+          <label class="field filter-field">
+            <span>Filter by status</span>
+            <select
+              [value]="selectedFilter()"
+              (change)="updateFilter($any($event.target).value)"
+            >
+              <option value="all">All patients</option>
+              <option value="waiting">Waiting</option>
+              <option value="in-consultation">In consultation</option>
+              <option value="completed">Completed</option>
+            </select>
+          </label>
+        </div>
+
+        @if (loading()) {
+          <div class="state-card" role="status">
+            <span class="material-symbols-outlined">progress_activity</span>
+            <h3>Loading patients</h3>
+            <p>Please wait while the patient queue is loading.</p>
+          </div>
+        } @else if (errorMessage()) {
+          <div class="state-card error-state" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <h3>Unable to load patients</h3>
+            <p>{{ errorMessage() }}</p>
+          </div>
+        } @else if (filteredPatients().length === 0) {
+          <div class="state-card">
+            <span class="material-symbols-outlined">person_search</span>
+            <h3>No patients found</h3>
+            <p>Try another search term or change the selected filter.</p>
+          </div>
+        } @else {
+          <div class="patient-list">
+            @for (patient of filteredPatients(); track patient.id) {
+              <article class="patient-item">
+                <div class="patient-top">
+                  <div class="patient-avatar" aria-hidden="true">
+                    {{ patient.name.charAt(0) }}
+                  </div>
+
+                  <div class="patient-details">
+                    <h3>{{ patient.name }}</h3>
+                    <p>{{ patient.age }} years · {{ patient.gender }}</p>
+                    <span>{{ patient.referenceNumber }}</span>
+                  </div>
+
+                  <span
+                    class="status-badge"
+                    [class.status-waiting]="patient.status === 'waiting'"
+                    [class.status-consultation]="patient.status === 'in-consultation'"
+                    [class.status-completed]="patient.status === 'completed'"
+                  >
+                    @if (patient.status === 'waiting') {
+                      Waiting
+                    } @else if (patient.status === 'in-consultation') {
+                      In consultation
+                    } @else {
+                      Completed
+                    }
+                  </span>
+                </div>
+
+                <div class="patient-information">
+                  <div class="information-item">
+                    <span class="information-label">Last visit</span>
+                    <strong>{{ patient.lastVisit }}</strong>
+                  </div>
+
+                  <div class="information-item">
+                    <span class="information-label">Medical record access</span>
+                    <span
+                      class="permission-badge"
+                      [class.permission-active]="patient.readAccess === 'active'"
+                      [class.permission-inactive]="patient.readAccess !== 'active'"
+                    >
+                      {{ patient.readAccess === 'active' ? 'Active' :
+                      patient.readAccess === 'expired' ? 'Expired' : 'Revoked' }}
+                    </span>
+                  </div>
+
+                  <div class="information-item">
+                    <span class="information-label">Consultation permission</span>
+                    <span
+                      class="permission-badge"
+                      [class.permission-active]="patient.consultationPermission === 'granted'"
+                      [class.permission-inactive]="patient.consultationPermission !== 'granted'"
+                    >
+                      {{ patient.consultationPermission === 'granted' ? 'Granted' :
+                      patient.consultationPermission === 'expired' ? 'Expired' : 'Not granted' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="consultation-context">
+                  <span class="material-symbols-outlined">description</span>
+                  <span>{{ patient.consultationContext }}</span>
+                </div>
+
+                <div class="patient-actions">
+                  @if (patient.status === 'waiting') {
+                    <button
+                      type="button"
+                      class="primary-button"
+                      (click)="startConsultation(patient.id)"
+                      [disabled]="patient.readAccess !== 'active' || patient.consultationPermission !== 'granted'"
+                      [attr.aria-label]="'Start consultation with ' + patient.name"
+                    >
+                      Start consultation
+                      <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                  } @else if (patient.status === 'in-consultation') {
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      (click)="endConsultation(patient.id)"
+                      [attr.aria-label]="'End consultation with ' + patient.name"
+                    >
+                      End consultation
+                    </button>
+                  } @else {
+                    <span class="completed-label">
+                      <span class="material-symbols-outlined">check_circle</span>
+                      Consultation completed
+                    </span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    </main>
+
+    <aside class="queue-sidebar">
+      <section class="sidebar-card">
+        <h2>Queue Overview</h2>
+        <p class="sidebar-description">Current patient queue summary.</p>
+
+        <div class="summary-item">
+          <div class="summary-icon total-icon">
+            <span class="material-symbols-outlined">groups</span>
+          </div>
+          <div>
+            <span>Total patients</span>
+            <strong>{{ patients().length }}</strong>
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-icon waiting-icon">
+            <span class="material-symbols-outlined">schedule</span>
+          </div>
+          <div>
+            <span>Waiting</span>
+            <strong>{{ waitingCount() }}</strong>
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-icon consultation-icon">
+            <span class="material-symbols-outlined">stethoscope</span>
+          </div>
+          <div>
+            <span>In consultation</span>
+            <strong>{{ consultationCount() }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="sidebar-card access-card">
+        <div class="sidebar-heading-icon">
+          <span class="material-symbols-outlined">verified_user</span>
+        </div>
+        <h2>Access Information</h2>
+        <p>
+          Patient record access and consultation permission are separate.
+          Both must be valid before a consultation can begin.
+        </p>
+      </section>
+    </aside>
+  </div>
+</div>

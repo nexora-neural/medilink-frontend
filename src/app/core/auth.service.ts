@@ -48,6 +48,17 @@ export interface MeResponse {
     emergency_contact_phone: string | null;
     notification_preferences: Record<string, boolean>;
   } | null;
+  professional_profile: {
+    user_id: string;
+    role: 'doctor' | 'pharmacist' | 'lab_staff';
+    doctor_reference: string | null;
+    registration_number: string | null;
+    qualifications: string | null;
+    specialty: string | null;
+    verification_status: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
 }
 
 declare global {
