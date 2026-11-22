@@ -303,6 +303,27 @@ export const routes: Routes = [
       },
 
       {
+        path: 'admin/applications',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-applications').then(
+            (module) => module.ProfessionalApplications,
+          ),
+        canActivate: [roleGuard],
+        title: 'Professional applications | MediLink',
+        data: { allowedRoles: ['Admin'] },
+      },
+      {
+        path: 'admin/applications/:id',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-application-detail').then(
+            (module) => module.ProfessionalApplicationDetail,
+          ),
+        canActivate: [roleGuard],
+        title: 'Application review | MediLink',
+        data: { allowedRoles: ['Admin'] },
+      },
+
+      {
         path: 'admin/account-support',
         component: AccountSupport,
         canActivate: [roleGuard],

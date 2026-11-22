@@ -42,6 +42,8 @@ export class ProfessionalApplicationDetail implements OnInit {
   protected readonly saveError = signal(false);
   protected readonly saved = signal(false);
   protected readonly submitted = signal(false);
+  protected readonly downloading = signal<string | null>(null);
+  protected readonly downloadError = signal(false);
   protected readonly form = new FormGroup({
     decision: new FormControl<ApplicationDecision | ''>('', {
       nonNullable: true,
@@ -92,6 +94,26 @@ export class ProfessionalApplicationDetail implements OnInit {
 
   protected load(): void {
     this.retry.next();
+  }
+
+  protected downloadEvidence(id: string): void {
+    if (this.downloading()) return;
+    this.downloading.set(id);
+    this.downloadError.set(false);
+    this.service
+      .downloadEvidence(id)
+      .then(({ blob, fileName }) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        this.downloadError.set(true);
+      })
+      .finally(() => this.downloading.set(null));
   }
 
   protected submit(): void {

@@ -1,8 +1,7 @@
 <section aria-labelledby="review-title">
-  <a class="back" routerLink="/super-admin/applications">← Application queue</a>
+  <a class="back" routerLink="..">← Application queue</a>
   <header class="heading">
     <h1 #heading id="review-title" tabindex="-1">Application review</h1>
-    <p class="preview">Preview · Sample applications and decisions</p>
   </header>
   <p class="notice" role="status">
     {{ saved() ? 'Decision recorded. See decision history below.' : '' }}
@@ -54,8 +53,7 @@
               </p>
             }
             <h3>Supporting evidence</h3>
-            <p class="muted">Sample file metadata</p>
-            @for (evidence of item.evidence; track evidence.name) {
+            @for (evidence of item.evidence; track evidence.id) {
               <details class="evidence">
                 <summary>{{ evidence.name }}</summary>
                 <dl class="facts">
@@ -72,9 +70,15 @@
                     </dd>
                   </div>
                 </dl>
+                <button type="button" (click)="downloadEvidence(evidence.id)" [disabled]="downloading() !== null">
+                  {{ downloading() === evidence.id ? 'Opening evidence…' : 'Download evidence' }}
+                </button>
               </details>
             } @empty {
               <p role="status">No evidence attached.</p>
+            }
+            @if (downloadError()) {
+              <p class="error" role="alert">Unable to access this evidence. Check your access and try again.</p>
             }
           </section>
 
