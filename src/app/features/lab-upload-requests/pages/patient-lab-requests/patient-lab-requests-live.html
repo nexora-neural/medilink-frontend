@@ -1,0 +1,261 @@
+<section class="requests-page" aria-labelledby="live-requests-title">
+  <header class="page-heading">
+    <h1 id="live-requests-title">Lab upload requests</h1>
+    <p>Manage requests for a laboratory to upload your reports.</p>
+  </header>
+
+  @if (data.permitted() && createdToken(); as token) {
+    <section class="panel" aria-labelledby="created-token-title">
+      <h2 id="created-token-title">Request created</h2>
+
+      <p id="token-help">
+        Copy this token and share it only with your selected laboratory. It cannot be retrieved
+        again after leaving or refreshing this page.
+      </p>
+
+      <div class="field">
+        <label for="created-request-token">Upload request token</label>
+        <input
+          id="created-request-token"
+          type="text"
+          readonly
+          [value]="token"
+          aria-describedby="token-help"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+    </section>
+  }
+
+  @if (!data.permitted() || data.state() === 'denied') {
+    <section class="panel">
+      <h2>Access unavailable</h2>
+      <p>Sign in with an authorized patient account to view upload requests.</p>
+    </section>
+  } @else if (data.state() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading upload requests"
+      description="Getting laboratories and your saved requests."
+    />
+  } @else if (data.state() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Upload requests unavailable"
+      description="We could not load your requests. Please try again."
+      actionLabel="Try again"
+      (action)="data.load()"
+    />
+  } @else {
+    <section class="panel" aria-labelledby="live-laboratories-title">
+      <h2 id="live-laboratories-title">Available laboratories</h2>
+
+      @if (data.laboratories().length === 0) {
+        <p>No active laboratories are available on this page.</p>
+      } @else {
+        <ul>
+          @for (lab of data.laboratories(); track lab.id) {
+            <li>{{ lab.name }}</li>
+          }
+        </ul>
+      }
+
+      <form (submit)="$event.preventDefault(); createRequest()">
+        <div class="field">
+          <label for="live-laboratory">Laboratory *</label>
+
+          <select
+            id="live-laboratory"
+            [formControl]="labControl"
+            required
+            [attr.aria-invalid]="labControl.touched && labControl.invalid"
+          >
+            <option value="">Select a laboratory</option>
+
+            @for (lab of data.laboratories(); track lab.id) {
+              <option [value]="lab.id">{{ lab.name }}</option>
+            }
+          </select>
+        </div>
+
+        @if (createError()) {
+          <p class="error-message" role="alert">{{ createError() }}</p>
+        }
+
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+            [disabled]="!canCreate() || data.laboratories().length === 0"
+          >
+            {{ creating() ? 'Creating request…' : 'Create request' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="button-row">
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="data.laboratoryPage() <= 1"
+          (click)="changeLaboratoryPage(-1)"
+        >
+          Previous laboratories
+        </button>
+
+        <span>Page {{ data.laboratoryPage() }}</span>
+
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="data.laboratoryPage() * 20 >= data.laboratoryTotal()"
+          (click)="changeLaboratoryPage(1)"
+        >
+          Next laboratories
+        </button>
+      </div>
+    </section>
+
+    @if (revokeError()) {
+      <p class="error-message" role="alert">{{ revokeError() }}</p>
+    }
+
+    @if (selectedRevoke(); as request) {
+      <section class="panel confirmation-panel" aria-labelledby="live-revoke-title">
+        <h2 id="live-revoke-title">Revoke this request?</h2>
+
+        <p>This will stop this request from being used for a report upload.</p>
+
+        <p class="request-reference">{{ request.id }}</p>
+
+        <form (submit)="$event.preventDefault(); confirmRevoke()">
+          <div class="field">
+            <label for="revoke-reason">Reason *</label>
+            <textarea
+              id="revoke-reason"
+              [formControl]="reasonControl"
+              rows="3"
+              maxlength="1000"
+              required
+              [readOnly]="revoking()"
+              aria-describedby="revoke-reason-help"
+              [attr.aria-invalid]="
+                reasonControl.touched && (reasonControl.invalid || !reasonControl.value.trim())
+              "
+            ></textarea>
+
+            <small id="revoke-reason-help"> Enter a reason between 1 and 1000 characters. </small>
+          </div>
+
+          <div class="button-row form-actions">
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="revoking()"
+              (click)="cancelRevoke()"
+            >
+              Cancel
+            </button>
+
+            <button class="danger-button" type="submit" [disabled]="revoking()">
+              {{ revoking() ? 'Revoking…' : 'Confirm revoke' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="panel" aria-labelledby="live-history-title">
+      <div class="section-heading">
+        <h2 id="live-history-title">Your requests</h2>
+        <span>{{ data.requestTotal() }} total</span>
+      </div>
+
+      @if (data.requests().length === 0) {
+        <app-ui-state
+          kind="empty"
+          title="No upload requests on this page"
+          description="Your saved upload requests will appear here."
+        />
+      } @else {
+        <ul class="request-list">
+          @for (request of data.requests(); track request.id) {
+            <li>
+              <article class="request-card">
+                <header class="request-heading">
+                  <h3>{{ labName(request.laboratory_id) }}</h3>
+                  <span class="status-badge">
+                    {{ statusLabels[request.status] }}
+                  </span>
+                </header>
+
+                <dl class="request-metadata">
+                  <div class="full-width">
+                    <dt>Request ID</dt>
+                    <dd class="request-reference">{{ request.id }}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Created at</dt>
+                    <dd>{{ request.created_at | date: 'medium' }}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Expires at</dt>
+                    <dd>{{ request.expires_at | date: 'medium' }}</dd>
+                  </div>
+
+                  @if (request.used_at) {
+                    <div>
+                      <dt>Used at</dt>
+                      <dd>{{ request.used_at | date: 'medium' }}</dd>
+                    </div>
+                  }
+                </dl>
+
+                <p class="help-text">
+                  Limited to report upload for you and the assigned laboratory. This request
+                  provides no medical-history or patient-directory access.
+                </p>
+
+                @if (request.status === 'active' && !request.used_at) {
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [disabled]="creating() || revoking() || pendingRevokeId() !== null"
+                    (click)="requestRevoke(request.id)"
+                  >
+                    Revoke request
+                  </button>
+                }
+              </article>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="button-row form-actions">
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="data.requestPage() <= 1"
+          (click)="changeRequestPage(-1)"
+        >
+          Previous requests
+        </button>
+
+        <span>Page {{ data.requestPage() }}</span>
+
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="data.requestPage() * 20 >= data.requestTotal()"
+          (click)="changeRequestPage(1)"
+        >
+          Next requests
+        </button>
+      </div>
+    </section>
+  }
+</section>

@@ -1,0 +1,102 @@
+<section class="requests-page" aria-labelledby="live-resolution-title">
+  <header class="page-heading">
+    <h1 id="live-resolution-title">Resolve a lab upload request</h1>
+    <p>Enter the upload request token provided by the patient.</p>
+  </header>
+
+  @if (!permitted()) {
+    <section class="panel">
+      <h2>Access unavailable</h2>
+      <p>Sign in with an authorized Lab Staff account.</p>
+    </section>
+  } @else if (!laboratoryId()) {
+    <section class="panel">
+      <h2>Select your laboratory</h2>
+      <p>Choose your laboratory using the workspace organization selector.</p>
+    </section>
+  } @else {
+    <section class="panel" aria-labelledby="live-lookup-title">
+      <h2 id="live-lookup-title">Find an upload request</h2>
+
+      <p class="help-text">
+        The request must belong to your selected laboratory. Lookup provides no patient-directory or
+        medical-history access.
+      </p>
+
+      <form (submit)="$event.preventDefault(); resolve()">
+        <div class="field">
+          <label for="live-request-token">Upload request token *</label>
+
+          <input
+            id="live-request-token"
+            type="text"
+            [formControl]="tokenControl"
+            maxlength="256"
+            required
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="live-token-help"
+            [attr.aria-invalid]="
+              tokenControl.touched && (tokenControl.invalid || !tokenControl.value.trim())
+            "
+          />
+
+          <small id="live-token-help">
+            Paste the token shared by the patient. Maximum 256 characters.
+          </small>
+        </div>
+
+        <div class="button-row form-actions">
+          <button class="primary-button" type="submit" [disabled]="loading()">
+            {{ loading() ? 'Checking request…' : 'Resolve request' }}
+          </button>
+
+          <button class="secondary-button" type="button" (click)="clear()">Clear</button>
+        </div>
+      </form>
+    </section>
+
+    @if (loading()) {
+      <p class="status-message" role="status">Checking upload request…</p>
+    }
+
+    @if (error()) {
+      <p class="error-message" role="alert">{{ error() }}</p>
+    }
+
+    @if (resolved(); as request) {
+      <section class="panel" aria-labelledby="live-result-title" role="status">
+        <h2 id="live-result-title">Upload request found</h2>
+
+        <dl class="request-metadata">
+          <div>
+            <dt>Patient</dt>
+            <dd>{{ request.patient.display_name }}</dd>
+          </div>
+
+          @if (request.patient.date_of_birth) {
+            <div>
+              <dt>Date of birth</dt>
+              <dd>{{ request.patient.date_of_birth | date: 'mediumDate' }}</dd>
+            </div>
+          }
+
+          <div class="full-width">
+            <dt>Request ID</dt>
+            <dd class="request-reference">{{ request.request_id }}</dd>
+          </div>
+
+          <div>
+            <dt>Expires at</dt>
+            <dd>{{ request.expires_at | date: 'medium' }}</dd>
+          </div>
+        </dl>
+
+        <p class="help-text">
+          Limited to report upload for this patient and laboratory. This request provides no
+          medical-history or patient-directory access.
+        </p>
+      </section>
+    }
+  }
+</section>

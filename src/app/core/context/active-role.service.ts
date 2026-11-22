@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 
 export type ActiveRole =
   'Patient' | 'Doctor' | 'Pharmacist' | 'Lab Staff' | 'Admin' | 'Super Admin';
@@ -14,10 +15,12 @@ const roleNames: Record<string, ActiveRole> = {
 
 @Injectable({ providedIn: 'root' })
 export class ActiveRoleService {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly availableRoles = signal<ActiveRole[]>([]);
   private readonly selectedRole = signal<ActiveRole>('Patient');
-  private accountId: string | null = null;
+  private readonly accountId = signal<string | null>(null);
 
+  readonly activeAccountId = this.accountId.asReadonly();
   readonly roles = this.availableRoles.asReadonly();
   readonly activeRole = this.selectedRole.asReadonly();
 
@@ -28,25 +31,73 @@ export class ActiveRoleService {
       ),
     ];
 
-    const accountChanged = this.accountId !== accountId;
+    const accountChanged = this.accountId() !== accountId;
 
-    this.accountId = accountId;
+    this.accountId.set(accountId);
     this.availableRoles.set(roles);
 
     if (accountChanged || !roles.includes(this.selectedRole())) {
-      this.selectedRole.set(roles[0] ?? 'Patient');
+      const savedRole = this.readSavedRole(accountId);
+      const selected = roles.find((role) => role === savedRole);
+
+      this.selectedRole.set(selected ?? roles[0] ?? 'Patient');
     }
+
+    this.saveRole();
   }
 
   setActiveRole(role: ActiveRole): void {
-    if (this.roles().includes(role)) {
-      this.selectedRole.set(role);
-    }
+    if (!this.roles().includes(role)) return;
+
+    this.selectedRole.set(role);
+    this.saveRole();
   }
 
   clear(): void {
-    this.accountId = null;
+    const accountId = this.accountId();
+
+    if (accountId && isPlatformBrowser(this.platformId)) {
+      try {
+        sessionStorage.removeItem(this.storageKey(accountId));
+      } catch {
+        // Logout must still work if browser storage is unavailable.
+      }
+    }
+
+    this.accountId.set(null);
     this.availableRoles.set([]);
     this.selectedRole.set('Patient');
+  }
+
+  private storageKey(accountId: string): string {
+    return `medilink.active-role.${accountId}`;
+  }
+
+  private readSavedRole(accountId: string): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+
+    try {
+      return sessionStorage.getItem(this.storageKey(accountId));
+    } catch {
+      return null;
+    }
+  }
+
+  private saveRole(): void {
+    const accountId = this.accountId();
+
+    if (
+      !accountId ||
+      !isPlatformBrowser(this.platformId) ||
+      !this.roles().includes(this.activeRole())
+    ) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(this.storageKey(accountId), this.activeRole());
+    } catch {
+      // Role selection remains usable without browser storage.
+    }
   }
 }
