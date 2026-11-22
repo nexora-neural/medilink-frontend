@@ -1,10 +1,10 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 type QueueStatus = 'waiting' | 'in-consultation' | 'completed';
-
 type AccessStatus = 'active' | 'expired' | 'revoked';
-
 type ConsultationPermission = 'granted' | 'not-granted' | 'expired';
+type PreviewState = 'ready' | 'loading' | 'error';
 
 interface QueuePatient {
   id: string;
@@ -28,6 +28,8 @@ interface QueuePatient {
   styleUrl: './doctor-patient-queue.scss',
 })
 export class DoctorPatientQueue {
+  private readonly route = inject(ActivatedRoute);
+
   readonly searchTerm = signal('');
   readonly selectedFilter = signal<'all' | QueueStatus>('all');
   readonly loading = signal(false);
@@ -100,6 +102,29 @@ export class DoctorPatientQueue {
   readonly consultationCount = computed(
     () => this.patients().filter((patient) => patient.status === 'in-consultation').length,
   );
+
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      const preview = params.get('preview');
+
+      if (preview === 'loading' || preview === 'error') {
+        this.setPreviewState(preview);
+      } else {
+        this.setPreviewState('ready');
+      }
+    });
+  }
+
+  setPreviewState(state: PreviewState): void {
+    this.loading.set(state === 'loading');
+    this.errorMessage.set(
+      state === 'error' ? 'The patient queue could not be loaded. Please try again.' : '',
+    );
+  }
+
+  retry(): void {
+    this.setPreviewState('ready');
+  }
 
   updateSearch(value: string): void {
     this.searchTerm.set(value);
