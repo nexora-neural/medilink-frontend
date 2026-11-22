@@ -8,7 +8,10 @@
     <button type="button" class="secondary-button" (click)="viewApplicationStatus()">
       <span class="material-symbols-outlined">fact_check</span> Application status
     </button>
-    <a class="secondary-button" routerLink="/workspace/professional-verification/membership-request">
+    <a
+      class="secondary-button"
+      routerLink="/workspace/professional-verification/membership-request"
+    >
       Request organization membership
     </a>
   </header>
@@ -50,6 +53,17 @@
         Your application status is saved by MediLink and will remain available after you sign in
         again.
       </p>
+
+      @if (application.review_reason) {
+        <div class="notice" role="note">
+          <span class="material-symbols-outlined">info</span>
+          <p>
+            <strong>Reviewer feedback:</strong>
+            {{ application.review_reason }}
+          </p>
+        </div>
+      }
+
       <div class="status-summary">
         <div>
           <span>Professional role</span><strong>{{ roleLabel }}</strong>

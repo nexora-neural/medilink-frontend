@@ -3,10 +3,15 @@ import { AuthService } from '../../core/auth.service';
 
 export interface VerificationApplication {
   id: string;
+  user_id: string;
+  organization_id: string | null;
   role: 'doctor' | 'pharmacist' | 'lab_staff';
   registration_number: string | null;
   status: string;
   submitted_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_reason: string | null;
   evidence_document_ids: string[];
 }
 
