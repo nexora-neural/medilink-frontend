@@ -82,12 +82,17 @@ const rolePages: Route[] = [
     'Medications',
     'A protected patient route for the medication workspace.',
   ),
-  rolePage(
-    'patient/prescriptions',
-    ['Patient'],
-    'Prescriptions',
-    'A protected patient route for the prescription workspace.',
-  ),
+  {
+    path: 'patient/prescriptions',
+    loadComponent: () =>
+      import('./features/patient-prescriptions/patient-prescriptions').then(
+        (m) => m.PatientPrescriptions,
+      ),
+    canActivate: [roleGuard],
+    title: 'My prescriptions | MediLink',
+    data: { allowedRoles: ['Patient'] },
+  },
+
   {
     path: 'patient/history',
     component: ClinicalRecords,
