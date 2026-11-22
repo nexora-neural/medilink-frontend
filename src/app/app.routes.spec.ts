@@ -316,4 +316,26 @@ describe('workspace routing', () => {
 
     expect(TestBed.inject(Router).url).toBe('/login');
   });
+  it('restores a Doctor session before opening the patient queue directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    roleContext.clear();
+
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+      roleContext.setAccountRoles('demo-doctor', ['doctor']);
+      return true;
+    });
+
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/workspace/doctor/patients');
+
+    expect(auth.restoreSession).toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
+    expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
+  });
 });
