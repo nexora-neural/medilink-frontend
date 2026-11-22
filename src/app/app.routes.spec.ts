@@ -25,7 +25,7 @@ describe('workspace routing', () => {
           provide: AuthService,
           useValue: {
             restoreSession: vi.fn().mockResolvedValue(true),
-            getOwnProfile: vi.fn().mockResolvedValue({ professional_profile: null }),
+            getOwnProfile: vi.fn(),
           },
         },
         {
@@ -317,7 +317,6 @@ describe('workspace routing', () => {
 
     expect(TestBed.inject(Router).url).toBe('/login');
   });
-
   it('allows a pending professional applicant to request membership without granting a role', async () => {
     vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
       user: {
@@ -443,5 +442,27 @@ describe('workspace routing', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/workspace/professional-verification/membership-request');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
+  });
+  it('restores a Doctor session before opening the patient queue directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    roleContext.clear();
+
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+      roleContext.setAccountRoles('demo-doctor', ['doctor']);
+      return true;
+    });
+
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/workspace/doctor/patients');
+
+    expect(auth.restoreSession).toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
+    expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
 });
