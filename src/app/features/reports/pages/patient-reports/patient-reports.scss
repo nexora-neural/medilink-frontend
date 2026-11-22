@@ -139,7 +139,7 @@
     font-weight: 600;
   }
 
-  input,
+  input:not([type='checkbox']),
   textarea {
     width: 100%;
     min-width: 0;
@@ -364,6 +364,34 @@
   border-radius: 8px;
   font-size: 0.82rem;
   line-height: 1.6;
+}
+
+// Confirmation checkbox
+.confirmation-panel {
+  min-width: 0;
+}
+
+.confirmation-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+
+  input[type='checkbox'] {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: #1689ba;
+    cursor: pointer;
+  }
 }
 
 @media (max-width: 700px) {
