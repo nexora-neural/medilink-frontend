@@ -41,6 +41,7 @@ export class ProfessionalApplicationDetail implements OnInit {
   protected readonly saving = signal(false);
   protected readonly saveError = signal(false);
   protected readonly saved = signal(false);
+  protected readonly detailsReloadError = signal(false);
   protected readonly submitted = signal(false);
   protected readonly downloading = signal<string | null>(null);
   protected readonly downloadError = signal(false);
@@ -76,6 +77,7 @@ export class ProfessionalApplicationDetail implements OnInit {
               this.submitted.set(false);
               this.saveError.set(false);
               this.saved.set(false);
+              this.detailsReloadError.set(false);
               this.saving.set(false);
               return this.service.get(params.get('id') ?? '').pipe(
                 map((application) => ({ state: 'ready' as const, application })),
@@ -107,8 +109,14 @@ export class ProfessionalApplicationDetail implements OnInit {
         const anchor = document.createElement('a');
         anchor.href = url;
         anchor.download = fileName;
-        anchor.click();
-        URL.revokeObjectURL(url);
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        try {
+          anchor.click();
+        } finally {
+          anchor.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
       })
       .catch(() => {
         this.downloadError.set(true);
@@ -130,10 +138,11 @@ export class ProfessionalApplicationDetail implements OnInit {
       .recordDecision(application.id, decision, reason)
       .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (updated) => {
-          this.application.set(updated);
+        next: ({ application, detailsReloaded }) => {
+          this.application.set(application);
           this.saving.set(false);
           this.saved.set(true);
+          this.detailsReloadError.set(!detailsReloaded);
           this.heading().nativeElement.focus();
         },
         error: () => {

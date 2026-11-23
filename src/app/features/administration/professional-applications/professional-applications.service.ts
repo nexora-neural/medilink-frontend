@@ -33,6 +33,11 @@ export interface ProfessionalApplication {
   history: readonly DecisionRecord[];
 }
 
+export interface DecisionSaveResult {
+  application: ProfessionalApplication;
+  detailsReloaded: boolean;
+}
+
 interface ApiPage<T> {
   items: T[];
   page: number;
@@ -123,7 +128,7 @@ export class ProfessionalApplicationsService {
     id: string,
     decision: ApplicationDecision,
     reason: string,
-  ): Observable<ProfessionalApplication> {
+  ): Observable<DecisionSaveResult> {
     const apiDecision =
       decision === 'Approved'
         ? 'approved'
@@ -136,7 +141,13 @@ export class ProfessionalApplicationsService {
           status: apiDecision,
           reason: reason.trim(),
         })
-        .then((saved) => this.getDetails(saved.id)),
+        .then(async (saved): Promise<DecisionSaveResult> => {
+          try {
+            return { application: await this.getDetails(saved.id), detailsReloaded: true };
+          } catch {
+            return { application: this.toApplication(saved), detailsReloaded: false };
+          }
+        }),
     );
   }
 

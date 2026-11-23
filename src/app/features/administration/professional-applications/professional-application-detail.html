@@ -6,6 +6,13 @@
   <p class="notice" role="status">
     {{ saved() ? 'Decision recorded. See decision history below.' : '' }}
   </p>
+  @if (detailsReloadError()) {
+    <p class="error" role="alert">
+      The decision was recorded, but the latest application details could not be loaded. Reload the
+      application to confirm its current status and history.
+    </p>
+    <button type="button" (click)="load()">Reload application details</button>
+  }
 
   @switch (state()) {
     @case ('loading') {
@@ -139,8 +146,8 @@
                 }
                 @if (saveError()) {
                   <p class="error" role="alert">
-                    Unable to record the decision. Try again or reload the application from the
-                    queue.
+                    Unable to confirm that the decision was recorded. Reload the application before
+                    trying again.
                   </p>
                 }
               </form>

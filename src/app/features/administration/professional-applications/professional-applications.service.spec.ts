@@ -128,7 +128,7 @@ describe('ProfessionalApplicationsService', () => {
       throw new Error(`Unexpected API path: ${path}`);
     });
 
-    const updated = await firstValueFrom(
+    const result = await firstValueFrom(
       service.recordDecision(applicationId, 'Approved', '  SLMC details manually compared.  '),
     );
 
@@ -136,8 +136,9 @@ describe('ProfessionalApplicationsService', () => {
       `admin/verification-applications/${applicationId}/decision`,
       { status: 'approved', reason: 'SLMC details manually compared.' },
     );
-    expect(updated.status).toBe('Approved');
-    expect(updated.history).toEqual([
+    expect(result.detailsReloaded).toBe(true);
+    expect(result.application.status).toBe('Approved');
+    expect(result.application.history).toEqual([
       {
         decision: 'Approved',
         reviewer: 'Admin Reviewer',
@@ -145,10 +146,45 @@ describe('ProfessionalApplicationsService', () => {
         reason: 'SLMC details manually compared.',
       },
     ]);
-    expect(updated.evidence[0]).toMatchObject({
+    expect(result.application.evidence[0]).toMatchObject({
       id: documentId,
       fileName: 'slmc-card.pdf',
     });
+  });
+
+  it('reports a saved decision when reloading application details fails', async () => {
+    const approved = {
+      ...application,
+      status: 'approved' as const,
+      reviewed_by: userId,
+      reviewed_at: '2026-11-21T09:00:00Z',
+      review_reason: 'SLMC details manually compared.',
+      evidence_document_ids: [],
+    };
+    auth.postAuthorized.mockResolvedValue(approved);
+    auth.getAuthorized.mockImplementation((path: string) => {
+      if (path === `admin/verification-applications/${applicationId}`) {
+        return Promise.resolve(approved);
+      }
+      if (path.includes('/decisions?')) return Promise.reject(new Error('Service unavailable'));
+      throw new Error(`Unexpected API path: ${path}`);
+    });
+
+    const result = await firstValueFrom(
+      service.recordDecision(applicationId, 'Approved', 'SLMC details manually compared.'),
+    );
+
+    expect(result.detailsReloaded).toBe(false);
+    expect(result.application.status).toBe('Approved');
+    expect(result.application.history).toEqual([
+      {
+        decision: 'Approved',
+        reviewer: userId,
+        decidedAt: '2026-11-21T09:00:00Z',
+        reason: 'SLMC details manually compared.',
+      },
+    ]);
+    expect(auth.postAuthorized).toHaveBeenCalledTimes(1);
   });
 
   it('downloads evidence only through the authenticated private content route', async () => {
