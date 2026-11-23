@@ -12,3 +12,25 @@ describe('dispensing route', () => {
     expect(dispensing?.loadComponent).toBeDefined();
   });
 });
+
+describe('dispensing navigation', () => {
+  it('restores the selected screen and does not confirm cleared preview quantities', async () => {
+    const { TestBed } = await import('@angular/core/testing');
+    const { provideRouter, Router } = await import('@angular/router');
+    const { RouterTestingHarness } = await import('@angular/router/testing');
+    const { Dispensing } = await import('./dispensing');
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: 'dispensing', component: Dispensing }])],
+    });
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/dispensing#history', Dispensing);
+    await harness.fixture.whenStable();
+    expect(component.page).toBe('history');
+    await harness.navigateByUrl('/dispensing#confirm');
+    await harness.fixture.whenStable();
+    expect(component.page).toBe('dispense');
+    expect(TestBed.inject(Router).url).toBe('/dispensing#dispense');
+    await harness.navigateByUrl('/dispensing#history');
+    expect(component.page).toBe('history');
+  });
+});
