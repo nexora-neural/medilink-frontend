@@ -120,6 +120,8 @@ export class Dispensing implements OnInit {
     }
   }
   get selected() {
-    return this.store.events.find((e) => e.id === this.selectedId && e.status === 'Recorded');
+    return this.store.events.find(
+      (e) => e.id === this.selectedId && (e.status === 'Recorded' || e.status === 'Correction'),
+    );
   }
 }

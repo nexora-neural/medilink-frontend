@@ -58,6 +58,10 @@ describe('DispensingStore preview', () => {
     expect(store.correct(id, 15, 'Adjusted')).toBe('');
     expect(store.remaining(store.items[0])).toBe(15);
     expect(store.events[0].originalQuantity).toBe(10);
+    expect(store.events[0].status).toBe('Correction');
+    expect(store.correct(store.events[0].id, 5, 'Follow-up correction')).toBe('');
+    expect(store.remaining(store.items[0])).toBe(25);
     expect(store.events[1].status).toBe('Reversed');
+    expect(store.events[2].status).toBe('Reversed');
   });
 });

@@ -15,7 +15,7 @@ export interface DispensingEvent {
   unit: string;
   date: string;
   notes: string;
-  status: 'Recorded' | 'Reversed' | 'Reversal';
+  status: 'Recorded' | 'Correction' | 'Reversed' | 'Reversal';
   originalQuantity?: number;
   reason?: string;
   originalId?: number;
@@ -60,7 +60,9 @@ export class DispensingStore {
     return (
       item.prescribed -
       this.events
-        .filter((e) => e.item === item.name && e.status === 'Recorded')
+        .filter(
+          (e) => e.item === item.name && (e.status === 'Recorded' || e.status === 'Correction'),
+        )
         .reduce((sum, e) => sum + e.quantity, 0)
     );
   }
@@ -101,7 +103,9 @@ export class DispensingStore {
     return '';
   }
   validateCorrection(id: number, quantity: number, reason: string): string {
-    const event = this.events.find((e) => e.id === id && e.status === 'Recorded');
+    const event = this.events.find(
+      (e) => e.id === id && (e.status === 'Recorded' || e.status === 'Correction'),
+    );
     if (!event) return 'This entry is no longer available for correction.';
     if (!reason.trim()) return 'Enter a reason for the correction.';
     const item = this.items.find((i) => i.name === event.item);
@@ -119,7 +123,9 @@ export class DispensingStore {
   correct(id: number, quantity: number, reason: string): string {
     const error = this.validateCorrection(id, quantity, reason);
     if (error) return error;
-    const event = this.events.find((e) => e.id === id && e.status === 'Recorded')!;
+    const event = this.events.find(
+      (e) => e.id === id && (e.status === 'Recorded' || e.status === 'Correction'),
+    )!;
     if (Number(quantity) === 0) return this.reverse(id, reason);
     event.status = 'Reversed';
     this.events.unshift({
@@ -129,7 +135,7 @@ export class DispensingStore {
       unit: event.unit,
       date: localDate(),
       notes: event.notes,
-      status: 'Recorded',
+      status: 'Correction',
       reason: reason.trim(),
       originalId: event.id,
       originalQuantity: event.quantity,
@@ -137,7 +143,9 @@ export class DispensingStore {
     return '';
   }
   reverse(id: number, reason: string): string {
-    const event = this.events.find((e) => e.id === id && e.status === 'Recorded');
+    const event = this.events.find(
+      (e) => e.id === id && (e.status === 'Recorded' || e.status === 'Correction'),
+    );
     if (!event) return 'This entry is no longer available for reversal.';
     if (!reason.trim()) return 'Enter a reason for the reversal.';
     event.status = 'Reversed';
