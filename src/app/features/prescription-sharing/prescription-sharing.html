@@ -1,0 +1,391 @@
+<section class="sharing">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">PRESCRIPTION ACCESS</p>
+      <h1>{{ audience === 'Patient' ? 'Share a prescription' : 'Claim a prescription' }}</h1>
+      <p class="subtitle">
+        {{
+          audience === 'Patient'
+            ? 'Choose who can access one prescription, and stay in control.'
+            : 'Request access using the code provided by your patient.'
+        }}
+      </p>
+    </div>
+    @if (audience === 'Patient') {
+      <a routerLink="/workspace/patient/prescriptions">My prescriptions</a>
+    }
+  </header>
+  <aside class="preview" role="note">
+    <strong>Screen preview · Sample data only</strong>
+    <p>
+      No real sharing, pharmacy access or dispensing occurs. Sample changes clear when you leave,
+      refresh or change accounts/roles. Real API integration is tracked in ML-179.
+    </p>
+  </aside>
+  @if (!authorized()) {
+    <p role="alert" tabindex="-1" class="error">
+      Your {{ audience }} session is unavailable. Return to your workspace and sign in with the
+      correct role.
+    </p>
+  } @else {
+    <details class="preview-controls">
+      <summary>Preview scenarios</summary>
+      <label for="sharing-scenario">Sample dataset</label
+      ><select
+        id="sharing-scenario"
+        [value]="scenario()"
+        (change)="changeScenario($event)"
+        [disabled]="busy() || !!modal()"
+      >
+        <option value="sample">Sample workflow</option>
+        <option value="empty">Empty list</option>
+        <option value="error">Load error (retry succeeds)</option>
+        @if (audience === 'Pharmacist') {
+          <option value="confirmed">Confirmed claim (sample)</option>
+          <option value="expired">Expired claim (sample)</option>
+          <option value="revoked">Revoked claim (sample)</option>
+        }
+      </select>
+    </details>
+    @if (message()) {
+      <p role="status" class="success">{{ message() }}</p>
+    }
+    @if (error() && !modal()) {
+      <p role="alert" tabindex="-1" class="error">{{ error() }}</p>
+    }
+    @if (state() === 'loading') {
+      <div class="card" role="status" aria-busy="true">Loading prescription sharing…</div>
+    } @else if (state() === 'error') {
+      <div class="card">
+        <h2>Sharing is unavailable</h2>
+        <p>Please try again.</p>
+        <button type="button" (click)="load()">Retry</button>
+      </div>
+    } @else {
+      @if (audience === 'Patient') {
+        <div class="card">
+          <h2>Create a share code</h2>
+          <p>
+            Only active doctor-issued prescriptions are eligible. Patient-added records and drafts
+            cannot be shared for pharmacy access.
+          </p>
+          <label for="share-prescription">Prescription *</label
+          ><select
+            id="share-prescription"
+            [value]="prescriptionId()"
+            (change)="prescriptionId.set(value($event))"
+            [disabled]="busy() || !!modal()"
+          >
+            <option value="">Choose a prescription</option>
+            @for (prescription of data().prescriptions; track prescription.id) {
+              <option [value]="prescription.id" [disabled]="!canShare(prescription)">
+                {{ prescription.label }}
+              </option>
+            }
+          </select>
+          @if (data().prescriptions.length === 0) {
+            <p>No eligible prescriptions are available in this preview dataset.</p>
+          }
+          <p class="hint">
+            The code expires after 15 minutes and can be claimed once. Access starts only after you
+            confirm the pharmacist and pharmacy.
+          </p>
+          <button
+            type="button"
+            class="primary"
+            (click)="create($event)"
+            [disabled]="busy() || !!modal() || data().prescriptions.length === 0"
+          >
+            {{ busy() ? 'Please wait…' : 'Create sample code' }}
+          </button>
+        </div>
+        <div class="list-heading">
+          <h2>Your prescription shares</h2>
+          <button type="button" (click)="load()" [disabled]="busy() || !!modal()">Reload</button>
+        </div>
+        <label for="share-filter">Filter by status</label
+        ><select
+          id="share-filter"
+          [value]="filter()"
+          (change)="filter.set(value($event))"
+          [disabled]="busy() || !!modal()"
+        >
+          <option value="all">All shares</option>
+          <option value="created">Awaiting claim</option>
+          <option value="claimed">Awaiting your confirmation</option>
+          <option value="confirmed">Access confirmed</option>
+          <option value="expired">Expired</option>
+          <option value="revoked">Revoked</option>
+        </select>
+      } @else {
+        <form class="card" (submit)="$event.preventDefault(); claim()" novalidate>
+          <h2>Enter the patient's code</h2>
+          <p>
+            Claiming reveals the share reference and your pharmacy identity. Medicines remain
+            unavailable until patient confirmation.
+          </p>
+          <label for="claim-code">Share code *</label
+          ><input
+            id="claim-code"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="256"
+            [value]="tokenInput()"
+            (input)="tokenInput.set(value($event))"
+            [disabled]="busy()"
+            [attr.aria-invalid]="attempted() && !tokenInput().trim()"
+            aria-describedby="claim-hint"
+          />
+          <p id="claim-hint" class="hint">
+            Preview only: use <code>DEMO-CLAIM-132</code> once. No real patient code is needed.
+          </p>
+          <label for="claim-pharmacy">Your active pharmacy membership *</label
+          ><select
+            id="claim-pharmacy"
+            [value]="organizationId()"
+            (change)="organizationId.set(value($event))"
+            [disabled]="busy()"
+          >
+            <option value="">Choose a pharmacy</option>
+            @for (pharmacy of data().pharmacies; track pharmacy.id) {
+              <option [value]="pharmacy.id">{{ pharmacy.name }}</option>
+            }
+          </select>
+          <p class="hint">
+            Sample verified pharmacist and active membership. The server must verify your real
+            professional status and membership during ML-179.
+          </p>
+          <button type="submit" class="primary" [disabled]="busy()">
+            {{ busy() ? 'Claiming…' : 'Claim sample code' }}
+          </button>
+        </form>
+        <h2>Claim status</h2>
+      }
+      @if (visibleShares().length === 0) {
+        <div class="card">
+          <h3>
+            {{
+              audience === 'Patient' ? 'No shares to display' : 'No code claimed in this session'
+            }}
+          </h3>
+          <p>
+            {{
+              audience === 'Patient'
+                ? 'Create a code or choose a different status filter.'
+                : 'Enter the code and select your pharmacy to request access.'
+            }}
+          </p>
+        </div>
+      }
+      <div class="share-list">
+        @for (share of visibleShares(); track share.id) {
+          <article class="card share">
+            <div class="list-heading">
+              <h3>{{ share.prescriptionLabel }}</h3>
+              <span class="badge" [class.confirmed]="status(share) === 'confirmed'">{{
+                status(share) === 'created'
+                  ? 'Awaiting claim'
+                  : status(share) === 'claimed'
+                    ? 'Awaiting patient confirmation'
+                    : status(share) === 'confirmed'
+                      ? 'Access confirmed'
+                      : status(share) === 'expired'
+                        ? 'Expired'
+                        : 'Revoked'
+              }}</span>
+            </div>
+            <p class="hint">Share reference: {{ share.id }}</p>
+            @if (status(share) === 'created' || status(share) === 'claimed') {
+              <p>
+                Claim/confirmation deadline: {{ share.claimExpiresAt | date: 'medium' }}
+                <span class="hint">(local time)</span>
+              </p>
+              <p>No prescription access has been granted.</p>
+            }
+            @if (share.identity) {
+              <dl class="identity">
+                <div>
+                  <dt>Pharmacist</dt>
+                  <dd>{{ share.identity.name }}</dd>
+                </div>
+                <div>
+                  <dt>Registration</dt>
+                  <dd>{{ share.identity.registration }}</dd>
+                </div>
+                <div>
+                  <dt>Pharmacy</dt>
+                  <dd>{{ share.identity.pharmacy }}</dd>
+                </div>
+                <div>
+                  <dt>Address</dt>
+                  <dd>{{ share.identity.address }}</dd>
+                </div>
+              </dl>
+            }
+            @if (status(share) === 'confirmed') {
+              <p>
+                Prescription-only access ends {{ share.accessExpiresAt | date: 'medium' }} (local
+                time).
+              </p>
+              <p class="hint">
+                This grants access to this prescription only. Other patient records are outside its
+                scope.
+              </p>
+            }
+            @if (status(share) === 'expired' || status(share) === 'revoked') {
+              <p>
+                Access is closed. A new code and patient confirmation are required for further
+                access.
+              </p>
+            }
+            @if (audience === 'Patient') {
+              <footer>
+                @if (actionAllowed('confirm', share)) {
+                  <button
+                    type="button"
+                    class="primary"
+                    (click)="open('confirm', share, $event)"
+                    [disabled]="busy() || !!modal()"
+                  >
+                    Verify pharmacy identity
+                  </button>
+                }
+                @if (actionAllowed('revoke', share)) {
+                  <button
+                    type="button"
+                    class="danger"
+                    (click)="open('revoke', share, $event)"
+                    [disabled]="busy() || !!modal()"
+                  >
+                    Revoke share
+                  </button>
+                }
+              </footer>
+            } @else {
+              <p class="notice">
+                No medicines or other patient records are disclosed by this preview. Dispensing is a
+                separate workflow.
+              </p>
+            }
+          </article>
+        }
+      </div>
+    }
+  }
+</section>
+@if (modal() && selected(); as share) {
+  <div class="backdrop">
+    <section
+      class="dialog card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sharing-dialog-title"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="$event.preventDefault(); $event.stopPropagation(); close()"
+      [attr.aria-busy]="busy()"
+    >
+      <h2 id="sharing-dialog-title" tabindex="0">
+        {{
+          modal() === 'code'
+            ? 'Your sample share code'
+            : modal() === 'confirm'
+              ? 'Confirm pharmacy identity'
+              : 'Revoke this share?'
+        }}
+      </h2>
+      @if (error()) {
+        <p role="alert" tabindex="-1" class="error">{{ error() }}</p>
+      }
+      @if (modal() === 'code') {
+        <p>
+          This sample code is shown once. Give it only to your intended pharmacist. Closing this
+          dialog clears it from the screen.
+        </p>
+        <output class="share-code" aria-label="Sample share code">{{ code() }}</output>
+        <p>
+          Valid until {{ share.claimExpiresAt | date: 'medium' }} (local time). Single claim; no
+          access until you confirm.
+        </p>
+        <p class="hint">
+          Demo codes cannot authorize real pharmacy access. Use the separate sample claim code on
+          the Pharmacist screen.
+        </p>
+      } @else if (modal() === 'confirm') {
+        @if (share.identity; as identity) {
+          <dl class="identity">
+            <div>
+              <dt>Pharmacist</dt>
+              <dd>{{ identity.name }}</dd>
+            </div>
+            <div>
+              <dt>Registration</dt>
+              <dd>{{ identity.registration }}</dd>
+            </div>
+            <div>
+              <dt>Pharmacy</dt>
+              <dd>{{ identity.pharmacy }}</dd>
+            </div>
+            <div>
+              <dt>Address</dt>
+              <dd>{{ identity.address }}</dd>
+            </div>
+          </dl>
+        }
+        <p>
+          Confirm only if these details match the pharmacist and pharmacy you intend. This starts a
+          24-hour grant for {{ share.prescriptionLabel }} only. You can revoke it sooner.
+        </p>
+        <label class="checkbox"
+          ><input
+            type="checkbox"
+            [checked]="acknowledged()"
+            (change)="acknowledged.set(checked($event))"
+            [disabled]="busy()"
+          />I have checked this identity and agree to this prescription-only access.</label
+        >
+      } @else {
+        <p>
+          This ends access to {{ share.prescriptionLabel }} and prevents further use of this share.
+          A new code will be needed.
+        </p>
+        <label for="revoke-reason">Reason *</label
+        ><textarea
+          id="revoke-reason"
+          rows="3"
+          maxlength="1000"
+          [value]="reason()"
+          (input)="reason.set(value($event))"
+          [disabled]="busy()"
+          aria-describedby="reason-hint"
+          [attr.aria-invalid]="attempted() && !reason().trim()"
+        ></textarea>
+        <p id="reason-hint" class="hint">
+          1–1,000 characters. Avoid sensitive medical information.
+        </p>
+      }
+      <footer>
+        <button type="button" (click)="close()" [disabled]="busy()">
+          {{ modal() === 'code' ? 'Close and clear code' : 'Cancel' }}
+        </button>
+        @if (modal() !== 'code') {
+          <button
+            type="button"
+            [class.primary]="modal() === 'confirm'"
+            [class.danger]="modal() === 'revoke'"
+            (click)="submit()"
+            [disabled]="busy()"
+          >
+            {{
+              busy()
+                ? 'Updating…'
+                : modal() === 'confirm'
+                  ? 'Confirm sample access'
+                  : 'Revoke sample share'
+            }}
+          </button>
+        }
+      </footer>
+    </section>
+  </div>
+}

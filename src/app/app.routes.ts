@@ -43,6 +43,26 @@ const rolePage = (
 
 const rolePages: Route[] = [
   {
+    path: 'patient/prescription-shares',
+    loadChildren: () =>
+      import('./features/prescription-sharing/prescription-sharing.routes').then(
+        (m) => m.PRESCRIPTION_SHARING_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Share a prescription | MediLink',
+    data: { allowedRoles: ['Patient'], audience: 'patient' },
+  },
+  {
+    path: 'pharmacist/prescription-shares',
+    loadChildren: () =>
+      import('./features/prescription-sharing/prescription-sharing.routes').then(
+        (m) => m.PRESCRIPTION_SHARING_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Claim a prescription | MediLink',
+    data: { allowedRoles: ['Pharmacist'], audience: 'pharmacist' },
+  },
+  {
     path: 'doctor/prescriptions/:id/issue',
     loadChildren: () =>
       import('./features/doctors/pages/prescription-issue/prescription-issue.routes').then(
