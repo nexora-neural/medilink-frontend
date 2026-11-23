@@ -11,7 +11,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ActiveRoleService } from '../../core/context/active-role.service';
 import {
   canShare,
@@ -24,7 +24,7 @@ import { PrescriptionSharingPreviewStore } from './prescription-sharing.store';
 
 @Component({
   selector: 'app-prescription-sharing',
-  imports: [A11yModule, DatePipe, RouterLink],
+  imports: [A11yModule, DatePipe],
   providers: [{ provide: PRESCRIPTION_SHARING, useClass: PrescriptionSharingPreviewStore }],
   templateUrl: './prescription-sharing.html',
   styleUrl: './prescription-sharing.scss',
