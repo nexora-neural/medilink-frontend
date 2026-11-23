@@ -7,7 +7,8 @@ import {
   OnInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DispensingStore } from './dispensing.store';
 
 type Page = 'prescription' | 'dispense' | 'confirm' | 'history' | 'reversal';
@@ -21,8 +22,29 @@ export class Dispensing implements OnInit {
   readonly store = inject(DispensingStore);
   private readonly element = inject(ElementRef<HTMLElement>);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private focusHeading = false;
   constructor() {
+    this.route.fragment.pipe(takeUntilDestroyed()).subscribe((fragment) => {
+      const pages: Page[] = ['prescription', 'dispense', 'confirm', 'history', 'reversal'];
+      let page = pages.find((item) => item === fragment) ?? 'prescription';
+      if (page === 'confirm' && this.store.validate()) {
+        page = 'dispense';
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          fragment: 'dispense',
+          replaceUrl: true,
+        });
+      }
+      if (this.page !== page) {
+        this.page = page;
+        this.error = '';
+        this.message = '';
+        this.focusHeading = true;
+        this.changeDetector.markForCheck();
+      }
+    });
     afterEveryRender(() => {
       if (this.focusHeading) {
         this.focusHeading = false;
@@ -55,6 +77,10 @@ export class Dispensing implements OnInit {
     this.error = '';
     this.message = '';
     this.focusHeading = true;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      fragment: page === 'prescription' ? undefined : page,
+    });
   }
   review(): void {
     this.error = this.store.validate();
