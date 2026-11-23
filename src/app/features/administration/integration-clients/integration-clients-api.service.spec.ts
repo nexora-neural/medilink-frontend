@@ -70,15 +70,60 @@ describe('IntegrationClientsApiService', () => {
     expect(clients[1]).toMatchObject({ scopes: [], status: 'pending' });
   });
 
-  it('selects active laboratories from the public organizations source', async () => {
+  it('uses every page of server-eligible labs instead of inferring staff approval publicly', async () => {
     listPublicOrganizations.mockResolvedValue([
-      { id: 'lab-1', name: 'Central Lab', type: 'laboratory' },
-      { id: 'clinic-1', name: 'Central Clinic', type: 'clinic' },
+      { id: 'ineligible-lab', name: 'No approved staff', type: 'laboratory' },
     ]);
+    getAuthorized
+      .mockResolvedValueOnce({
+        items: [{ id: 'lab-1', name: 'Central Lab', user_id: 'not-for-display' }],
+        page: 1,
+        page_size: 1,
+        total: 2,
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 'lab-2', name: 'Second Lab' }],
+        page: 2,
+        page_size: 1,
+        total: 2,
+      });
 
     await expect(service.listApprovedLabs()).resolves.toEqual([
       { id: 'lab-1', name: 'Central Lab' },
+      { id: 'lab-2', name: 'Second Lab' },
     ]);
+    expect(getAuthorized.mock.calls).toEqual([
+      [`${path}/eligible-laboratories?page=1&page_size=100`],
+      [`${path}/eligible-laboratories?page=2&page_size=100`],
+    ]);
+    expect(listPublicOrganizations).not.toHaveBeenCalled();
+  });
+
+  it('keeps the selector empty when no lab satisfies the server eligibility rule', async () => {
+    getAuthorized.mockResolvedValue({ items: [], page: 1, page_size: 100, total: 0 });
+
+    await expect(service.listApprovedLabs()).resolves.toEqual([]);
+    expect(listPublicOrganizations).not.toHaveBeenCalled();
+  });
+
+  it.each([401, 403, 503])(
+    'does not fall back to public labs on eligibility HTTP %i',
+    async (status) => {
+      const error = new HttpErrorResponse({ status });
+      getAuthorized.mockRejectedValue(error);
+
+      await expect(service.listApprovedLabs()).rejects.toBe(error);
+      expect(listPublicOrganizations).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects malformed eligibility pagination rather than offering an incomplete selection', async () => {
+    getAuthorized.mockResolvedValue({ items: [], page: 2, page_size: 100, total: 0 });
+
+    await expect(service.listApprovedLabs()).rejects.toThrow(
+      'Unexpected integration API pagination',
+    );
+    expect(listPublicOrganizations).not.toHaveBeenCalled();
   });
 
   it('sends the creation payload and exposes the credential only in the write result', async () => {

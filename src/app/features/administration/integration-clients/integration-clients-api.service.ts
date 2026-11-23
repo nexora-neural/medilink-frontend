@@ -64,10 +64,10 @@ export class IntegrationClientsApiService implements IntegrationClientsPort {
   }
 
   async listApprovedLabs(): Promise<ApprovedLab[]> {
-    const organizations = await this.organizations.listPublicOrganizations();
-    const labs = organizations
-      .filter((organization) => organization.type === 'laboratory')
-      .map(({ id, name }) => ({ id, name }));
+    // The server shares this eligibility predicate with client creation. Public
+    // organizations alone cannot establish staff verification or account status.
+    const eligible = await this.readAllPages<ApprovedLab>(`${CLIENTS_PATH}/eligible-laboratories`);
+    const labs = eligible.map(({ id, name }) => ({ id, name }));
 
     for (const { id, name } of labs) {
       this.organizationNames.set(id, name);
