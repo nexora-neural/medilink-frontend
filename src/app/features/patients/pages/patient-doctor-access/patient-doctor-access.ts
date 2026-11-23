@@ -10,6 +10,11 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  DoctorIdentity,
+  DoctorIdentityService,
+} from '../../../doctor-identity/doctor-identity.service';
 
 interface DetectedBarcode {
   rawValue: string;
@@ -54,6 +59,7 @@ interface SampleGrant {
 export class PatientDoctorAccess implements OnDestroy {
   private readonly formBuilder = inject(FormBuilder);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly doctorIdentity = inject(DoctorIdentityService);
 
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
 
@@ -258,7 +264,7 @@ export class PatientDoctorAccess implements OnDestroy {
   private cameraStream?: MediaStream;
   private detector?: BarcodeDetectorLike;
   private scanTimer?: ReturnType<typeof setTimeout>;
-  private reviewTimer?: ReturnType<typeof setTimeout>;
+  readonly resolvedDoctor = signal<DoctorIdentity | null>(null);
 
   private cameraSession = 0;
   private scanInProgress = false;
@@ -468,28 +474,47 @@ export class PatientDoctorAccess implements OnDestroy {
       return;
     }
 
-    if (this.reviewTimer) {
-      clearTimeout(this.reviewTimer);
-      this.reviewTimer = undefined;
-    }
-
     this.enteredCode.set(code);
     this.reviewStatus.set('loading');
-    this.reviewMessage.set('Loading sample review preview...');
+    this.reviewMessage.set('Verifying the current doctor identity with the server...');
+    this.resolvedDoctor.set(null);
+    void this.resolveCode(code);
+  }
 
-    // Local sample-state transition only. This is not an API request.
-    this.reviewTimer = setTimeout(() => {
-      this.reviewTimer = undefined;
+  onReferenceInput(): void {
+    this.clearGrantReview();
+    if (this.enteredCode()) {
+      this.enteredCode.set('');
+      this.resolvedDoctor.set(null);
+      this.reviewStatus.set('empty');
+      this.reviewMessage.set('');
+    }
+  }
 
-      if (this.destroyed || this.enteredCode() !== code) {
-        return;
-      }
-
+  private async resolveCode(code: string): Promise<void> {
+    try {
+      const identity = await this.doctorIdentity.resolve(code);
+      if (this.destroyed || this.enteredCode() !== code) return;
+      this.resolvedDoctor.set(identity);
       this.reviewStatus.set('ready');
       this.reviewMessage.set(
-        'Sample preview only. Doctor identity has not been verified by the server.',
+        'Doctor identity was returned by the server. Review it before making any access decision.',
       );
-    }, 350);
+    } catch (error) {
+      if (this.destroyed || this.enteredCode() !== code) return;
+      this.resolvedDoctor.set(null);
+      this.reviewStatus.set('error');
+      const status = error instanceof HttpErrorResponse ? error.status : 0;
+      this.reviewMessage.set(
+        status === 404
+          ? 'This doctor reference was not found or is no longer active.'
+          : status === 403
+            ? 'Your account is not allowed to verify doctor references.'
+            : status === 401
+              ? 'Please sign in again to verify this doctor.'
+              : 'The doctor identity service is unavailable. Check your connection and try again.',
+      );
+    }
   }
 
   clearCode(): void {
@@ -497,13 +522,9 @@ export class PatientDoctorAccess implements OnDestroy {
 
     this.stopCamera();
 
-    if (this.reviewTimer) {
-      clearTimeout(this.reviewTimer);
-      this.reviewTimer = undefined;
-    }
-
     this.codeForm.reset({ doctorCode: '' });
     this.enteredCode.set('');
+    this.resolvedDoctor.set(null);
     this.reviewMessage.set('');
     this.cameraMessage.set('');
     this.reviewStatus.set('empty');
@@ -512,11 +533,6 @@ export class PatientDoctorAccess implements OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
-
-    if (this.reviewTimer) {
-      clearTimeout(this.reviewTimer);
-      this.reviewTimer = undefined;
-    }
 
     this.stopCamera();
   }

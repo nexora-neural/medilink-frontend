@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
+import { DoctorIdentityService } from '../../../doctor-identity/doctor-identity.service';
 import { PatientDoctorAccess } from './patient-doctor-access';
 
 describe('PatientDoctorAccess', () => {
@@ -8,6 +10,7 @@ describe('PatientDoctorAccess', () => {
   let getUserMedia: ReturnType<typeof vi.fn>;
   let detectQr: ReturnType<typeof vi.fn>;
   let originalMediaDevices: PropertyDescriptor | undefined;
+  let identityApi: { resolve: ReturnType<typeof vi.fn> };
 
   const createStream = () => {
     const stopTrack = vi.fn();
@@ -30,6 +33,16 @@ describe('PatientDoctorAccess', () => {
   beforeEach(async () => {
     getUserMedia = vi.fn();
     detectQr = vi.fn().mockResolvedValue([]);
+    identityApi = {
+      resolve: vi.fn().mockResolvedValue({
+        user_id: 'doctor-1',
+        role: 'doctor',
+        display_name: 'Dr Test',
+        verification_status: 'approved',
+        organization_id: 'clinic-1',
+        organization_name: 'Test Clinic',
+      }),
+    };
 
     originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
 
@@ -42,7 +55,7 @@ describe('PatientDoctorAccess', () => {
 
     await TestBed.configureTestingModule({
       imports: [PatientDoctorAccess],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: DoctorIdentityService, useValue: identityApi }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PatientDoctorAccess);
@@ -108,26 +121,34 @@ describe('PatientDoctorAccess', () => {
     expect(getScreenText()).toContain('Please enter a doctor QR reference.');
   });
 
-  it('automatically updates the visible screen from loading to ready', async () => {
+  it('resolves the current doctor identity with the API and renders server details', async () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
 
     component.reviewCode();
 
     await fixture!.whenStable();
-
-    expect(component.reviewStatus()).toBe('loading');
-    expect(getScreenText()).toContain('Loading sample review');
-
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    await fixture!.whenStable();
+    await vi.waitFor(() => expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-DOCTOR-01'));
 
     expect(component.reviewStatus()).toBe('ready');
     expect(component.enteredCode()).toBe('DEMO-DOCTOR-01');
-    expect(component.reviewMessage()).toContain('Sample preview only');
+    expect(component.resolvedDoctor()?.verification_status).toBe('approved');
+    expect(getScreenText()).toContain('Doctor reference resolved');
+    expect(getScreenText()).toContain('Dr Test');
+    expect(getScreenText()).toContain('Test Clinic');
+  });
 
-    expect(getScreenText()).toContain('Sample review ready');
-    expect(getScreenText()).toContain('DEMO-DOCTOR-01');
-    expect(getScreenText()).toContain('Not verified');
+  it('clears a resolved identity as soon as the reference is edited', async () => {
+    component.enteredCode.set('DEMO-DOCTOR-01');
+    component.resolvedDoctor.set({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Demo Doctor',
+      verification_status: 'approved',
+    });
+    component.reviewStatus.set('ready');
+    component.onReferenceInput();
+    expect(component.resolvedDoctor()).toBeNull();
+    expect(component.reviewStatus()).toBe('empty');
   });
 
   it('automatically updates the visible screen when camera permission is denied', async () => {
@@ -167,7 +188,7 @@ describe('PatientDoctorAccess', () => {
     component.stopCamera();
   });
 
-  it('automatically displays a captured QR reference and starts doctor review', async () => {
+  it('automatically resolves a captured QR reference with the API', async () => {
     const { stream } = createStream();
 
     getUserMedia.mockResolvedValue(stream);
@@ -176,6 +197,7 @@ describe('PatientDoctorAccess', () => {
     await component.startCamera();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.waitFor(() => expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01'));
     await fixture!.whenStable();
 
     expect(detectQr).toHaveBeenCalled();
@@ -183,12 +205,24 @@ describe('PatientDoctorAccess', () => {
     expect(component.codeForm.controls.doctorCode.value).toBe('DEMO-QR-DOCTOR-01');
 
     expect(component.cameraStatus()).toBe('found');
-    expect(component.reviewStatus()).toBe('loading');
     expect(component.enteredCode()).toBe('DEMO-QR-DOCTOR-01');
 
     expect(getScreenText()).toContain('QR reference captured');
-    expect(getScreenText()).toContain('DEMO-QR-DOCTOR-01');
-    expect(getScreenText()).toContain('Loading sample review');
+    expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01');
+    expect(getScreenText()).toContain('Doctor reference resolved');
+  });
+
+  it.each([
+    [404, 'not found or is no longer active'],
+    [403, 'not allowed to verify'],
+    [0, 'service is unavailable'],
+  ])('shows a safe server error state for status %s', async (status, message) => {
+    identityApi.resolve.mockRejectedValue(new HttpErrorResponse({ status }));
+    component.codeForm.controls.doctorCode.setValue('OPAQUE-REF');
+    component.reviewCode();
+    await vi.waitFor(() => expect(component.reviewStatus()).toBe('error'));
+    expect(component.reviewMessage()).toContain(message);
+    expect(component.resolvedDoctor()).toBeNull();
   });
 
   it('ignores a QR result returned after scan cancellation', async () => {
