@@ -28,6 +28,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'My profile', icon: 'person', path: '/workspace/patient/profile' },
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/patient/prescriptions' },
+    {
+      label: 'Prescription sharing',
+      icon: 'share',
+      path: '/workspace/patient/prescription-shares',
+    },
     { label: 'Medical history', icon: 'clinical_notes', path: '/workspace/patient/history' },
     {
       label: 'Request a correction',
@@ -64,11 +69,17 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
       path: '/workspace/doctor/correction-requests',
     },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
+    {
+      label: 'Issue prescription (preview)',
+      icon: 'fact_check',
+      path: '/workspace/doctor/prescriptions/sample-order/issue',
+    },
   ],
 
   Pharmacist: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'Dispensing', icon: 'medication', path: '/workspace/pharmacist/dispensing' },
+    { label: 'Claim prescription', icon: 'key', path: '/workspace/pharmacist/prescription-shares' },
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
   'Lab Staff': [

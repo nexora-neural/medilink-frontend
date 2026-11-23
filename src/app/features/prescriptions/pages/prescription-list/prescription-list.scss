@@ -1,0 +1,171 @@
+:host {
+  display: block;
+  color: #193455;
+}
+
+.prescription-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+}
+
+h2,
+h3 {
+  margin-top: 0;
+}
+
+p {
+  line-height: 1.7;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #007fa8;
+  font-weight: 700;
+}
+
+.preview-notice,
+.panel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #d6e3ef;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.preview-notice {
+  background: #eaf6fd;
+  line-height: 1.7;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  font-weight: 600;
+}
+
+input,
+select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid #adbed1;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.prescription-list {
+  display: grid;
+  gap: 16px;
+}
+
+.prescription-card {
+  padding: 20px;
+  border: 1px solid #d6e3ef;
+  border-radius: 14px;
+}
+
+.card-heading,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.card-heading h3 {
+  margin: 0;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eaf6fd;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+dt {
+  margin-bottom: 6px;
+  color: #526a85;
+}
+
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  justify-content: flex-start;
+}
+
+a,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #adbed1;
+  border-radius: 10px;
+  background: #fff;
+  color: #193455;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:where(a, button, input, select):focus-visible {
+  outline: 3px solid #008ac0;
+  outline-offset: 3px;
+}
+
+.empty-state {
+  padding: 28px 12px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .prescription-page {
+    padding: 20px 12px;
+  }
+
+  .panel,
+  .preview-notice {
+    padding: 18px;
+  }
+
+  .filters,
+  dl {
+    grid-template-columns: 1fr;
+  }
+
+  .actions a {
+    width: 100%;
+  }
+}
