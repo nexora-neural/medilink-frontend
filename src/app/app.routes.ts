@@ -92,12 +92,15 @@ const rolePages: Route[] = [
       allowedRoles: ['Lab Staff'],
     },
   },
-  rolePage(
-    'patient/medications',
-    ['Patient'],
-    'Medications',
-    'A protected patient route for the medication workspace.',
-  ),
+  {
+    path: 'patient/medications',
+    loadComponent: () =>
+      import('./features/medicine-schedule/pages/medicine-schedule/medicine-schedule').then(
+        (module) => module.MedicineSchedule,
+      ),
+    canActivate: [roleGuard],
+    title: 'Medicine schedule | MediLink',
+  },
   {
     path: 'patient/prescriptions',
     loadComponent: () =>
