@@ -1,0 +1,302 @@
+<section class="schedule-page" aria-labelledby="schedule-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">PATIENT WORKSPACE</p>
+      <h1 id="schedule-title">Medicine schedule</h1>
+      <p class="subtitle">Review your prescribed medicines and daily dose times.</p>
+    </div>
+  </header>
+
+  <div class="preview-notice" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      Demonstration schedule using sample data. Changes are temporary and are not sent to your
+      doctor.
+    </p>
+  </div>
+
+  <section class="date-panel" aria-labelledby="date-heading">
+    <div>
+      <h2 id="date-heading">Daily schedule</h2>
+      <p>Select a date to review your dose records.</p>
+    </div>
+
+    <label for="schedule-date">Schedule date</label>
+    <input id="schedule-date" type="date" [value]="selectedDate()" (change)="changeDate($event)" />
+
+    <p class="timezone">
+      <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+      Timezone: {{ timezone }}
+    </p>
+  </section>
+
+  <section class="summary-grid" aria-label="Schedule summary">
+    <article class="summary-card">
+      <span>Scheduled medicines</span>
+      <strong>{{ schedules().length }}</strong>
+      <small>Sample prescriptions</small>
+    </article>
+
+    <article class="summary-card">
+      <span>Active schedules</span>
+      <strong>{{ activeCount() }}</strong>
+      <small>Currently active</small>
+    </article>
+
+    <article class="summary-card">
+      <span>Paused schedules</span>
+      <strong>{{ pausedCount() }}</strong>
+      <small>Temporarily paused</small>
+    </article>
+
+    <article class="summary-card">
+      <span>Daily dose times</span>
+      <strong>{{ totalDoses() }}</strong>
+      <small>Across sample medicines</small>
+    </article>
+  </section>
+
+  @if (message()) {
+    <p class="success-message" role="status">{{ message() }}</p>
+  }
+
+  @if (error()) {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+
+  @if (pageState() === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading medicine schedule"
+      description="Please wait while the schedule is prepared."
+    />
+  } @else if (pageState() === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Schedule unavailable"
+      description="The schedule could not be displayed."
+      actionLabel="Try again"
+      (action)="retry()"
+    />
+  } @else if (pageState() === 'empty' || schedules().length === 0) {
+    <app-ui-state
+      kind="empty"
+      title="No scheduled medicines"
+      description="There are no medicines in this demonstration schedule."
+    />
+  } @else {
+    <section class="medicines-section" aria-labelledby="medicines-heading">
+      <div class="section-heading">
+        <div>
+          <h2 id="medicines-heading">Your medicines</h2>
+          <p>Review each medicine and its scheduled dose times.</p>
+        </div>
+      </div>
+
+      <div class="medicine-list">
+        @for (medicine of schedules(); track medicine.id) {
+          <article class="medicine-card">
+            <div class="medicine-header">
+              <div class="medicine-title">
+                <span class="medicine-icon material-symbols-outlined" aria-hidden="true">
+                  medication
+                </span>
+
+                <div>
+                  <h3>{{ medicine.medicineName }}</h3>
+                  <p>{{ medicine.strength }} · {{ medicine.dosage }}</p>
+                </div>
+              </div>
+
+              <span
+                class="status-pill"
+                [class.active]="medicine.status === 'active'"
+                [class.paused]="medicine.status === 'paused'"
+              >
+                {{ medicine.status }}
+              </span>
+            </div>
+
+            <div class="medicine-details">
+              <div>
+                <span>Instructions</span>
+                <p>{{ medicine.instructions }}</p>
+              </div>
+
+              <div>
+                <span>Prescribed by</span>
+                <p>{{ medicine.prescribedBy }}</p>
+              </div>
+
+              <div>
+                <span>Start date</span>
+                <p>{{ medicine.startDate | date: 'mediumDate' }}</p>
+              </div>
+
+              <div>
+                <span>End date</span>
+                <p>{{ medicine.endDate ? (medicine.endDate | date: 'mediumDate') : 'Ongoing' }}</p>
+              </div>
+            </div>
+
+            <div class="dose-section">
+              <h4>Scheduled dose times</h4>
+
+              @for (dose of medicine.doseTimes; track dose.id) {
+                <div class="dose-row">
+                  <div class="dose-time">
+                    <span class="material-symbols-outlined" aria-hidden="true"> schedule </span>
+
+                    <div>
+                      <strong>{{ dose.time }}</strong>
+                      <small>{{ dose.label }}</small>
+                    </div>
+                  </div>
+
+                  <label class="time-input-label" [for]="'time-' + dose.id"> Replace time </label>
+
+                  <input
+                    class="time-input"
+                    [id]="'time-' + dose.id"
+                    type="time"
+                    [value]="dose.time"
+                    [disabled]="medicine.status !== 'active'"
+                    (change)="replaceTime(medicine.id, dose.id, $any($event.target).value)"
+                  />
+                </div>
+              }
+            </div>
+
+            <div class="medicine-actions">
+              @if (medicine.status === 'active') {
+                <button
+                  type="button"
+                  class="secondary-button pause-button"
+                  (click)="pause(medicine.id)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">pause</span>
+                  Pause schedule
+                </button>
+              } @else if (medicine.status === 'paused') {
+                <button
+                  type="button"
+                  class="secondary-button resume-button"
+                  (click)="resume(medicine.id)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                  Resume schedule
+                </button>
+              }
+
+              @if (medicine.status === 'active') {
+                @if (isScheduleConfirmed(medicine.id)) {
+                  <span class="confirmation-status" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                    Schedule reviewed
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    (click)="confirmSchedule(medicine.id)"
+                  >
+                    Confirm schedule
+                  </button>
+                }
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="occurrences-section" aria-labelledby="occurrences-heading">
+    <div class="section-heading">
+      <div>
+        <h2 id="occurrences-heading">Dose records</h2>
+        <p>Patient-reported dose information for {{ selectedDate() }}.</p>
+      </div>
+    </div>
+
+    <div class="dose-summary" aria-label="Dose report summary">
+      <span
+        >Reported taken: <strong>{{ takenCount() }}</strong></span
+      >
+      <span
+        >Reported skipped: <strong>{{ skippedCount() }}</strong></span
+      >
+    </div>
+
+    @if (selectedDateOccurrences().length === 0) {
+      <app-ui-state
+        kind="empty"
+        title="No dose records for this date"
+        description="There are no sample dose occurrences for the selected date."
+      />
+    } @else {
+      <div class="occurrence-list">
+        @for (occurrence of selectedDateOccurrences(); track occurrence.id) {
+          <article class="occurrence-card">
+            <div class="occurrence-info">
+              <strong>{{ occurrence.scheduledTime }}</strong>
+              <span>{{ occurrence.timezone }}</span>
+              <span class="occurrence-status" [attr.data-status]="occurrence.status">
+                {{ occurrence.status }}
+              </span>
+            </div>
+
+            @if (occurrence.reminderSnoozedUntil) {
+              <p class="snooze-info">
+                Reminder snoozed until
+                {{ occurrence.reminderSnoozedUntil | date: 'shortTime' }}
+              </p>
+            }
+
+            @if (
+              occurrence.status !== 'taken' &&
+              occurrence.status !== 'skipped' &&
+              occurrence.status !== 'cancelled'
+            ) {
+              <div class="occurrence-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="snoozeOccurrence(occurrence.id)"
+                >
+                  Snooze 10 minutes
+                </button>
+
+                <button
+                  type="button"
+                  class="primary-button"
+                  (click)="reportDose(occurrence.id, 'taken')"
+                >
+                  Report taken
+                </button>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="reportDose(occurrence.id, 'skipped')"
+                >
+                  Report skipped
+                </button>
+              </div>
+            }
+
+            @if (occurrence.reportedAt) {
+              <p class="reported-time">Reported at {{ occurrence.reportedAt | date: 'short' }}</p>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <p class="safety-note">
+    Schedule information is for demonstration only. Pausing or changing a displayed time does not
+    modify a prescription or notify your healthcare professional. Dose statuses are patient-reported
+    and do not independently verify that medicine was taken. Follow your prescriber's instructions.
+  </p>
+</section>
