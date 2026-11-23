@@ -1,4 +1,5 @@
-﻿<div class="vaccination-page">
+﻿
+<div class="vaccination-page">
   <header class="page-header">
     <div>
       <p class="eyebrow">PATIENT HEALTH RECORD</p>
@@ -11,6 +12,19 @@
       <span class="count-label">Records</span>
     </div>
   </header>
+
+  <aside class="preview-notice" aria-label="Preview notice">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <div>
+      <strong>Preview only — Sample data</strong>
+      <p>
+        The vaccination records displayed on this page are fictional sample data
+        for demonstration purposes only. They are not real patient records and
+        are not currently connected to the backend. Do not rely on this
+        information for medical decisions.
+      </p>
+    </div>
+  </aside>
 
   @if (pageState() === 'loading') {
     <app-ui-state
@@ -122,18 +136,53 @@
           } @else {
             @for (record of sortedHistory(); track record.id) {
               <article class="previous-card">
-                <div>
+                <div class="previous-details">
                   <h3>{{ record.vaccineName }}</h3>
-                  <p>Administered {{ formatDate(record.administeredOn) }}</p>
+
+                  <p class="previous-administered-date">
+                    <strong>Originally administered:</strong>
+                    {{ formatDate(record.administeredOn) }}
+                  </p>
+
                   @if (record.doseDetails) {
-                    <p>{{ record.doseDetails }}</p>
+                    <p>
+                      <strong>Dose details:</strong>
+                      {{ record.doseDetails }}
+                    </p>
                   }
+
+                  @if (record.nextDoseOn) {
+                    <p>
+                      <strong>Original next dose:</strong>
+                      {{ formatDate(record.nextDoseOn) }}
+                    </p>
+                  } @else {
+                    <p>
+                      <strong>Original next dose:</strong>
+                      Not specified
+                    </p>
+                  }
+
+                  @if (record.notes) {
+                    <p>
+                      <strong>Original notes:</strong>
+                      {{ record.notes }}
+                    </p>
+                  } @else {
+                    <p>
+                      <strong>Original notes:</strong>
+                      No notes recorded
+                    </p>
+                  }
+
                   @if (record.correctionReason) {
-                    <p class="correction-reason">
-                      <strong>Correction reason:</strong> {{ record.correctionReason }}
+                    <p class="previous-correction-reason">
+                      <strong>Correction reason:</strong>
+                      {{ record.correctionReason }}
                     </p>
                   }
                 </div>
+
                 <span class="archived-label">Previous version</span>
               </article>
             }

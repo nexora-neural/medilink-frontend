@@ -120,6 +120,37 @@ describe('VaccinationStore', () => {
     expect(corrected.supersedesId).toBe(original.id);
     expect(corrected.correctionReason).toBe('Corrected dose details');
     expect(store.totalCount()).toBe(3);
+
+    // The original notes and next-dose value must remain unchanged.
+    expect(store.history()[0].notes).toBe('Sample vaccination record');
+    expect(store.history()[0].nextDoseOn).toBeNull();
+  });
+
+  it('preserves the original next-dose date when a vaccination is corrected', async () => {
+    const original = store.current()[1];
+
+    expect(original.nextDoseOn).toBe('2026-10-10');
+
+    const correctionDraft: VaccinationDraft = {
+      ...draft,
+      vaccineName: original.vaccineName,
+      administeredOn: original.administeredOn,
+      doseDetails: 'Updated annual dose',
+      nextDoseOn: null,
+    };
+
+    await store.correct(
+      original.id,
+      correctionDraft,
+      'Updated annual dose details',
+      'consultation-001',
+    );
+
+    const previousVersion = store.history().find((record) => record.id === original.id);
+
+    expect(previousVersion).toBeDefined();
+    expect(previousVersion?.nextDoseOn).toBe('2026-10-10');
+    expect(previousVersion?.doseDetails).toBe('Annual dose');
   });
 
   it('rejects a correction without a consultation', async () => {
