@@ -20,6 +20,14 @@ describe('Dispensing preview workflow', () => {
     expect(text()).toContain('Sample data only');
     expect(text()).toContain('30 tablets remaining');
     component.go('dispense');
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges(false);
+    expect(
+      fixture.nativeElement.querySelector('input[aria-label="Quantity for Amlodipine (tablets)"]'),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('input[aria-label="Quantity for Metformin (tablets)"]'),
+    ).not.toBeNull();
     component.review();
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges(false);

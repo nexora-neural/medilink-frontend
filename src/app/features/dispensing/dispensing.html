@@ -17,7 +17,7 @@
       }
       @case ('dispense') {
         <button class="back" (click)="go('prescription')">← Prescription details</button><h1 tabindex="-1">Record dispensing</h1><p>Enter the quantity supplied for each medicine.</p>
-        <section class="panel form-panel">@for (item of store.items; track item.name; let i = $index) { <div class="record"><div><strong>{{ item.name }} · {{ item.dose }}</strong><small>{{ item.instructions }} · {{ store.remaining(item) }} {{ item.unit }} remaining</small></div><label>Quantity ({{ item.unit }})<input type="number" min="0" [step]="item.step" [max]="store.remaining(item)" [(ngModel)]="store.quantities[i]"></label></div> }
+        <section class="panel form-panel">@for (item of store.items; track item.name; let i = $index) { <div class="record"><div><strong>{{ item.name }} · {{ item.dose }}</strong><small>{{ item.instructions }} · {{ store.remaining(item) }} {{ item.unit }} remaining</small></div><label>Quantity ({{ item.unit }})<input type="number" min="0" [attr.aria-label]="'Quantity for ' + item.name + ' (' + item.unit + ')'" [step]="item.step" [max]="store.remaining(item)" [(ngModel)]="store.quantities[i]"></label></div> }
           <label>Dispensing date<input type="date" [(ngModel)]="store.date"></label><label>Notes<textarea rows="3" [(ngModel)]="store.notes" placeholder="Optional notes"></textarea></label><p class="tip">You may record a partial supply. Quantities cannot exceed the remaining amount.</p><button class="primary" (click)="review()">Review dispensing →</button>
         </section>
       }
