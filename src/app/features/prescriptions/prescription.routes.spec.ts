@@ -55,7 +55,9 @@ describe('Prescription preview routing', () => {
     expect(text()).toContain('Sample patient A');
     expect(text()).toContain('Sample patient B');
     expect(text()).toContain('Sample patient C');
-    expect(text()).toContain('3 prescription(s) shown');
+    expect(text()).toContain('5 prescription(s) shown');
+    expect(text()).toContain('sample-superseded-01');
+    expect(text()).toContain('sample-replacement-01');
   });
 
   it('searches the list by patient reference', async () => {

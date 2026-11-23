@@ -169,3 +169,33 @@ button {
     width: 100%;
   }
 }
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #adbed1;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+textarea:focus-visible {
+  outline: 3px solid #008ac0;
+  outline-offset: 3px;
+}
+
+.reason-field {
+  margin-top: 20px;
+}
+
+.action-error {
+  color: #b42318;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
