@@ -13,8 +13,10 @@ describe('DoctorEvidenceReview', () => {
 
   it('requires an outcome before adding a review', () => {
     const fixture = TestBed.createComponent(DoctorEvidenceReview);
+
     fixture.componentInstance.saveReview();
     fixture.detectChanges();
+
     expect(fixture.componentInstance.reviews).toHaveLength(0);
     expect(fixture.nativeElement.textContent).toContain('Select a review outcome');
   });
@@ -22,10 +24,12 @@ describe('DoctorEvidenceReview', () => {
   it('shows the review outcome, sample reviewer and date without changing the source', () => {
     const fixture = TestBed.createComponent(DoctorEvidenceReview);
     const component = fixture.componentInstance;
+
     component.outcome = 'Reviewed';
     component.notes = 'Checked';
     component.saveReview();
     fixture.detectChanges();
+
     expect(component.reviews[0].date).toBeInstanceOf(Date);
     expect(fixture.nativeElement.textContent).toContain('Sample doctor');
     expect(fixture.nativeElement.textContent).toContain('Reviewed');
@@ -34,17 +38,21 @@ describe('DoctorEvidenceReview', () => {
 
   it('shows loading, empty and error states and supports retry', () => {
     const fixture = TestBed.createComponent(DoctorEvidenceReview);
-    for (const [state, text] of [
-      ['loading', 'Loading evidence'],
-      ['empty', 'No evidence available'],
-      ['error', 'Unable to load evidence'],
-    ] as const) {
-      fixture.componentInstance.state = state;
-      fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain(text);
-    }
+
+    fixture.componentInstance.state = 'loading';
+    fixture.changeDetectorRef.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Loading evidence');
+
+    fixture.componentInstance.state = 'empty';
+    fixture.changeDetectorRef.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No evidence available');
+
+    fixture.componentInstance.state = 'error';
+    fixture.changeDetectorRef.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Unable to load evidence');
+
     fixture.componentInstance.retry();
-    fixture.detectChanges();
+    fixture.changeDetectorRef.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Prescription evidence');
   });
 });
