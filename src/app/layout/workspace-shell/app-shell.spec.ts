@@ -62,6 +62,19 @@ describe('AppShell', () => {
     },
   );
 
+  it('shows the vaccination entry link in the Doctor navigation', async () => {
+    roles.setAccountRoles('demo-doctor', ['doctor']);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const link = fixture.nativeElement.querySelector(
+      'a[href="/workspace/doctor/vaccinations"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toContain('Vaccinations');
+  });
+
   it('keeps the mobile menu and role selection coordinated across child components', async () => {
     roles.setAccountRoles('demo-multi-role', ['patient', 'doctor']);
     fixture.detectChanges();
@@ -84,6 +97,7 @@ describe('AppShell', () => {
     expect(navigate).toHaveBeenCalledWith(['/workspace']);
     expect(element.querySelector('.user-summary')?.textContent).toContain('Doctor account');
   });
+
   it('closes the mobile navigation when the scrim is selected', () => {
     const element = fixture.nativeElement as HTMLElement;
     (element.querySelector('.menu-button') as HTMLButtonElement).click();

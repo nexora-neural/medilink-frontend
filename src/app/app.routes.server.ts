@@ -3,6 +3,7 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 export const serverRoutes: ServerRoute[] = [
   { path: 'workspace/patient/prescription-shares', renderMode: RenderMode.Client },
   { path: 'workspace/pharmacist/prescription-shares', renderMode: RenderMode.Client },
+  { path: 'workspace/pharmacist/dispensing', renderMode: RenderMode.Client },
   { path: 'workspace/patient/prescriptions', renderMode: RenderMode.Client },
   { path: 'workspace/doctor/prescriptions/:id/issue', renderMode: RenderMode.Client },
   { path: 'super-admin/dashboard', renderMode: RenderMode.Client },
@@ -79,6 +80,14 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/patient/measurements',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/vaccinations',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/vaccinations',
     renderMode: RenderMode.Client,
   },
   { path: 'workspace/patient/correction-request', renderMode: RenderMode.Client },
