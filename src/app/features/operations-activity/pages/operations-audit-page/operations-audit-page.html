@@ -1,0 +1,41 @@
+<div class="heading">
+  <div>
+    <h1>
+      {{
+        privileged
+          ? 'Privileged audit and recovery'
+          : 'Operations and audit'
+      }}
+    </h1>
+
+    <p>
+      Review {{ privileged ? 'privileged' : 'permitted operational' }} activity.
+    </p>
+  </div>
+</div>
+
+<section
+  class="panel"
+  aria-label="Audit activity"
+  [attr.aria-busy]="state() === 'loading'"
+>
+  @if (state() === 'ready' && visibleEvents().length) {
+    <app-audit-event-list [events]="visibleEvents()" />
+  } @else {
+    <app-activity-state
+      [state]="state() === 'ready' ? 'empty' : state()"
+      emptyText="No audit activity."
+      (retry)="reloadPreview()"
+    />
+  }
+
+  @if (state() === 'ready') {
+    <div class="tip">
+      {{
+        privileged
+          ? 'Backup and recovery status: available in sample data.'
+          : 'Failed jobs: none in sample data.'
+      }}
+    </div>
+  }
+</section>

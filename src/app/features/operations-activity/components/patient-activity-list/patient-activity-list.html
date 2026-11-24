@@ -1,0 +1,9 @@
+@for (item of activities(); track item.id) {
+  <div class="item">
+    <span class="item-icon material-symbols-outlined" aria-hidden="true">history</span>
+    <div class="item-main">
+      <strong>{{ item.actor }} · {{ item.action }}</strong>
+      <small>{{ item.scope }} · {{ item.occurredAt }}</small>
+    </div>
+  </div>
+}

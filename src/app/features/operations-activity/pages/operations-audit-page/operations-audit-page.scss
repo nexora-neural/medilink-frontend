@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  color: #17334f;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 0 27px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.heading p {
+  margin: 8px 0 0;
+  color: #8195a6;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.panel {
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 25px;
+  border: 1px solid #e7eef4;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.preview {
+  margin: 0 0 16px;
+  color: #8195a6;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.notice {
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: #e6f7ef;
+  color: #257a56;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 850px) {
+  .heading {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 500px) {
+  .heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  h1 {
+    font-size: 25px;
+  }
+  .panel {
+    padding: 19px;
+  }
+}
+.tip {
+  margin: 18px 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: #eff8fc;
+  color: #648598;
+  font-size: 12px;
+  line-height: 1.6;
+}
