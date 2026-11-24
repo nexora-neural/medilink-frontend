@@ -83,6 +83,7 @@ h1 {
 
 .qr-card,
 .details-card {
+  min-width: 0;
   padding: 26px;
   border: 1px solid #e3edf3;
   border-radius: 14px;
@@ -170,7 +171,8 @@ h1 {
 
 .reference-box {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  min-width: 0;
   gap: 12px;
   padding: 15px;
   border: 1px solid #e3edf3;
@@ -184,6 +186,8 @@ h1 {
 
   strong {
     color: #526c80;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
