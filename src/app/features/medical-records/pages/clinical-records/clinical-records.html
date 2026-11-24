@@ -1,3 +1,4 @@
+@let view = state();
 <section class="records-page" aria-labelledby="records-page-title">
   <header class="page-heading">
     <div>
@@ -7,14 +8,31 @@
       <p class="subtitle">Review conditions, allergies, diagnoses and clinical notes.</p>
     </div>
 
-    @if (canAdd()) {
-      <button class="primary-button" type="button" [disabled]="formOpen()" (click)="openForm()">
-        Add {{ audience === 'patient' ? 'condition or allergy' : 'diagnosis or note' }}
-      </button>
-    }
+    <div class="button-row">
+      @if (account() && view.kind !== 'expired') {
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="saving() || view.kind === 'loading'"
+          (click)="refresh()"
+        >
+          Refresh records
+        </button>
+      }
+      @if (canAdd()) {
+        <button
+          class="primary-button"
+          type="button"
+          [disabled]="formOpen() || saving()"
+          (click)="openForm()"
+        >
+          Add {{ audience === 'patient' ? 'condition or allergy' : 'diagnosis or note' }}
+        </button>
+      }
+    </div>
   </header>
 
-  @if (permitted() && pageState() !== 'denied') {
+  @if (account() && view.kind !== 'denied' && view.kind !== 'expired') {
     <nav class="correction-actions" aria-label="Clinical corrections">
       @if (audience === 'patient') {
         <a routerLink="/workspace/patient/correction-request">Request a correction</a>
@@ -26,44 +44,89 @@
     </nav>
   }
 
-  <p class="preview-notice">
-    <strong>Sample preview only.</strong>
-    All records and identities on this screen are fictional. Changes are temporary and disappear
-    when you leave this page or refresh.
-    @if (audience === 'doctor') {
-      This demonstrates a sample authorized patient workspace. Real patient access must be verified
-        during API integration.
-    }
-  </p>
+  @let patientQueue = queue();
+  @if (
+    audience === 'doctor' && account() && patientQueue?.kind === 'ready' && view.kind !== 'expired'
+  ) {
+    <div class="panel field">
+      <label for="clinical-patient">Patient with record access</label>
+      <select
+        id="clinical-patient"
+        #patientSelect
+        [disabled]="saving()"
+        (change)="selectPatient(patientSelect.value)"
+      >
+        <option value="" [selected]="!selection()">Select a patient</option>
+        @for (patient of patientOptions(); track patient.id) {
+          <option [value]="patient.id" [selected]="patient.id === selection()">
+            {{ patient.name }}
+          </option>
+        }
+      </select>
+      @if (patientOptions().length === 0) {
+        <p class="help-text">No patients have shared history and allergy access.</p>
+      }
+    </div>
+  }
 
-  @if (!permitted() || pageState() === 'denied') {
-    <section class="panel" aria-labelledby="access-title">
-      <h2 id="access-title">Access unavailable</h2>
-      <p>This workspace is unavailable for the current role or sample access state.</p>
-    </section>
-  } @else if (pageState() === 'loading') {
-    <app-ui-state
-      kind="loading"
-      title="Loading medical history"
-      description="Getting the sample clinical records."
-    />
-  } @else if (pageState() === 'error') {
+  @if (message(); as notice) {
+    <p
+      [class.error-message]="notice.error"
+      [class.status-message]="!notice.error"
+      [attr.role]="notice.error ? 'alert' : 'status'"
+    >
+      {{ notice.text }}
+    </p>
+  }
+
+  @if (view.kind === 'denied') {
     <app-ui-state
       kind="error"
-      title="Medical history unavailable"
-      description="The sample records could not be loaded."
-      actionLabel="Try again"
-      (action)="retry()"
+      title="Access unavailable"
+      description="The clinical record is unavailable for this account or permission."
     />
-  } @else {
+  } @else if (view.kind === 'expired') {
+    <app-ui-state
+      kind="error"
+      title="Session expired"
+      description="Sign in again to view clinical records."
+    />
+    <a routerLink="/login">Sign in</a>
+  } @else if (view.kind === 'select') {
+    <app-ui-state
+      kind="empty"
+      title="Select a patient"
+      description="Choose a patient whose history and allergies are shared with you."
+    />
+  } @else if (view.kind === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading clinical records"
+      description="Getting your current records and permissions."
+    />
+  } @else if (view.kind === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Clinical records unavailable"
+      description="Records could not be loaded."
+      actionLabel="Try again"
+      (action)="refresh()"
+    />
+  } @else if (view.kind === 'ready') {
+    @if (audience === 'doctor' && !canAdd()) {
+      <p class="help-text">
+        Read-only access. Adding entries requires an active consultation with permission from the
+        patient.
+      </p>
+    }
     <section class="panel" aria-labelledby="allergy-summary-title">
       <h2 id="allergy-summary-title">Allergy status</h2>
 
-      @if (allergyStatus() === 'unknown') {
+      @if (view.data.allergy === 'unknown') {
         <p class="allergy-status">
           <strong>Unknown</strong> — allergy information has not been established.
         </p>
-      } @else if (allergyStatus() === 'no-known-allergies') {
+      } @else if (view.data.allergy === 'no-known-allergies') {
         <p class="allergy-status">
           <strong>No known allergies reported.</strong>
           This is different from an unknown allergy status.
@@ -75,37 +138,28 @@
         </p>
       }
 
-      @if (audience === 'patient') {
-        <div class="button-row">
-          <button class="secondary-button" type="button" (click)="setAllergyStatus('unknown')">
-            Mark status unknown
-          </button>
-          <button
-            class="secondary-button"
-            type="button"
-            (click)="setAllergyStatus('no-known-allergies')"
-          >
-            Report no known allergies
-          </button>
-        </div>
+      @if (audience === 'patient' && view.data.allergy === 'unknown') {
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="saving() || formOpen()"
+          (click)="reportNoKnownAllergies()"
+        >
+          Report no known allergies
+        </button>
       }
 
       <p class="help-text">
-        Patient-reported information is shown as reported; this preview does not clinically verify
-        or interpret it.
+        The summary reflects active recorded entries. Review individual entries and their sources
+        for context.
       </p>
     </section>
 
-    @if (message()) {
-      <p class="status-message" role="status">{{ message() }}</p>
-    }
-
     @if (formOpen() && canAdd()) {
       <section class="panel" aria-labelledby="entry-form-title">
-        <h2 id="entry-form-title">Add sample entry</h2>
+        <h2 id="entry-form-title">Add clinical entry</h2>
         <p class="help-text">
-          Required fields are marked *. The recorded author and source are assigned by this sample
-          workspace.
+          Required fields are marked *. The server assigns the recorded author and source.
         </p>
 
         <form [formGroup]="form" (ngSubmit)="save()">
@@ -136,14 +190,14 @@
                 id="clinical-title"
                 type="text"
                 formControlName="title"
-                maxlength="160"
+                maxlength="200"
                 required
                 aria-describedby="clinical-title-help"
                 [attr.aria-invalid]="
                   submitted() && (form.controls.title.invalid || !form.controls.title.value.trim())
                 "
               />
-              <small id="clinical-title-help">Maximum 160 characters.</small>
+              <small id="clinical-title-help">Maximum 200 characters.</small>
             </div>
 
             <div class="field full-width">
@@ -152,11 +206,11 @@
                 id="clinical-details"
                 formControlName="details"
                 rows="4"
-                maxlength="2000"
+                maxlength="8000"
                 aria-describedby="clinical-details-help"
                 [attr.aria-invalid]="submitted() && form.controls.details.invalid"
               ></textarea>
-              <small id="clinical-details-help">Maximum 2,000 characters.</small>
+              <small id="clinical-details-help">Maximum 8,000 characters.</small>
             </div>
           </div>
 
@@ -165,8 +219,17 @@
           }
 
           <div class="form-actions">
-            <button class="secondary-button" type="button" (click)="closeForm()">Cancel</button>
-            <button class="primary-button" type="submit">Save sample entry</button>
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="saving()"
+              (click)="closeForm()"
+            >
+              Cancel
+            </button>
+            <button class="primary-button" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save entry' }}
+            </button>
           </div>
         </form>
       </section>
@@ -176,22 +239,22 @@
       <div class="section-heading">
         <h2 id="history-title">Recorded history</h2>
         <span>
-          {{ visibleEntries().length }}
-          {{ visibleEntries().length === 1 ? 'entry' : 'entries' }}
+          {{ view.data.history.total }}
+          {{ view.data.history.total === 1 ? 'entry' : 'entries' }}
         </span>
       </div>
 
-      @if (pageState() === 'empty' || visibleEntries().length === 0) {
+      @if (view.data.history.items.length === 0) {
         <app-ui-state
           kind="empty"
           title="No clinical entries yet"
-          description="Add a sample entry to preview the recorded history."
-          actionLabel="Add sample entry"
+          description="No entries were returned for this record."
+          [actionLabel]="canAdd() ? 'Add clinical entry' : ''"
           (action)="openForm()"
         />
       } @else {
         <ul class="entry-list">
-          @for (entry of visibleEntries(); track entry.id) {
+          @for (entry of view.data.history.items; track entry.kind + entry.id) {
             <li>
               <article class="entry-card">
                 <header class="entry-heading">
@@ -212,16 +275,16 @@
                   <div>
                     <dt>Source</dt>
                     <dd>
-                      {{ entry.source === 'patient' ? 'Patient-reported' : 'Doctor-entered' }}
+                      {{ sourceLabels[entry.source] }}
                     </dd>
                   </div>
                   <div>
                     <dt>Author</dt>
-                    <dd>{{ entry.authorName }}</dd>
+                    <dd>{{ entry.authorId === account() ? 'You' : entry.authorId }}</dd>
                   </div>
                   <div>
                     <dt>Organization</dt>
-                    <dd>{{ entry.organization ?? 'Not associated with an organization' }}</dd>
+                    <dd>{{ entry.organizationId ?? 'Not associated with an organization' }}</dd>
                   </div>
                   <div>
                     <dt>Recorded at</dt>
@@ -233,11 +296,38 @@
                   </div>
                 </dl>
 
-                <p class="help-text">Recorded entries are read-only in this preview.</p>
+                @if (entry.clinicalCode) {
+                  <p class="help-text">Clinical code {{ entry.clinicalCode }}</p>
+                }
               </article>
             </li>
           }
         </ul>
+      }
+      @if (view.data.history.total > view.data.history.pageSize) {
+        <nav class="button-row" aria-label="Clinical history pages">
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="view.data.history.page <= 1 || saving() || formOpen()"
+            (click)="changePage(view.data.history.page - 1)"
+          >
+            Previous
+          </button>
+          <span>Page {{ view.data.history.page }}</span>
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="
+              view.data.history.page * view.data.history.pageSize >= view.data.history.total ||
+              saving() ||
+              formOpen()
+            "
+            (click)="changePage(view.data.history.page + 1)"
+          >
+            Next
+          </button>
+        </nav>
       }
     </section>
   }

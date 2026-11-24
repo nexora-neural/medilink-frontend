@@ -26,7 +26,6 @@ import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-ac
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
-import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -113,7 +112,10 @@ const rolePages: Route[] = [
 
   {
     path: 'patient/history',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Medical history | MediLink',
     data: {
@@ -161,7 +163,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'doctor/records',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Patient clinical records | MediLink',
     data: {
