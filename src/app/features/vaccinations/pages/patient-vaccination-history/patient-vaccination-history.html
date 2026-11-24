@@ -4,7 +4,9 @@
     <div>
       <p class="eyebrow">PATIENT HEALTH RECORD</p>
       <h1>Vaccination History</h1>
-      <p class="subtitle">View your vaccination records and previous corrections.</p>
+      <p class="subtitle">
+        View your vaccination records and previous corrections.
+      </p>
     </div>
 
     <div class="record-count" aria-label="Total vaccination records">
@@ -15,12 +17,13 @@
 
   <aside class="preview-notice" aria-label="Preview notice">
     <span class="material-symbols-outlined" aria-hidden="true">info</span>
+
     <div>
       <strong>Preview only — Sample data</strong>
       <p>
-        The vaccination records displayed on this page are fictional sample data
-        for demonstration purposes only. They are not real patient records and
-        are not currently connected to the backend. Do not rely on this
+        The vaccination records displayed on this page are fictional sample
+        data for demonstration purposes only. They are not real patient records
+        and are not currently connected to the backend. Do not rely on this
         information for medical decisions.
       </p>
     </div>
@@ -53,11 +56,12 @@
           <h2 id="current-heading">Current records</h2>
           <p>Your latest vaccination information.</p>
         </div>
+
         <span class="section-count">{{ vaccinations().length }}</span>
       </div>
 
       <div class="record-list">
-        @for (record of sortedVaccinations(); track record.id) {
+        @for (group of vaccinationGroups(); track group.record.id) {
           <article class="vaccination-card">
             <div class="card-main">
               <div class="vaccine-icon" aria-hidden="true">
@@ -65,130 +69,143 @@
               </div>
 
               <div class="record-details">
-                <h3>{{ record.vaccineName }}</h3>
+                <h3>{{ group.record.vaccineName }}</h3>
+
                 <p class="administered-date">
-                  Administered {{ formatDate(record.administeredOn) }}
+                  Administered
+                  {{ formatDate(group.record.administeredOn) }}
                 </p>
 
-                @if (record.doseDetails) {
-                  <p class="dose-details">{{ record.doseDetails }}</p>
+                @if (group.record.doseDetails) {
+                  <p class="dose-details">
+                    {{ group.record.doseDetails }}
+                  </p>
                 }
 
                 <div class="record-meta">
                   <span class="source-label">
-                    Source: {{ sourceLabel(record.source) }}
+                    Source: {{ sourceLabel(group.record.source) }}
                   </span>
-                  @if (record.supersedesId) {
+
+                  @if (group.record.supersedesId) {
                     <span class="corrected-label">Corrected record</span>
                   }
                 </div>
               </div>
             </div>
 
-            @if (record.nextDoseOn) {
+            @if (group.record.nextDoseOn) {
               <div class="next-dose">
-                <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  event
+                </span>
+
                 <div>
                   <span class="next-dose-label">Next dose</span>
-                  <strong>{{ formatDate(record.nextDoseOn) }}</strong>
+                  <strong>{{ formatDate(group.record.nextDoseOn) }}</strong>
                 </div>
               </div>
             }
 
-            @if (record.notes) {
-              <p class="record-notes">{{ record.notes }}</p>
+            @if (group.record.notes) {
+              <p class="record-notes">{{ group.record.notes }}</p>
             }
 
-            @if (record.correctionReason) {
+            @if (group.record.correctionReason) {
               <p class="correction-reason">
-                <strong>Correction reason:</strong> {{ record.correctionReason }}
+                <strong>Correction reason:</strong>
+                {{ group.record.correctionReason }}
               </p>
+            }
+
+            @if (group.previousVersions.length > 0) {
+              <details class="version-chain">
+                <summary>
+                  <span>
+                    <strong>Previous versions</strong>
+                    <small>
+                      {{ group.previousVersions.length }}
+                      previous
+                      {{
+                        group.previousVersions.length === 1
+                          ? 'record'
+                          : 'records'
+                      }}
+                      linked to this vaccination
+                    </small>
+                  </span>
+
+                  <span class="version-expand-icon" aria-hidden="true"></span>
+                </summary>
+
+                <div class="previous-records">
+                  @for (
+                    record of group.previousVersions;
+                    track record.id;
+                    let index = $index
+                    ) {
+                    <article class="previous-card">
+                      <div class="previous-details">
+                        <div class="previous-version-heading">
+                          <h3>{{ record.vaccineName }}</h3>
+                          <span class="version-number">
+                            Version {{ group.previousVersions.length - index }}
+                          </span>
+                        </div>
+
+                        <p class="previous-administered-date">
+                          <strong>Originally administered:</strong>
+                          {{ formatDate(record.administeredOn) }}
+                        </p>
+
+                        @if (record.doseDetails) {
+                          <p>
+                            <strong>Dose details:</strong>
+                            {{ record.doseDetails }}
+                          </p>
+                        }
+
+                        @if (record.nextDoseOn) {
+                          <p>
+                            <strong>Original next dose:</strong>
+                            {{ formatDate(record.nextDoseOn) }}
+                          </p>
+                        } @else {
+                          <p>
+                            <strong>Original next dose:</strong>
+                            Not specified
+                          </p>
+                        }
+
+                        @if (record.notes) {
+                          <p>
+                            <strong>Original notes:</strong>
+                            {{ record.notes }}
+                          </p>
+                        } @else {
+                          <p>
+                            <strong>Original notes:</strong>
+                            No notes recorded
+                          </p>
+                        }
+
+                        @if (record.correctionReason) {
+                          <p class="previous-correction-reason">
+                            <strong>Correction reason:</strong>
+                            {{ record.correctionReason }}
+                          </p>
+                        }
+                      </div>
+
+                      <span class="archived-label">Previous version</span>
+                    </article>
+                  }
+                </div>
+              </details>
             }
           </article>
         }
       </div>
-    </section>
-
-    <section class="previous-section" aria-labelledby="previous-heading">
-      <button
-        class="history-toggle"
-        type="button"
-        [attr.aria-expanded]="showHistory()"
-        aria-controls="previous-records"
-        (click)="toggleHistory()"
-      >
-        <span>
-          <span class="material-symbols-outlined" aria-hidden="true">history</span>
-          <span>
-            <strong id="previous-heading">Previous versions</strong>
-            <small>{{ history().length }} previous records</small>
-          </span>
-        </span>
-        <span class="material-symbols-outlined" aria-hidden="true">
-          {{ showHistory() ? 'expand_less' : 'expand_more' }}
-        </span>
-      </button>
-
-      @if (showHistory()) {
-        <div id="previous-records" class="previous-records">
-          @if (sortedHistory().length === 0) {
-            <p class="no-history">No previous versions are available.</p>
-          } @else {
-            @for (record of sortedHistory(); track record.id) {
-              <article class="previous-card">
-                <div class="previous-details">
-                  <h3>{{ record.vaccineName }}</h3>
-
-                  <p class="previous-administered-date">
-                    <strong>Originally administered:</strong>
-                    {{ formatDate(record.administeredOn) }}
-                  </p>
-
-                  @if (record.doseDetails) {
-                    <p>
-                      <strong>Dose details:</strong>
-                      {{ record.doseDetails }}
-                    </p>
-                  }
-
-                  @if (record.nextDoseOn) {
-                    <p>
-                      <strong>Original next dose:</strong>
-                      {{ formatDate(record.nextDoseOn) }}
-                    </p>
-                  } @else {
-                    <p>
-                      <strong>Original next dose:</strong>
-                      Not specified
-                    </p>
-                  }
-
-                  @if (record.notes) {
-                    <p>
-                      <strong>Original notes:</strong>
-                      {{ record.notes }}
-                    </p>
-                  } @else {
-                    <p>
-                      <strong>Original notes:</strong>
-                      No notes recorded
-                    </p>
-                  }
-
-                  @if (record.correctionReason) {
-                    <p class="previous-correction-reason">
-                      <strong>Correction reason:</strong>
-                      {{ record.correctionReason }}
-                    </p>
-                  }
-                </div>
-
-                <span class="archived-label">Previous version</span>
-              </article>
-            }
-          }
-        </div>
-      }
     </section>
   }
 </div>

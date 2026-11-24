@@ -121,7 +121,6 @@ describe('VaccinationStore', () => {
     expect(corrected.correctionReason).toBe('Corrected dose details');
     expect(store.totalCount()).toBe(3);
 
-    // The original notes and next-dose value must remain unchanged.
     expect(store.history()[0].notes).toBe('Sample vaccination record');
     expect(store.history()[0].nextDoseOn).toBeNull();
   });
@@ -197,5 +196,138 @@ describe('VaccinationStore', () => {
     expect(versions).toHaveLength(1);
     expect(versions[0].supersedesId).toBe(original.id);
     expect(versions[0].doseDetails).toBe('Updated dose details');
+  });
+
+  it('groups successive corrections separately for records with the same vaccine name', async () => {
+    const firstOriginal = store.current()[0];
+
+    // Create a second independent COVID-19 vaccination record.
+    await store.add(
+      {
+        ...draft,
+        vaccineName: 'COVID-19',
+        administeredOn: '2025-07-15',
+        doseDetails: 'Second booster dose',
+        nextDoseOn: null,
+        notes: 'Independent second COVID-19 record',
+      },
+      'consultation-001',
+    );
+
+    const secondOriginal = store
+      .current()
+      .find((record) => record.id !== firstOriginal.id && record.vaccineName === 'COVID-19');
+
+    expect(secondOriginal).toBeDefined();
+
+    if (!secondOriginal) {
+      throw new Error('Second COVID-19 record was not created.');
+    }
+
+    // First record: Original -> First correction.
+    await store.correct(
+      firstOriginal.id,
+      {
+        ...draft,
+        vaccineName: 'COVID-19',
+        administeredOn: firstOriginal.administeredOn,
+        doseDetails: 'First correction',
+        nextDoseOn: null,
+      },
+      'First correction reason',
+      'consultation-001',
+    );
+
+    const firstCorrection = store
+      .current()
+      .find((record) => record.supersedesId === firstOriginal.id);
+
+    expect(firstCorrection).toBeDefined();
+
+    if (!firstCorrection) {
+      throw new Error('First correction was not created.');
+    }
+
+    // First record: Original -> First correction -> Second correction.
+    await store.correct(
+      firstCorrection.id,
+      {
+        ...draft,
+        vaccineName: 'COVID-19',
+        administeredOn: firstOriginal.administeredOn,
+        doseDetails: 'Second correction',
+        nextDoseOn: null,
+      },
+      'Second correction reason',
+      'consultation-001',
+    );
+
+    const firstLatest = store
+      .current()
+      .find((record) => record.supersedesId === firstCorrection.id);
+
+    expect(firstLatest).toBeDefined();
+
+    if (!firstLatest) {
+      throw new Error('Second correction was not created.');
+    }
+
+    // Second independent record: Original -> Correction.
+    await store.correct(
+      secondOriginal.id,
+      {
+        ...draft,
+        vaccineName: 'COVID-19',
+        administeredOn: secondOriginal.administeredOn,
+        doseDetails: 'Second record correction',
+        nextDoseOn: null,
+      },
+      'Second record correction reason',
+      'consultation-001',
+    );
+
+    const secondLatest = store
+      .current()
+      .find((record) => record.supersedesId === secondOriginal.id);
+
+    expect(secondLatest).toBeDefined();
+
+    if (!secondLatest) {
+      throw new Error('Second record correction was not created.');
+    }
+
+    // First chain must contain only its own previous versions.
+    const firstChain = store.previousVersionsFor(firstLatest.id);
+
+    expect(firstChain.map((record) => record.id)).toEqual([firstCorrection.id, firstOriginal.id]);
+
+    expect(firstChain.map((record) => record.doseDetails)).toEqual([
+      'First correction',
+      firstOriginal.doseDetails,
+    ]);
+
+    // Second chain must contain only its own original record.
+    const secondChain = store.previousVersionsFor(secondLatest.id);
+
+    expect(secondChain.map((record) => record.id)).toEqual([secondOriginal.id]);
+
+    expect(secondChain.map((record) => record.doseDetails)).toEqual(['Second booster dose']);
+
+    // Both current records have the same name but remain separate.
+    expect(firstLatest.vaccineName).toBe(secondLatest.vaccineName);
+    expect(firstLatest.id).not.toBe(secondLatest.id);
+
+    // The chains must never contain each other's records.
+    expect(firstChain.some((record) => record.id === secondOriginal.id)).toBe(false);
+
+    expect(
+      secondChain.some(
+        (record) => record.id === firstOriginal.id || record.id === firstCorrection.id,
+      ),
+    ).toBe(false);
+  });
+
+  it('returns no previous versions for an unknown current record', () => {
+    expect(store.previousVersionsFor('unknown-record')).toEqual([]);
   });
 });

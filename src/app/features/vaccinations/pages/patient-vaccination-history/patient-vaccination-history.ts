@@ -18,11 +18,9 @@ export class PatientVaccinationHistory implements OnInit {
   private readonly store = inject(VaccinationStore);
 
   readonly vaccinations = this.store.current;
-  readonly history = this.store.history;
 
   readonly pageState = signal<PageState>('loading');
   readonly error = signal('');
-  readonly showHistory = signal(false);
 
   readonly total = computed(() => this.store.totalCount());
 
@@ -30,8 +28,16 @@ export class PatientVaccinationHistory implements OnInit {
     [...this.vaccinations()].sort((a, b) => b.administeredOn.localeCompare(a.administeredOn)),
   );
 
-  readonly sortedHistory = computed(() =>
-    [...this.history()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  /**
+   * Groups each current vaccination record with only its own
+   * previous versions. Grouping is based on record IDs and
+   * supersedesId relationships, never on vaccine names.
+   */
+  readonly vaccinationGroups = computed(() =>
+    this.sortedVaccinations().map((record) => ({
+      record,
+      previousVersions: this.store.previousVersionsFor(record.id),
+    })),
   );
 
   ngOnInit(): void {
@@ -53,10 +59,6 @@ export class PatientVaccinationHistory implements OnInit {
 
       this.pageState.set('error');
     }
-  }
-
-  toggleHistory(): void {
-    this.showHistory.update((value) => !value);
   }
 
   trackById(_index: number, record: VaccinationRecord): string {

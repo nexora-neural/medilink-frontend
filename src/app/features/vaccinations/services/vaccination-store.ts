@@ -154,11 +154,16 @@ export class VaccinationStore {
     this.activeState.update((records) => records.filter((record) => record.id !== currentId));
 
     this.historyState.update((records) => [original, ...records]);
+
     this.activeState.update((records) => [correctedRecord, ...records]);
 
     return { refreshed: true };
   }
 
+  /**
+   * Returns newer records that supersede the supplied record.
+   * Kept for existing version-chain lookups.
+   */
   versionsFor(recordId: string): VaccinationRecord[] {
     const allRecords = [...this.current(), ...this.history()];
     const versions: VaccinationRecord[] = [];
@@ -178,6 +183,40 @@ export class VaccinationStore {
       versions.push(nextRecord);
       visited.add(nextRecord.id);
       nextId = nextRecord.id;
+    }
+
+    return versions;
+  }
+
+  /**
+   * Returns the previous versions belonging to one current record.
+   *
+   * The lookup follows supersedesId backwards, so records with the
+   * same vaccine name cannot accidentally be mixed into another chain.
+   */
+  previousVersionsFor(recordId: string): VaccinationRecord[] {
+    const currentRecord = this.current().find((record) => record.id === recordId);
+
+    if (!currentRecord) {
+      return [];
+    }
+
+    const historyRecords = this.history();
+    const versions: VaccinationRecord[] = [];
+    const visited = new Set<string>([recordId]);
+
+    let previousId = currentRecord.supersedesId;
+
+    while (previousId && !visited.has(previousId)) {
+      const previousRecord = historyRecords.find((record) => record.id === previousId);
+
+      if (!previousRecord) {
+        break;
+      }
+
+      versions.push(previousRecord);
+      visited.add(previousRecord.id);
+      previousId = previousRecord.supersedesId;
     }
 
     return versions;
