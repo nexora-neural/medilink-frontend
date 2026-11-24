@@ -1,8 +1,15 @@
 import { routes } from '../../app.routes';
+import { serverRoutes } from '../../app.routes.server';
+import { RenderMode } from '@angular/ssr';
 import { authGuard } from '../../core/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 
 describe('dispensing route', () => {
+  it('renders on the client for authenticated direct navigation and refresh', () => {
+    expect(
+      serverRoutes.find((route) => route.path === 'workspace/pharmacist/dispensing')?.renderMode,
+    ).toBe(RenderMode.Client);
+  });
   it('requires a session and pharmacist role before loading the workspace', () => {
     const workspace = routes.find((route) => route.path === 'workspace');
     const dispensing = workspace?.children?.find((route) => route.path === 'pharmacist/dispensing');
