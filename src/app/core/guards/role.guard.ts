@@ -1,5 +1,7 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { Injector, inject, runInInjectionContext } from '@angular/core';
+import { CanActivateFn, GuardResult, Router } from '@angular/router';
+import { firstValueFrom, isObservable } from 'rxjs';
+import { authGuard } from '../auth.guard';
 import { AuthService } from '../auth.service';
 import { ActiveRole, ActiveRoleService } from '../context/active-role.service';
 
@@ -47,3 +49,16 @@ export const roleGuard: CanActivateFn = async (route) => {
 
   return router.createUrlTree(['/access-denied']);
 };
+
+/** Read role state only after the current session has been restored. */
+export const authenticatedRoleGuard: CanActivateFn = async (route, state) => {
+  const injector = inject(Injector);
+  const authenticated = await resolveGuard(authGuard(route, state));
+  return authenticated === true
+    ? resolveGuard(runInInjectionContext(injector, () => roleGuard(route, state)))
+    : authenticated;
+};
+
+async function resolveGuard(result: ReturnType<CanActivateFn>): Promise<GuardResult> {
+  return isObservable(result) ? firstValueFrom(result) : result;
+}

@@ -1,5 +1,5 @@
 import { Route, Routes } from '@angular/router';
-import { roleGuard } from './core/guards/role.guard';
+import { authenticatedRoleGuard, roleGuard } from './core/guards/role.guard';
 import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
 import { AppShell } from './layout/workspace-shell/app-shell';
@@ -429,7 +429,7 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authenticatedRoleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [
       {
