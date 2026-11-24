@@ -75,6 +75,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/doctor/prescriptions' },
     {
+      label: 'Vaccinations',
+      icon: 'vaccines',
+      path: '/workspace/doctor/vaccinations',
+    },
+    {
       label: 'Issue prescription (preview)',
       icon: 'fact_check',
       path: '/workspace/doctor/prescriptions/sample-order/issue',

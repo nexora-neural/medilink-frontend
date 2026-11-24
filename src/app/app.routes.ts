@@ -27,7 +27,6 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
-
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -128,12 +127,30 @@ const rolePages: Route[] = [
     'Reports',
     'A protected patient route for the reports workspace.',
   ),
-  rolePage(
-    'patient/vaccinations',
-    ['Patient'],
-    'Vaccinations',
-    'A protected patient route for the vaccinations workspace.',
-  ),
+  {
+    path: 'patient/vaccinations',
+    loadComponent: () =>
+      import('./features/vaccinations/pages/patient-vaccination-history/patient-vaccination-history').then(
+        (m) => m.PatientVaccinationHistory,
+      ),
+    canActivate: [roleGuard],
+    title: 'Vaccination history | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
+  {
+    path: 'doctor/vaccinations',
+    loadComponent: () =>
+      import('./features/vaccinations/pages/doctor-vaccination-entry/doctor-vaccination-entry').then(
+        (m) => m.DoctorVaccinationEntry,
+      ),
+    canActivate: [roleGuard],
+    title: 'Vaccination entry | MediLink',
+    data: {
+      allowedRoles: ['Doctor'],
+    },
+  },
   {
     path: 'patient/access',
     component: PatientDoctorAccess,
