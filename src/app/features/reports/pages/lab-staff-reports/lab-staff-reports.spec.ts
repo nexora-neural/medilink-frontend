@@ -11,6 +11,7 @@ import { LabStaffReports } from './lab-staff-reports';
 describe('LabStaffReports preview', () => {
   async function setup(preview = '') {
     const activeRole = signal<ActiveRole>('Lab Staff');
+    const activeAccountId = signal('lab-staff-account-01');
 
     await TestBed.configureTestingModule({
       imports: [LabStaffReports],
@@ -25,6 +26,7 @@ describe('LabStaffReports preview', () => {
           provide: ActiveRoleService,
           useValue: {
             activeRole: activeRole.asReadonly(),
+            activeAccountId: activeAccountId.asReadonly(),
           },
         },
       ],
@@ -37,6 +39,7 @@ describe('LabStaffReports preview', () => {
       fixture,
       page: fixture.componentInstance,
       activeRole,
+      activeAccountId,
     };
   }
 
@@ -142,6 +145,31 @@ describe('LabStaffReports preview', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Access unavailable');
     expect(element.textContent).not.toContain('Kasun Perera');
+  });
+
+  it('clears the selected report and confirmation when the Lab Staff account changes', async () => {
+    const { page, fixture, activeAccountId } = await setup();
+
+    const report = page.pendingReports()[0];
+
+    page.selectReport(report);
+    page.confirmPatientAndLab(true);
+
+    expect(page.selectedReport()?.id).toBe(report.id);
+    expect(page.patientAndLabConfirmed()).toBe(true);
+    expect(page.canSubmitReview()).toBe(true);
+
+    // Switch accounts while keeping the same Lab Staff role.
+    activeAccountId.set('lab-staff-account-02');
+    fixture.detectChanges();
+
+    expect(page.permitted()).toBe(true);
+    expect(page.selectedReportId()).toBeNull();
+    expect(page.selectedReport()).toBeNull();
+    expect(page.patientAndLabConfirmed()).toBe(false);
+    expect(page.error()).toBe('');
+    expect(page.message()).toBe('');
+    expect(page.canSubmitReview()).toBe(false);
   });
 
   for (const preview of ['loading', 'empty', 'error', 'denied']) {

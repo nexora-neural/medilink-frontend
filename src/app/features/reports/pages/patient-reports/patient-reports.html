@@ -112,7 +112,7 @@
           </div>
 
           @if (submitted() && selectedFiles().length === 0) {
-            <p class="field-error" role="alert">Select a report document.</p>
+            <p class="field-error" role="alert">Select at least one report document.</p>
           }
 
           <section class="confirmation-panel" aria-labelledby="confirmation-heading">
@@ -259,7 +259,15 @@
 
               <div class="report-details">
                 <h3>{{ report.reportType }}</h3>
-                <p class="report-filename">{{ report.fileName }}</p>
+
+                @if (report.attachments?.length) {
+                  @for (attachment of report.attachments; track attachment.fileName) {
+                    <p class="report-filename">{{ attachment.fileName }}</p>
+                  }
+                } @else {
+                  <p class="report-filename">{{ report.fileName }}</p>
+                }
+
                 <p>Report date: {{ report.reportDate | date: 'mediumDate' }}</p>
                 <p>Reference: {{ report.reference || 'Not provided' }}</p>
                 <p>
@@ -371,14 +379,22 @@
               </dd>
             </div>
 
-            <div class="detail-item">
-              <dt>File name</dt>
-              <dd>{{ report.fileName }}</dd>
-            </div>
-
-            <div class="detail-item">
-              <dt>File type</dt>
-              <dd>{{ report.fileType || 'Not specified' }}</dd>
+            <div class="detail-item full-width">
+              <dt>Files</dt>
+              <dd>
+                @if (report.attachments?.length) {
+                  <ul>
+                    @for (attachment of report.attachments; track attachment.fileName) {
+                      <li>
+                        {{ attachment.fileName }}
+                        <span>({{ attachment.fileType || 'Not specified' }})</span>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  {{ report.fileName }} ({{ report.fileType || 'Not specified' }})
+                }
+              </dd>
             </div>
 
             @if (report.reviewedAt) {
@@ -395,7 +411,7 @@
           </dl>
 
           <p class="detail-notice">
-            The original uploaded document is stored only as local preview metadata
+            The original uploaded documents are stored only as local preview metadata
             in this sample implementation.
           </p>
         </section>

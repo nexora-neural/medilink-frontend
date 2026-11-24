@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import type { LabReport } from '../../models/lab-report.model';
@@ -145,6 +145,57 @@ describe('PatientReports preview', () => {
 
       expect(page.uploadState()).toBe('complete');
       expect(store.addReport).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('saves metadata for every selected file after a successful upload', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { page, store } = await setup();
+
+      const files = [
+        new File(['blood count'], 'blood-count.pdf', {
+          type: 'application/pdf',
+        }),
+        new File(['lipid profile'], 'lipid-profile.pdf', {
+          type: 'application/pdf',
+        }),
+        new File(['scan'], 'scan.png', {
+          type: 'image/png',
+        }),
+      ];
+
+      page.openForm();
+      page.reportType.set('Multiple Lab Reports');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set(files);
+      page.detailsConfirmed.set(true);
+
+      page.save();
+
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(page.uploadState()).toBe('failed');
+
+      page.retryUpload();
+
+      await vi.advanceTimersByTimeAsync(1200);
+
+      expect(page.uploadState()).toBe('complete');
+      expect(store.addReport).toHaveBeenCalledTimes(1);
+
+      const savedReport = store.addReport.mock.calls[0][0];
+
+      expect(savedReport.fileName).toBe('blood-count.pdf');
+      expect(savedReport.fileType).toBe('application/pdf');
+      expect(savedReport.attachments).toEqual([
+        { fileName: 'blood-count.pdf', fileType: 'application/pdf' },
+        { fileName: 'lipid-profile.pdf', fileType: 'application/pdf' },
+        { fileName: 'scan.png', fileType: 'image/png' },
+      ]);
     } finally {
       vi.useRealTimers();
     }
@@ -369,7 +420,7 @@ describe('PatientReports preview', () => {
       page.retryUpload();
 
       expect(page.uploadState()).toBe('failed');
-      expect(page.formError()).toContain('select a report file');
+      expect(page.formError()).toContain('select at least one report file');
     } finally {
       vi.useRealTimers();
     }

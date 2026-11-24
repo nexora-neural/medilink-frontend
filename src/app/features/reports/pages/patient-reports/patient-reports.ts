@@ -220,10 +220,10 @@ export class PatientReports {
     const date = this.reportDate();
     const reportReference = this.reference().trim();
     const reportNotes = this.notes().trim();
-    const file = this.selectedFiles()[0];
+    const files = [...this.selectedFiles()];
 
-    if (!type || !date || !file) {
-      this.formError.set('Enter the report type and date, and select a report file.');
+    if (!type || !date || files.length === 0) {
+      this.formError.set('Enter the report type and date, and select at least one report file.');
       return null;
     }
 
@@ -260,7 +260,7 @@ export class PatientReports {
       uploadRequestReference: null,
       notes: reportNotes,
       source: 'patient',
-      file,
+      files,
     };
   }
 
@@ -302,13 +302,12 @@ export class PatientReports {
         const nextProgress = Math.min(this.uploadProgress() + 20, 100);
         this.uploadProgress.set(nextProgress);
 
-        // First attempt intentionally fails to demonstrate recovery.
         if (this.uploadAttempt === 1 && nextProgress >= 60) {
           this.uploadSubscription?.unsubscribe();
           this.uploadSubscription = undefined;
           this.uploadState.set('failed');
           this.formError.set(
-            'The sample upload failed. Your selected report is saved locally. Please retry.',
+            'The sample upload failed. Your selected files are saved locally. Please retry.',
           );
           return;
         }
@@ -334,6 +333,19 @@ export class PatientReports {
       return;
     }
 
+    const attachments = draft.files.map((file) => ({
+      fileName: file.name,
+      fileType: file.type || 'application/octet-stream',
+    }));
+
+    const firstAttachment = attachments[0];
+
+    if (!firstAttachment) {
+      this.formError.set('Select at least one report file before uploading.');
+      this.uploadState.set('failed');
+      return;
+    }
+
     const report: LabReport = {
       id: `local-preview-${this.nextId++}`,
       reference: draft.reference || `LOCAL-${Date.now()}`,
@@ -346,8 +358,9 @@ export class PatientReports {
       reportDate: draft.reportDate,
       notes: draft.notes,
       source: draft.source,
-      fileName: draft.file.name,
-      fileType: draft.file.type,
+      fileName: firstAttachment.fileName,
+      fileType: firstAttachment.fileType,
+      attachments,
       status: 'pending',
       uploadedAt: new Date().toISOString(),
       reviewedAt: null,

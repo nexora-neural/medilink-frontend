@@ -92,6 +92,20 @@
                   <dt>Source</dt>
                   <dd>{{ report.source === 'patient' ? 'Patient upload' : 'Laboratory upload' }}</dd>
                 </div>
+                <div class="full-width">
+                  <dt>Attached files</dt>
+                  <dd>
+                    @if (report.attachments?.length) {
+                      <ul>
+                        @for (attachment of report.attachments; track $index) {
+                          <li>{{ attachment.fileName }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      {{ report.fileName }}
+                    }
+                  </dd>
+                </div>
               </dl>
 
               <button
@@ -147,13 +161,23 @@
             <dt>Report date</dt>
             <dd>{{ report.reportDate | date: 'mediumDate' }}</dd>
           </div>
-          <div>
-            <dt>File</dt>
-            <dd>{{ report.fileName }}</dd>
-          </div>
-          <div>
-            <dt>File type</dt>
-            <dd>{{ report.fileType }}</dd>
+          <div class="full-width">
+            <dt>Attached files</dt>
+            <dd>
+              @if (report.attachments?.length) {
+                <ul>
+                  @for (attachment of report.attachments; track $index) {
+                    <li>
+                      <strong>{{ attachment.fileName }}</strong>
+                      <span> — {{ attachment.fileType || 'Unknown file type' }}</span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <strong>{{ report.fileName }}</strong>
+                <span> — {{ report.fileType }}</span>
+              }
+            </dd>
           </div>
           <div class="full-width">
             <dt>Notes</dt>

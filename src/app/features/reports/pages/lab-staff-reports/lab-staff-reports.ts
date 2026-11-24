@@ -77,9 +77,19 @@ export class LabStaffReports {
   constructor() {
     this.store.load();
 
+    let previousRole = this.roles.activeRole();
+    let previousAccountId = this.roles.activeAccountId();
+
     effect(() => {
-      if (!this.permitted()) {
+      const currentRole = this.roles.activeRole();
+      const currentAccountId = this.roles.activeAccountId();
+
+      if (currentRole !== previousRole || currentAccountId !== previousAccountId) {
+        previousRole = currentRole;
+        previousAccountId = currentAccountId;
+
         this.clearSelection();
+        this.message.set('');
       }
     });
 
