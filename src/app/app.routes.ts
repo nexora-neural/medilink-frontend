@@ -163,12 +163,13 @@ const rolePages: Route[] = [
         (module) => module.PRESCRIPTION_ROUTES,
       ),
   },
-  rolePage(
-    'pharmacist/dispensing',
-    ['Pharmacist'],
-    'Dispensing',
-    'A protected pharmacist route for the dispensing workspace.',
-  ),
+  {
+    path: 'pharmacist/dispensing',
+    loadComponent: () => import('./features/dispensing/dispensing').then((m) => m.Dispensing),
+    canActivate: [roleGuard],
+    title: 'Dispensing | MediLink',
+    data: { allowedRoles: ['Pharmacist'] },
+  },
   rolePage(
     'lab-staff/reports',
     ['Lab Staff'],

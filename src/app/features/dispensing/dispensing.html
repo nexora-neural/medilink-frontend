@@ -1,0 +1,239 @@
+<main class="dispensing">
+  <p class="preview">
+    Preview · Sample data only. Changes are kept in memory and reset on refresh. Real prescription
+    access and dispensing are not connected.
+  </p>
+  @if (message) {
+    <p class="notice" role="status">
+      {{ message }}
+      <button type="button" (click)="message = ''" aria-label="Dismiss message">×</button>
+    </p>
+  }
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+  @if (state === 'loading') {
+    <section class="panel" role="status">
+      <h1 tabindex="-1">Loading prescription</h1>
+      <p>Please wait.</p>
+    </section>
+  } @else if (state === 'error') {
+    <section class="panel" role="alert">
+      <h1 tabindex="-1">Unable to load prescription</h1>
+      <p>Please try again.</p>
+      <button type="button" (click)="load()">Try again</button>
+    </section>
+  } @else if (state === 'empty') {
+    <section class="panel">
+      <h1 tabindex="-1">No prescription available</h1>
+      <p>Claim a prescription share to continue.</p>
+      <a routerLink="/workspace/pharmacist/prescription-shares">Claim a share</a>
+    </section>
+  } @else {
+    @switch (page) {
+      @case ('prescription') {
+        <div class="heading">
+          <div>
+            <div class="eyebrow">LIMITED PRESCRIPTION VIEW</div>
+            <h1 tabindex="-1">Prescription details</h1>
+            <p>Confirm the patient and prescription before recording dispensing.</p>
+          </div>
+        </div>
+        <section class="panel">
+          <div class="section-title">
+            <div>
+              <h2>RX-1042</h2>
+              <p>2026-10-30 · Expires 2026-12-31</p>
+            </div>
+            <span class="badge green">Doctor-issued</span><span class="badge">Active</span>
+          </div>
+          <div class="record"><strong>Patient</strong><span>Nadeesha Perera (sample)</span></div>
+          <div class="record">
+            <strong>Issuing doctor</strong><span>Dr. Maya Perera (sample)</span>
+          </div>
+          @for (item of store.items; track item.name) {
+            <div class="record">
+              <div>
+                <strong>{{ item.name }} · {{ item.dose }}</strong
+                ><small
+                  >{{ item.instructions }} · {{ item.prescribed }} {{ item.unit }} prescribed</small
+                >
+              </div>
+              <span>{{ store.remaining(item) }} {{ item.unit }} remaining</span>
+            </div>
+          }
+          <p class="tip">
+            Only active doctor-issued prescriptions are eligible for dispensing. Patient-added
+            records are not eligible.
+          </p>
+          <div class="actions">
+            <button class="primary" (click)="go('dispense')">Record dispensing →</button
+            ><button (click)="go('history')">Dispensing history</button
+            ><a routerLink="/workspace/pharmacist/prescription-shares">Claim prescription</a>
+          </div>
+        </section>
+      }
+      @case ('dispense') {
+        <button class="back" (click)="go('prescription')">← Prescription details</button>
+        <h1 tabindex="-1">Record dispensing</h1>
+        <p>Enter the quantity supplied for each medicine.</p>
+        <section class="panel form-panel">
+          @for (item of store.items; track item.name; let i = $index) {
+            <div class="record">
+              <div>
+                <strong>{{ item.name }} · {{ item.dose }}</strong
+                ><small
+                  >{{ item.instructions }} · {{ store.remaining(item) }}
+                  {{ item.unit }} remaining</small
+                >
+              </div>
+              <label
+                >Quantity ({{ item.unit }})<input
+                  type="number"
+                  min="0"
+                  [attr.aria-label]="'Quantity for ' + item.name + ' (' + item.unit + ')'"
+                  [step]="item.step"
+                  [max]="store.remaining(item)"
+                  [(ngModel)]="store.quantities[i]"
+              /></label>
+            </div>
+          }
+          <label>Dispensing date<input type="date" [(ngModel)]="store.date" /></label
+          ><label
+            >Notes<textarea
+              rows="3"
+              [(ngModel)]="store.notes"
+              placeholder="Optional notes"
+            ></textarea>
+          </label>
+          <p class="tip">
+            You may record a partial supply. Quantities cannot exceed the remaining amount.
+          </p>
+          <button class="primary" (click)="review()">Review dispensing →</button>
+        </section>
+      }
+      @case ('confirm') {
+        <button class="back" (click)="go('dispense')">← Edit quantities</button>
+        <section class="panel">
+          <div class="eyebrow">CONFIRM DISPENSING</div>
+          <h1 tabindex="-1">Review before recording</h1>
+          <p>Check the patient, prescription and quantities.</p>
+          <div class="record"><strong>Patient</strong><span>Nadeesha Perera (sample)</span></div>
+          <div class="record">
+            <strong>Prescription</strong><span>RX-1042 · Dr. Maya Perera (sample)</span>
+          </div>
+          @for (item of store.items; track item.name; let i = $index) {
+            @if (store.quantities[i] > 0) {
+              <div class="record">
+                <strong>{{ item.name }}</strong
+                ><span
+                  >{{ store.quantities[i] }} {{ item.unit }} ·
+                  {{ store.quantities[i] < store.remaining(item) ? 'Partial' : 'Complete' }}</span
+                >
+              </div>
+            }
+          }
+          <div class="record">
+            <strong>Date</strong><span>{{ store.date }}</span>
+          </div>
+          <div class="record">
+            <strong>Notes</strong><span>{{ store.notes || 'None' }}</span>
+          </div>
+          <div class="actions">
+            <button (click)="go('dispense')">Back</button
+            ><button class="primary" (click)="save()">Confirm and record</button>
+          </div>
+        </section>
+      }
+      @case ('history') {
+        <div class="heading">
+          <div>
+            <h1 tabindex="-1">Dispensing history</h1>
+            <p>Review recorded quantities and reversals.</p>
+          </div>
+          <button (click)="go('prescription')">Prescription details</button>
+        </div>
+        <section class="panel">
+          @if (!store.events.length) {
+            <p class="empty">No dispensing events have been recorded.</p>
+          }
+          @for (event of store.events; track event.id) {
+            <div class="record">
+              <div class="grow">
+                <strong>{{ event.item }} · {{ event.quantity }} {{ event.unit }}</strong
+                ><small
+                  >{{ event.date }} · {{ event.status }}
+                  @if (event.reason) {
+                    · Reason: {{ event.reason }}
+                  }
+                </small>
+                @if (event.originalQuantity !== undefined) {
+                  <small>Previous quantity: {{ event.originalQuantity }}</small>
+                }
+                @if (event.notes) {
+                  <small>{{ event.notes }}</small>
+                }
+              </div>
+              <span class="badge">{{ event.status }}</span>
+              @if (event.status === 'Recorded' || event.status === 'Correction') {
+                <button (click)="selectReversal(event.id)">Correct</button>
+              }
+            </div>
+          }
+          <div class="tip">
+            Remaining:
+            @for (item of store.items; track item.name) {
+              <span>{{ item.name }} {{ store.remaining(item) }} {{ item.unit }} · </span>
+            }
+          </div>
+        </section>
+      }
+      @case ('reversal') {
+        <button class="back" (click)="go('history')">← Dispensing history</button>
+        <section class="panel form-panel">
+          @if (selected; as event) {
+            <div class="eyebrow">DISPENSING CORRECTION</div>
+            <h1 tabindex="-1">Correct dispensing entry</h1>
+            <p>{{ event.item }} · {{ event.quantity }} {{ event.unit }}</p>
+            <label
+              >Correct quantity ({{ event.unit }})<input
+                type="number"
+                min="0"
+                step="1"
+                [disabled]="confirming"
+                [(ngModel)]="correctionQuantity" /></label
+            ><label
+              >Reason for correction<textarea
+                rows="3"
+                [(ngModel)]="reason"
+                [disabled]="confirming"
+                placeholder="Explain the change"
+                required
+              ></textarea>
+            </label>
+            <p class="tip">The original entry stays in history. Enter 0 to reverse it.</p>
+            <div class="actions">
+              <button (click)="go('history')">Cancel</button
+              ><button class="primary" (click)="reviewCorrection()">Review correction</button>
+            </div>
+            @if (confirming) {
+              <div class="confirm" role="group" aria-label="Confirm correction">
+                <strong>Confirm correction?</strong>
+                <p>
+                  {{ event.item }}: {{ event.quantity }} → {{ correctionQuantity }} {{ event.unit }}
+                </p>
+                <p>Reason: {{ reason }}</p>
+                <p>The original entry remains in history.</p>
+                <button (click)="confirming = false">Back</button>
+                <button class="primary" (click)="reverse()">Confirm correction</button>
+              </div>
+            }
+          } @else {
+            <h1 tabindex="-1">Select an entry first</h1>
+            <button (click)="go('history')">Go to history →</button>
+          }
+        </section>
+      }
+    }
+  }
+</main>
