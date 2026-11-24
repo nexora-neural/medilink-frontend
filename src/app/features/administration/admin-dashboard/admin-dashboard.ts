@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { from } from 'rxjs';
 import { AdminDashboardData, AdminDashboardService } from './admin-dashboard.service';
 
-type DashboardState = 'loading' | 'ready' | 'empty' | 'forbidden' | 'expired' | 'error';
+type DashboardState = 'loading' | 'ready' | 'forbidden' | 'expired' | 'error';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -20,26 +20,11 @@ export class AdminDashboard implements OnInit {
   protected readonly state = signal<DashboardState>('loading');
   protected readonly data = signal<AdminDashboardData | null>(null);
   protected readonly reviewSummaries = computed(() => {
-    const applications = this.data()?.applications.items ?? [];
+    const counts = this.data()?.pendingByRole;
     return [
-      {
-        role: 'Doctor',
-        pendingCount: applications.filter(
-          (item) => item.role === 'doctor' && item.status === 'pending',
-        ).length,
-      },
-      {
-        role: 'Pharmacist',
-        pendingCount: applications.filter(
-          (item) => item.role === 'pharmacist' && item.status === 'pending',
-        ).length,
-      },
-      {
-        role: 'Lab Staff',
-        pendingCount: applications.filter(
-          (item) => item.role === 'lab_staff' && item.status === 'pending',
-        ).length,
-      },
+      { role: 'Doctor', pendingCount: counts?.doctor ?? 0 },
+      { role: 'Pharmacist', pendingCount: counts?.pharmacist ?? 0 },
+      { role: 'Lab Staff', pendingCount: counts?.lab_staff ?? 0 },
     ];
   });
   protected readonly pendingCount = computed(() => this.data()?.summary.pending_verifications ?? 0);
@@ -59,17 +44,25 @@ export class AdminDashboard implements OnInit {
       .subscribe({
         next: (result) => {
           this.data.set(result);
-          const empty =
-            result.applications.total === 0 &&
-            result.jobs.total === 0 &&
-            result.auditEvents.total === 0 &&
-            result.backups.total === 0;
-          this.state.set(empty ? 'empty' : 'ready');
+          this.state.set('ready');
         },
-        error: (error: { status?: number }) => {
+        error: (error: { status?: number; code?: string; message?: string }) => {
           this.data.set(null);
           this.state.set(
-            error.status === 403 ? 'forbidden' : error.status === 401 ? 'expired' : 'error',
+            error.status === 403
+              ? 'forbidden'
+              : error.status === 401 ||
+                  [
+                    'auth/user-token-expired',
+                    'auth/id-token-expired',
+                    'auth/user-disabled',
+                    'auth/user-not-found',
+                    'auth/invalid-user-token',
+                    'TOKEN_EXPIRED',
+                  ].includes(error.code ?? '') ||
+                  error.message === 'Please sign in to continue.'
+                ? 'expired'
+                : 'error',
           );
         },
       });

@@ -11,43 +11,7 @@ const sample: AdminDashboardData = {
     failed_jobs: 1,
     last_backup_at: null,
   },
-  applications: {
-    items: [
-      {
-        id: '1',
-        user_id: 'u1',
-        organization_id: null,
-        role: 'doctor',
-        registration_number: null,
-        status: 'pending',
-        submitted_at: '',
-        reviewed_by: null,
-        reviewed_at: null,
-        review_reason: null,
-        evidence_document_ids: [],
-        applicant_display_name: null,
-        organization_name: null,
-      },
-      {
-        id: '2',
-        user_id: 'u2',
-        organization_id: null,
-        role: 'pharmacist',
-        registration_number: null,
-        status: 'approved',
-        submitted_at: '',
-        reviewed_by: null,
-        reviewed_at: null,
-        review_reason: null,
-        evidence_document_ids: [],
-        applicant_display_name: null,
-        organization_name: null,
-      },
-    ],
-    page: 1,
-    page_size: 100,
-    total: 2,
-  },
+  pendingByRole: { doctor: 1, pharmacist: 0, lab_staff: 0 },
   jobs: { items: [], page: 1, page_size: 20, total: 0 },
   auditEvents: { items: [], page: 1, page_size: 10, total: 0 },
   backups: { items: [], page: 1, page_size: 10, total: 0 },
@@ -89,12 +53,12 @@ describe('AdminDashboard', () => {
           active_organizations: 0,
           failed_jobs: 0,
         },
-        applications: { ...sample.applications, items: [], total: 0 },
+        pendingByRole: { doctor: 0, pharmacist: 0, lab_staff: 0 },
       }),
     );
-    expect(element.querySelector('[role="status"]')?.textContent).toContain(
-      'No administrative activity',
-    );
+    expect(element.textContent).toContain('No failed jobs');
+    expect(element.textContent).toContain('Active organizations');
+    expect(element.textContent).toContain('Open account support');
   });
 
   it('shows permission denied for a forbidden API response', async () => {
@@ -115,5 +79,52 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(element.querySelector('.count')?.textContent?.trim()).toBe('2');
+  });
+});
+
+describe('dashboard review regressions', () => {
+  it.each(['auth/user-token-expired', 'auth/id-token-expired', 'TOKEN_EXPIRED'])(
+    'offers sign-in for Firebase expiry %s',
+    async (code) => {
+      await TestBed.configureTestingModule({
+        imports: [AdminDashboard],
+        providers: [
+          provideRouter([]),
+          { provide: AdminDashboardService, useValue: { load: () => Promise.reject({ code }) } },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(AdminDashboard);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Session expired');
+      expect(fixture.nativeElement.querySelector('a[href="/login"]')).not.toBeNull();
+    },
+  );
+  it('keeps operations and actions visible when the lists are empty', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminDashboard],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AdminDashboardService,
+          useValue: {
+            load: () =>
+              Promise.resolve({
+                ...sample,
+                summary: { ...sample.summary, active_organizations: 1 },
+                pendingByRole: { doctor: 0, pharmacist: 0, lab_staff: 0 },
+              }),
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Active organizations');
+    expect(fixture.nativeElement.querySelector('.summary-list').textContent).toContain('1');
+    expect(fixture.nativeElement.textContent).toContain('Open account support');
   });
 });

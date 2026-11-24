@@ -67,7 +67,7 @@ export interface AdminBackup {
 
 export interface AdminDashboardData {
   summary: OperationalSummary;
-  applications: Page<VerificationApplication>;
+  pendingByRole: { doctor: number; pharmacist: number; lab_staff: number };
   jobs: Page<AdminJob>;
   auditEvents: Page<AdminAuditEvent>;
   backups: Page<AdminBackup>;
@@ -78,15 +78,29 @@ export class AdminDashboardService {
   private readonly auth = inject(AuthService);
 
   async load(): Promise<AdminDashboardData> {
-    const [summary, applications, jobs, auditEvents, backups] = await Promise.all([
+    const [summary, rolePages, jobs, auditEvents, backups] = await Promise.all([
       this.auth.getAuthorized<OperationalSummary>('admin/operations'),
-      this.auth.getAuthorized<Page<VerificationApplication>>(
-        'admin/verification-applications?page=1&page_size=100',
+      Promise.all(
+        (['doctor', 'pharmacist', 'lab_staff'] as const).map((role) =>
+          this.auth.getAuthorized<Page<VerificationApplication>>(
+            `admin/verification-applications?page=1&page_size=1&status=pending&role=${role}`,
+          ),
+        ),
       ),
       this.auth.getAuthorized<Page<AdminJob>>('admin/jobs?page=1&page_size=20&status=failed'),
       this.auth.getAuthorized<Page<AdminAuditEvent>>('admin/audit-events?page=1&page_size=10'),
       this.auth.getAuthorized<Page<AdminBackup>>('admin/backups?page=1&page_size=10'),
     ]);
-    return { summary, applications, jobs, auditEvents, backups };
+    return {
+      summary,
+      pendingByRole: {
+        doctor: rolePages[0].total,
+        pharmacist: rolePages[1].total,
+        lab_staff: rolePages[2].total,
+      },
+      jobs,
+      auditEvents,
+      backups,
+    };
   }
 }
