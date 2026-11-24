@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
@@ -64,11 +64,28 @@ export class PatientReports {
   readonly detailsConfirmed = signal(false);
 
   readonly canUpload = computed(
-    () => this.permitted() && ['ready', 'empty'].includes(this.pageState()),
+    () =>
+      this.permitted() &&
+      ['ready', 'empty'].includes(this.pageState()) &&
+      this.uploadState() !== 'uploading',
   );
 
   constructor() {
     this.store.load();
+
+    let previousRole = this.roles.activeRole();
+    let previousAccountId = this.roles.activeAccountId();
+
+    effect(() => {
+      const currentRole = this.roles.activeRole();
+      const currentAccountId = this.roles.activeAccountId();
+
+      if (currentRole !== previousRole || currentAccountId !== previousAccountId) {
+        previousRole = currentRole;
+        previousAccountId = currentAccountId;
+        this.resetAccountScopedState();
+      }
+    });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.cancelUpload();
@@ -145,69 +162,36 @@ export class PatientReports {
   }
 
   save(): void {
-    if (!this.canUpload() || !this.formOpen() || this.uploadState() === 'uploading') {
+    if (!this.canUpload() || !this.formOpen()) {
       return;
     }
 
     this.submitted.set(true);
-    this.formError.set('');
+    this.pendingDraft = null;
 
-    const type = this.reportType().trim();
-    const date = this.reportDate();
-    const reportReference = this.reference().trim();
-    const reportNotes = this.notes().trim();
-    const file = this.selectedFiles()[0];
+    const draft = this.createDraftFromCurrentForm();
 
-    if (!type || !date || !file) {
-      this.formError.set('Enter the report type and date, and select a report file.');
-      return;
-    }
+    if (!draft) return;
 
-    const parsedDate = new Date(`${date}T00:00:00`);
-
-    if (
-      !Number.isFinite(parsedDate.getTime()) ||
-      parsedDate.getTime() > new Date().setHours(23, 59, 59, 999)
-    ) {
-      this.formError.set('Choose a valid report date that is not in the future.');
-      return;
-    }
-
-    const accountId = this.roles.activeAccountId();
-
-    if (!accountId) {
-      this.formError.set('Your patient account could not be verified.');
-      return;
-    }
-
-    if (!this.detailsConfirmed()) {
-      this.formError.set(
-        'Confirm your patient account and laboratory assignment before continuing.',
-      );
-      return;
-    }
-
-    this.pendingDraft = {
-      patientId: accountId,
-      labId: '',
-      reportType: type,
-      reportDate: date,
-      reference: reportReference,
-      uploadRequestReference: null,
-      notes: reportNotes,
-      source: 'patient',
-      file,
-    };
-
+    this.pendingDraft = draft;
     this.uploadAttempt = 0;
     this.startUpload();
   }
 
   retryUpload(): void {
-    if (this.uploadState() !== 'failed' || !this.pendingDraft || !this.canUpload()) {
+    if (this.uploadState() !== 'failed' || !this.canUpload() || !this.formOpen()) {
       return;
     }
 
+    // Always rebuild the draft from the current form values.
+    this.submitted.set(true);
+    this.pendingDraft = null;
+
+    const draft = this.createDraftFromCurrentForm();
+
+    if (!draft) return;
+
+    this.pendingDraft = draft;
     this.startUpload();
   }
 
@@ -229,8 +213,82 @@ export class PatientReports {
     this.message.set('');
   }
 
+  private createDraftFromCurrentForm(): LabReportDraft | null {
+    this.formError.set('');
+
+    const type = this.reportType().trim();
+    const date = this.reportDate();
+    const reportReference = this.reference().trim();
+    const reportNotes = this.notes().trim();
+    const file = this.selectedFiles()[0];
+
+    if (!type || !date || !file) {
+      this.formError.set('Enter the report type and date, and select a report file.');
+      return null;
+    }
+
+    const parsedDate = new Date(`${date}T00:00:00`);
+
+    if (
+      !Number.isFinite(parsedDate.getTime()) ||
+      parsedDate.getTime() > new Date().setHours(23, 59, 59, 999)
+    ) {
+      this.formError.set('Choose a valid report date that is not in the future.');
+      return null;
+    }
+
+    const accountId = this.roles.activeAccountId();
+
+    if (!accountId || this.roles.activeRole() !== 'Patient') {
+      this.formError.set('Your patient account could not be verified.');
+      return null;
+    }
+
+    if (!this.detailsConfirmed()) {
+      this.formError.set(
+        'Confirm your patient account and laboratory assignment before continuing.',
+      );
+      return null;
+    }
+
+    return {
+      patientId: accountId,
+      labId: '',
+      reportType: type,
+      reportDate: date,
+      reference: reportReference,
+      uploadRequestReference: null,
+      notes: reportNotes,
+      source: 'patient',
+      file,
+    };
+  }
+
+  private resetAccountScopedState(): void {
+    this.cancelUpload();
+
+    this.pendingDraft = null;
+    this.uploadAttempt = 0;
+
+    this.selectedReport.set(null);
+    this.selectedFiles.set([]);
+    this.reportType.set('');
+    this.reportDate.set('');
+    this.reference.set('');
+    this.notes.set('');
+    this.submitted.set(false);
+    this.formOpen.set(false);
+    this.formError.set('');
+    this.message.set('');
+    this.detailsConfirmed.set(false);
+    this.uploadState.set('idle');
+    this.uploadProgress.set(0);
+  }
+
   private startUpload(): void {
-    if (!this.pendingDraft) return;
+    if (!this.pendingDraft || !this.canUpload() || !this.formOpen() || !this.detailsConfirmed()) {
+      return;
+    }
 
     this.uploadSubscription?.unsubscribe();
     this.uploadAttempt += 1;
@@ -250,7 +308,7 @@ export class PatientReports {
           this.uploadSubscription = undefined;
           this.uploadState.set('failed');
           this.formError.set(
-            'The sample upload failed. Your selected report is محفوظ. Please retry.',
+            'The sample upload failed. Your selected report is saved locally. Please retry.',
           );
           return;
         }
@@ -266,7 +324,15 @@ export class PatientReports {
   private completeUpload(): void {
     const draft = this.pendingDraft;
 
-    if (!draft) return;
+    if (
+      !draft ||
+      !this.permitted() ||
+      !this.detailsConfirmed() ||
+      draft.patientId !== this.roles.activeAccountId()
+    ) {
+      this.resetAccountScopedState();
+      return;
+    }
 
     const report: LabReport = {
       id: `local-preview-${this.nextId++}`,
@@ -288,6 +354,7 @@ export class PatientReports {
     };
 
     this.store.addReport(report);
+
     this.uploadState.set('complete');
     this.message.set(
       'Sample report added locally. It is not linked to a laboratory request or uploaded to the server.',

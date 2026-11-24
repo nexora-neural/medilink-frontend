@@ -16,6 +16,14 @@ describe('workspace routing', () => {
     ).toBe(RenderMode.Client);
   });
 
+  it('renders patient and lab staff reports on the client for direct navigation and refresh', () => {
+    const reportPaths = ['workspace/patient/reports', 'workspace/lab-staff/reports'];
+
+    for (const path of reportPaths) {
+      expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
+    }
+  });
+
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     TestBed.configureTestingModule({
@@ -219,6 +227,7 @@ describe('workspace routing', () => {
       '/super-admin/applications',
     );
   });
+
   it('restores a Patient session before opening the profile directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
@@ -261,6 +270,7 @@ describe('workspace routing', () => {
 
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
+
   it('restores an Admin session before opening the dashboard directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
@@ -316,6 +326,7 @@ describe('workspace routing', () => {
 
     expect(TestBed.inject(Router).url).toBe('/login');
   });
+
   it('restores a Doctor session before opening the patient queue directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);

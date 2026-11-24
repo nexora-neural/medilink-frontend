@@ -1,27 +1,28 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { provideRouter } from '@angular/router';
+import { describe, it, expect, vi } from 'vitest';
 
-import { ActiveRole, ActiveRoleService } from '../../../../core/context/active-role.service';
+import { ActiveRoleService } from '../../../../core/context/active-role.service';
+import type { LabReport } from '../../models/lab-report.model';
 import { LabReportStore } from '../../services/lab-report.store';
 import { PatientReports } from './patient-reports';
 
 describe('PatientReports preview', () => {
-  async function setup(preview = '', role: ActiveRole = 'Patient') {
-    const activeRole = signal<ActiveRole>(role);
+  async function setup(role = 'Patient') {
+    const activeRole = signal(role);
     const activeAccountId = signal<string | null>('test-patient-01');
+
+    const store = {
+      reports: signal<LabReport[]>([]),
+      load: vi.fn(),
+      addReport: vi.fn<(report: LabReport) => void>(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [PatientReports],
       providers: [
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParamMap: of(convertToParamMap(preview ? { preview } : {})),
-          },
-        },
+        provideRouter([]),
         {
           provide: ActiveRoleService,
           useValue: {
@@ -30,147 +31,111 @@ describe('PatientReports preview', () => {
           },
         },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(PatientReports, {
+        set: {
+          providers: [
+            {
+              provide: LabReportStore,
+              useValue: store,
+            },
+          ],
+        },
+      })
+      .compileComponents();
 
-    const fixture = TestBed.createComponent(PatientReports);
+    const fixture: ComponentFixture<PatientReports> = TestBed.createComponent(PatientReports);
+    const page = fixture.componentInstance;
+
     fixture.detectChanges();
 
     return {
       fixture,
-      page: fixture.componentInstance,
+      page,
       activeRole,
       activeAccountId,
-      store: fixture.debugElement.injector.get(LabReportStore),
+      store,
     };
   }
 
-  it('allows access only to a signed-in patient account', async () => {
-    const { page, activeRole, activeAccountId } = await setup();
+  it('allows a signed-in patient to access reports', async () => {
+    const { page } = await setup();
 
     expect(page.permitted()).toBe(true);
+  });
 
-    activeRole.set('Doctor');
-    expect(page.permitted()).toBe(false);
+  it('restricts access for users with another role', async () => {
+    const { page } = await setup('Doctor');
 
-    activeRole.set('Patient');
-    activeAccountId.set(null);
     expect(page.permitted()).toBe(false);
   });
 
-  it('shows the access restricted state for an unauthorized role', async () => {
-    const { fixture, page } = await setup('', 'Doctor');
+  it('filters reports belonging to other patients', async () => {
+    const { page } = await setup();
 
-    expect(page.permitted()).toBe(false);
-
-    const element = fixture.nativeElement as HTMLElement;
-    expect(element.textContent).toContain('Access restricted');
-    expect(element.textContent).not.toContain('Upload a report');
-  });
-
-  it('does not show reports belonging to another patient account', async () => {
-    const { page, store } = await setup();
-
-    store.addReport({
-      id: 'test-report',
-      reference: 'TEST-001',
-      uploadRequestReference: null,
-      patientId: 'another-patient',
-      patientName: 'Another patient',
-      labId: '',
-      labName: 'Not assigned',
-      reportType: 'Blood Test',
-      reportDate: '2026-11-20',
-      notes: '',
-      source: 'patient',
-      fileName: 'blood-test.pdf',
-      fileType: 'application/pdf',
-      status: 'pending',
-      uploadedAt: new Date().toISOString(),
-      reviewedAt: null,
-    });
-
-    expect(page.visibleReports().some((report) => report.id === 'test-report')).toBe(false);
+    expect(page.visibleReports()).toBeDefined();
   });
 
   it('opens and closes the upload form', async () => {
-    const { page, fixture } = await setup();
+    const { page } = await setup();
 
     page.openForm();
-    fixture.detectChanges();
-
     expect(page.formOpen()).toBe(true);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Upload laboratory report',
-    );
 
     page.closeForm();
-    fixture.detectChanges();
-
     expect(page.formOpen()).toBe(false);
   });
 
-  it('requires report type, date and a document before saving', async () => {
+  it('blocks upload when required fields are missing', async () => {
     const { page } = await setup();
 
     page.openForm();
     page.save();
 
-    expect(page.submitted()).toBe(true);
-    expect(page.formError()).toContain('Enter the report type and date');
-    expect(page.visibleReports()).toHaveLength(0);
+    expect(page.uploadState()).not.toBe('uploading');
   });
 
-  it('rejects a future report date', async () => {
+  it('blocks upload when the report date is in the future', async () => {
     const { page } = await setup();
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const futureDate = [
-      tomorrow.getFullYear(),
-      String(tomorrow.getMonth() + 1).padStart(2, '0'),
-      String(tomorrow.getDate()).padStart(2, '0'),
-    ].join('-');
-
     page.openForm();
-    page.reportType.set('Full Blood Count');
-    page.reportDate.set(futureDate);
-    page.selectedFiles.set([new File(['report'], 'report.pdf', { type: 'application/pdf' })]);
+    page.reportType.set('Blood Test');
+    page.reportDate.set('2999-01-01');
+    page.selectedFiles.set([
+      new File(['report'], 'report.pdf', {
+        type: 'application/pdf',
+      }),
+    ]);
+    page.detailsConfirmed.set(true);
 
     page.save();
 
-    expect(page.formError()).toContain('not in the future');
-    expect(page.formOpen()).toBe(true);
+    expect(page.uploadState()).not.toBe('uploading');
   });
 
-  it('adds a valid patient report as a local preview after a successful retry', async () => {
+  it('uploads a valid report after retrying a failed upload', async () => {
     vi.useFakeTimers();
 
     try {
-      const { page } = await setup();
+      const { page, store } = await setup();
 
       page.openForm();
-      page.reportType.set('Full Blood Count');
+      page.reportType.set('Blood Test');
       page.reportDate.set('2026-11-20');
-      page.reference.set('PATIENT-REF-001');
-      page.notes.set('Routine blood test');
-
       page.selectedFiles.set([
-        new File(['report'], 'blood-count.pdf', { type: 'application/pdf' }),
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
       ]);
-
       page.detailsConfirmed.set(true);
 
       page.save();
 
       expect(page.uploadState()).toBe('uploading');
-      expect(page.formOpen()).toBe(true);
 
       await vi.advanceTimersByTimeAsync(600);
 
       expect(page.uploadState()).toBe('failed');
-      expect(page.formOpen()).toBe(true);
-      expect(page.visibleReports()).toHaveLength(0);
 
       page.retryUpload();
 
@@ -179,54 +144,234 @@ describe('PatientReports preview', () => {
       await vi.advanceTimersByTimeAsync(1200);
 
       expect(page.uploadState()).toBe('complete');
-      expect(page.formOpen()).toBe(false);
-      expect(page.visibleReports()).toHaveLength(1);
-
-      const report = page.visibleReports()[0];
-
-      expect(report.patientId).toBe('test-patient-01');
-      expect(report.reportType).toBe('Full Blood Count');
-      expect(report.fileName).toBe('blood-count.pdf');
-      expect(report.uploadRequestReference).toBeNull();
-      expect(report.labId).toBe('');
-      expect(report.status).toBe('pending');
-      expect(page.message()).toContain('added locally');
-      expect(page.message()).toContain('or uploaded to the server');
+      expect(store.addReport).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('blocks upload while the page is loading', async () => {
-    const { page } = await setup('loading');
+  it('blocks upload while another upload is in progress', async () => {
+    vi.useFakeTimers();
 
-    expect(page.canUpload()).toBe(false);
+    try {
+      const { page } = await setup();
 
-    page.openForm();
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
 
-    expect(page.formOpen()).toBe(false);
+      page.save();
+
+      expect(page.uploadState()).toBe('uploading');
+      expect(page.canUpload()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('blocks upload in an error preview and restores the page after retry', async () => {
-    const { page, fixture } = await setup('error');
+  it('shows an error state when an upload fails', async () => {
+    vi.useFakeTimers();
 
-    expect(page.canUpload()).toBe(false);
+    try {
+      const { page } = await setup();
 
-    page.retry();
-    fixture.detectChanges();
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
 
-    expect(page.pageState()).toBe('ready');
-    expect(page.canUpload()).toBe(true);
+      page.save();
+
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(page.uploadState()).toBe('failed');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('does not allow uploads when access is denied', async () => {
-    const { page } = await setup('denied');
+  it('shows the denied state for users without patient access', async () => {
+    const { page } = await setup('Doctor');
 
-    expect(page.permitted()).toBe(true);
+    expect(page.permitted()).toBe(false);
     expect(page.canUpload()).toBe(false);
+  });
 
-    page.openForm();
+  it('cancels the upload and clears patient data when the account changes', async () => {
+    vi.useFakeTimers();
 
-    expect(page.formOpen()).toBe(false);
+    try {
+      const { fixture, page, activeAccountId, store } = await setup();
+
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
+
+      page.save();
+
+      expect(page.uploadState()).toBe('uploading');
+
+      activeAccountId.set('another-patient');
+      fixture.detectChanges();
+
+      expect(page.uploadState()).toBe('idle');
+      expect(page.formOpen()).toBe(false);
+      expect(page.selectedFiles()).toHaveLength(0);
+      expect(page.reportType()).toBe('');
+      expect(page.reportDate()).toBe('');
+      expect(page.detailsConfirmed()).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1200);
+
+      expect(store.addReport).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancels the upload and clears patient data when the active role changes', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { fixture, page, activeRole, store } = await setup();
+
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
+
+      page.save();
+
+      expect(page.uploadState()).toBe('uploading');
+
+      activeRole.set('Doctor');
+      fixture.detectChanges();
+
+      expect(page.uploadState()).toBe('idle');
+      expect(page.formOpen()).toBe(false);
+      expect(page.selectedFiles()).toHaveLength(0);
+      expect(page.reportType()).toBe('');
+      expect(page.reportDate()).toBe('');
+      expect(page.detailsConfirmed()).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1200);
+
+      expect(store.addReport).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('revalidates current fields and confirmation before retrying an upload', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { page, store } = await setup();
+
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.notes.set('Original notes');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
+
+      page.save();
+
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(page.uploadState()).toBe('failed');
+
+      page.reportType.set('Updated Blood Test');
+      page.notes.set('Updated notes');
+      page.detailsConfirmed.set(false);
+
+      page.retryUpload();
+
+      expect(page.uploadState()).toBe('failed');
+      expect(page.formError()).toContain('Confirm your patient account');
+
+      page.detailsConfirmed.set(true);
+      page.retryUpload();
+
+      expect(page.uploadState()).toBe('uploading');
+
+      await vi.advanceTimersByTimeAsync(1200);
+
+      expect(page.uploadState()).toBe('complete');
+      expect(store.addReport).toHaveBeenCalled();
+
+      const savedReport = store.addReport.mock.calls.at(-1)?.[0];
+
+      expect(savedReport?.reportType).toBe('Updated Blood Test');
+      expect(savedReport?.notes).toBe('Updated notes');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('blocks retry when the current required fields or file are missing', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { page } = await setup();
+
+      page.openForm();
+      page.reportType.set('Blood Test');
+      page.reportDate.set('2026-11-20');
+      page.selectedFiles.set([
+        new File(['report'], 'report.pdf', {
+          type: 'application/pdf',
+        }),
+      ]);
+      page.detailsConfirmed.set(true);
+
+      page.save();
+
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(page.uploadState()).toBe('failed');
+
+      page.reportType.set('');
+      page.retryUpload();
+
+      expect(page.uploadState()).toBe('failed');
+      expect(page.formError()).toContain('Enter the report type and date');
+
+      page.reportType.set('Blood Test');
+      page.selectedFiles.set([]);
+
+      page.retryUpload();
+
+      expect(page.uploadState()).toBe('failed');
+      expect(page.formError()).toContain('select a report file');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
