@@ -23,6 +23,7 @@ function profileResponse(name = 'Demo Patient'): MeResponse {
       emergency_contact_phone: null,
       notification_preferences: {},
     },
+    professional_profile: null,
   };
 }
 

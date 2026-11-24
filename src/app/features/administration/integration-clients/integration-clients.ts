@@ -1,4 +1,5 @@
 import { A11yModule } from '@angular/cdk/a11y';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import {
   afterRenderEffect,
@@ -26,11 +27,16 @@ import {
   outcomeExplanation,
   SubmissionOutcome,
 } from './integration-clients.models';
-import { INTEGRATION_CLIENTS, IntegrationClientsPreviewStore } from './integration-clients.store';
+import { IntegrationClientsApiService } from './integration-clients-api.service';
+import { INTEGRATION_CLIENTS } from './integration-clients.store';
 
 @Component({
   selector: 'app-integration-clients',
   imports: [A11yModule, DatePipe, ReactiveFormsModule, RouterLink, RouterLinkActive, UiState],
+  providers: [
+    IntegrationClientsApiService,
+    { provide: INTEGRATION_CLIENTS, useExisting: IntegrationClientsApiService },
+  ],
   templateUrl: './integration-clients.html',
   styleUrl: './integration-clients.scss',
 })
@@ -48,6 +54,7 @@ export class IntegrationClients implements OnInit, OnDestroy {
   readonly state = signal<'loading' | 'ready' | 'error'>('loading');
   readonly saving = signal(false);
   readonly message = signal('');
+  readonly loadError = signal('');
   readonly actionError = signal('');
   readonly modal = signal<'approve' | ClientAction | 'credential' | null>(null);
   readonly selected = signal<IntegrationClient | null>(null);
@@ -96,6 +103,7 @@ export class IntegrationClients implements OnInit, OnDestroy {
         this.modal.set(null);
         this.selected.set(null);
         this.clients.set([]);
+        this.labs.set([]);
         this.submissions.set([]);
       }
     });
@@ -111,6 +119,7 @@ export class IntegrationClients implements OnInit, OnDestroy {
 
   async load(): Promise<void> {
     if (!this.canManage() || this.saving() || this.modal()) return;
+    this.loadError.set('');
     this.state.set('loading');
     try {
       const [clients, labs, submissions] = await Promise.all([
@@ -123,7 +132,9 @@ export class IntegrationClients implements OnInit, OnDestroy {
       this.labs.set(labs);
       this.submissions.set(submissions);
       this.state.set('ready');
-    } catch {
+    } catch (error) {
+      if (this.destroyed || !this.canManage()) return;
+      this.loadError.set(this.accessError(error) ?? 'Try loading the lists again.');
       this.clients.set([]);
       this.labs.set([]);
       this.submissions.set([]);
@@ -216,14 +227,33 @@ export class IntegrationClients implements OnInit, OnDestroy {
         this.credentialClient.set(client.name);
         this.modal.set('credential');
       } else this.modal.set(null);
-      this.message.set('Sample change applied for this preview. Production access is unchanged.');
-    } catch {
-      if (!this.destroyed && this.canManage())
-        this.actionError.set(
-          'Could not confirm the change. Close this dialog and reload before retrying.',
-        );
+      this.message.set('Integration client updated.');
+    } catch (error) {
+      if (!this.destroyed && this.canManage()) {
+        this.actionError.set(this.mutationError(error, action));
+      }
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private accessError(error: unknown): string | undefined {
+    if (!(error instanceof HttpErrorResponse)) return undefined;
+    if (error.status === 401) return 'Your session has expired. Sign in again.';
+    if (error.status === 403) return 'Only Super Admin can manage integration clients.';
+    return undefined;
+  }
+
+  private mutationError(error: unknown, action: 'approve' | ClientAction): string {
+    const accessError = this.accessError(error);
+    if (accessError) return accessError;
+
+    if (error instanceof HttpErrorResponse && error.status === 422) {
+      return action === 'approve'
+        ? 'Check the client name and expiry. The laboratory must be active and have verified Lab Staff.'
+        : 'Check the reason and any required expiry, then try again.';
+    }
+
+    return 'Could not confirm the change. Close this dialog and reload before retrying.';
   }
 }

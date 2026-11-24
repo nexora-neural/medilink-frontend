@@ -1,5 +1,4 @@
 import { Route, Routes } from '@angular/router';
-import { integrationClientsPreviewProviders } from './features/administration/integration-clients/integration-clients.store';
 import { roleGuard } from './core/guards/role.guard';
 import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
@@ -28,7 +27,6 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
-
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -42,6 +40,26 @@ const rolePage = (
 });
 
 const rolePages: Route[] = [
+  {
+    path: 'patient/prescription-shares',
+    loadChildren: () =>
+      import('./features/prescription-sharing/prescription-sharing.routes').then(
+        (m) => m.PRESCRIPTION_SHARING_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Share a prescription | MediLink',
+    data: { allowedRoles: ['Patient'], audience: 'patient' },
+  },
+  {
+    path: 'pharmacist/prescription-shares',
+    loadChildren: () =>
+      import('./features/prescription-sharing/prescription-sharing.routes').then(
+        (m) => m.PRESCRIPTION_SHARING_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    title: 'Claim a prescription | MediLink',
+    data: { allowedRoles: ['Pharmacist'], audience: 'pharmacist' },
+  },
   {
     path: 'doctor/prescriptions/:id/issue',
     loadChildren: () =>
@@ -82,12 +100,17 @@ const rolePages: Route[] = [
     'Medications',
     'A protected patient route for the medication workspace.',
   ),
-  rolePage(
-    'patient/prescriptions',
-    ['Patient'],
-    'Prescriptions',
-    'A protected patient route for the prescription workspace.',
-  ),
+  {
+    path: 'patient/prescriptions',
+    loadComponent: () =>
+      import('./features/patient-prescriptions/patient-prescriptions').then(
+        (m) => m.PatientPrescriptions,
+      ),
+    canActivate: [roleGuard],
+    title: 'My prescriptions | MediLink',
+    data: { allowedRoles: ['Patient'] },
+  },
+
   {
     path: 'patient/history',
     component: ClinicalRecords,
@@ -110,12 +133,30 @@ const rolePages: Route[] = [
       allowedRoles: ['Patient'],
     },
   },
-  rolePage(
-    'patient/vaccinations',
-    ['Patient'],
-    'Vaccinations',
-    'A protected patient route for the vaccinations workspace.',
-  ),
+  {
+    path: 'patient/vaccinations',
+    loadComponent: () =>
+      import('./features/vaccinations/pages/patient-vaccination-history/patient-vaccination-history').then(
+        (m) => m.PatientVaccinationHistory,
+      ),
+    canActivate: [roleGuard],
+    title: 'Vaccination history | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
+  {
+    path: 'doctor/vaccinations',
+    loadComponent: () =>
+      import('./features/vaccinations/pages/doctor-vaccination-entry/doctor-vaccination-entry').then(
+        (m) => m.DoctorVaccinationEntry,
+      ),
+    canActivate: [roleGuard],
+    title: 'Vaccination entry | MediLink',
+    data: {
+      allowedRoles: ['Doctor'],
+    },
+  },
   {
     path: 'patient/access',
     component: PatientDoctorAccess,
@@ -145,12 +186,15 @@ const rolePages: Route[] = [
         (module) => module.PRESCRIPTION_ROUTES,
       ),
   },
-  rolePage(
-    'pharmacist/dispensing',
-    ['Pharmacist'],
-    'Dispensing',
-    'A protected pharmacist route for the dispensing workspace.',
-  ),
+  {
+    path: 'pharmacist/dispensing',
+    loadComponent: () => import('./features/dispensing/dispensing').then((m) => m.Dispensing),
+    canActivate: [roleGuard],
+    title: 'Dispensing | MediLink',
+    data: {
+      allowedRoles: ['Pharmacist'],
+    },
+  },
   {
     path: 'lab-staff/reports',
     loadComponent: () =>
@@ -298,7 +342,10 @@ export const routes: Routes = [
         path: 'professional-verification/membership-request',
         component: MembershipRequest,
         canActivate: [roleGuard],
-        data: { allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'] },
+        data: {
+          allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'],
+          allowPendingProfessionalApplicant: true,
+        },
       },
 
       {
@@ -309,6 +356,27 @@ export const routes: Routes = [
         data: {
           allowedRoles: ['Admin'],
         },
+      },
+
+      {
+        path: 'admin/applications',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-applications').then(
+            (module) => module.ProfessionalApplications,
+          ),
+        canActivate: [roleGuard],
+        title: 'Professional applications | MediLink',
+        data: { allowedRoles: ['Admin'] },
+      },
+      {
+        path: 'admin/applications/:id',
+        loadComponent: () =>
+          import('./features/administration/professional-applications/professional-application-detail').then(
+            (module) => module.ProfessionalApplicationDetail,
+          ),
+        canActivate: [roleGuard],
+        title: 'Application review | MediLink',
+        data: { allowedRoles: ['Admin'] },
       },
 
       {
@@ -392,7 +460,6 @@ export const routes: Routes = [
   {
     path: 'super-admin',
     component: SuperAdminShell,
-    providers: integrationClientsPreviewProviders,
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['Super Admin'] },
     children: [

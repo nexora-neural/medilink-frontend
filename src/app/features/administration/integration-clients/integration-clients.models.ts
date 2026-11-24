@@ -8,7 +8,7 @@ export interface IntegrationClient {
   organizationName: string;
   name: string;
   status: ClientStatus;
-  scopes: readonly ['reports:write'];
+  scopes: readonly [] | readonly ['reports:write'];
   expiresAt: string;
 }
 

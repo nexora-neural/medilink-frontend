@@ -9,6 +9,12 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it('renders admin application review routes on the client', () => {
+    for (const path of ['workspace/admin/applications', 'workspace/admin/applications/:id']) {
+      expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
+    }
+  });
+
   it('renders professional verification on the client for direct navigation and refresh', () => {
     expect(
       serverRoutes.find((route) => route.path === 'workspace/professional-verification')
@@ -34,6 +40,9 @@ describe('workspace routing', () => {
           useValue: {
             restoreSession: vi.fn().mockResolvedValue(true),
             getOwnProfile: vi.fn(),
+            getAuthorized: vi.fn().mockRejectedValue(new Error('API unavailable')),
+            getAuthorizedBlob: vi.fn(),
+            postAuthorized: vi.fn().mockRejectedValue(new Error('API unavailable')),
           },
         },
         {
@@ -154,7 +163,80 @@ describe('workspace routing', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Organizations and memberships');
   });
 
+  it('allows admins to access the review queue and denies patients', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/admin/applications');
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-admin', ['admin']);
+    await harness.navigateByUrl('/workspace/admin/applications');
+    expect(TestBed.inject(Router).url).toBe('/workspace/admin/applications');
+    expect(harness.routeNativeElement?.textContent).toContain('Professional applications');
+  });
+
   it('reviews an application and keeps the decision in its history when reopened', async () => {
+    const applicationId = 'a87d99f1-652c-4c0e-85b7-50a863f1f2b1';
+    let application = {
+      id: applicationId,
+      user_id: '1838c503-08f3-49a1-a512-212d24eb67b0',
+      organization_id: 'b2f189a7-b5d7-4f6b-a0cf-ab88fb9c788e',
+      role: 'doctor',
+      registration_number: 'SLMC-12345',
+      status: 'pending',
+      submitted_at: '2026-11-21T08:00:00Z',
+      reviewed_by: null as string | null,
+      reviewed_at: null as string | null,
+      review_reason: null as string | null,
+      evidence_document_ids: ['604c84a0-152e-46ec-b77e-6ca8202924ab'],
+      applicant_display_name: 'Dr. Maya Perera',
+      organization_name: 'Lakeside Clinic',
+    };
+    let history: Array<Record<string, string>> = [];
+    const auth = TestBed.inject(AuthService);
+    vi.mocked(auth.getAuthorized).mockImplementation(async (path: string) => {
+      if (path === 'admin/verification-applications?page=1&page_size=100') {
+        return { items: [application], page: 1, page_size: 100, total: 1 };
+      }
+      if (path === `admin/verification-applications/${applicationId}`) return application;
+      if (path.includes('/decisions?')) {
+        return { items: history, page: 1, page_size: 100, total: history.length };
+      }
+      if (path.startsWith('documents/')) {
+        return {
+          id: application.evidence_document_ids[0],
+          document_type: 'verification_evidence',
+          original_filename: 'sample-slmc.pdf',
+          created_at: application.submitted_at,
+        };
+      }
+      if (path.startsWith('admin/organizations/')) {
+        return { id: application.organization_id, name: application.organization_name };
+      }
+      throw new Error(`Unexpected API path: ${path}`);
+    });
+    vi.mocked(auth.postAuthorized).mockImplementation(async (_path: string, body: unknown) => {
+      const input = body as { status: string; reason: string };
+      const reviewerId = '1838c503-08f3-49a1-a512-212d24eb67b0';
+      application = {
+        ...application,
+        status: input.status,
+        reviewed_by: reviewerId,
+        reviewed_at: '2026-11-21T09:00:00Z',
+        review_reason: input.reason,
+      };
+      history = [
+        {
+          id: '7aa55a27-2446-4bdb-929e-6ccaf0c164f2',
+          application_id: applicationId,
+          reviewer_user_id: reviewerId,
+          reviewer_display_name: 'Demo reviewer',
+          decision: input.status,
+          reason: input.reason,
+          decided_at: application.reviewed_at!,
+        },
+      ];
+      return application;
+    });
+
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/super-admin/applications');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
@@ -167,7 +249,7 @@ describe('workspace routing', () => {
       expect(harness.routeNativeElement?.textContent).toContain('Dr. Maya Perera');
     });
 
-    await harness.navigateByUrl('/super-admin/applications/APP-104');
+    await harness.navigateByUrl(`/super-admin/applications/${applicationId}`);
     const detail = harness.routeNativeElement!;
     await vi.waitFor(() => {
       harness.detectChanges();
@@ -201,11 +283,11 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/super-admin/applications');
     await vi.waitFor(() => {
       harness.detectChanges();
-      const row = harness.routeNativeElement?.querySelector('a[href$="APP-104"]');
+      const row = harness.routeNativeElement?.querySelector(`a[href$="${applicationId}"]`);
       expect(row?.textContent).toContain('Approved');
     });
 
-    await harness.navigateByUrl('/super-admin/applications/APP-104');
+    await harness.navigateByUrl(`/super-admin/applications/${applicationId}`);
     await vi.waitFor(() => {
       harness.detectChanges();
       const history = harness.routeNativeElement?.querySelector('.history');
@@ -253,6 +335,7 @@ describe('workspace routing', () => {
       roles: ['patient'],
       memberships: [],
       patient_profile: null,
+      professional_profile: null,
     });
 
     const harness = await RouterTestingHarness.create();
@@ -327,6 +410,132 @@ describe('workspace routing', () => {
     expect(TestBed.inject(Router).url).toBe('/login');
   });
 
+  it('allows a pending professional applicant to request membership without granting a role', async () => {
+    vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
+      user: {
+        id: 'pending-applicant',
+        email: null,
+        display_name: 'Pending',
+        phone: null,
+        status: 'active',
+      },
+      roles: [],
+      memberships: [],
+      patient_profile: null,
+      professional_profile: {
+        user_id: 'pending-applicant',
+        role: 'doctor',
+        doctor_reference: null,
+        registration_number: null,
+        qualifications: null,
+        specialty: null,
+        verification_status: 'not_submitted',
+        created_at: '',
+        updated_at: '',
+      },
+    });
+    const roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('pending-applicant', []);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+
+    expect(TestBed.inject(Router).url).toBe(
+      '/workspace/professional-verification/membership-request',
+    );
+    expect(harness.routeNativeElement?.textContent).toContain('Request organization membership');
+    expect(roles.roles()).toEqual([]);
+  });
+
+  it.each(['pending', 'rejected', 'more_info_requested'] as const)(
+    'allows a roleless professional with %s verification to reach membership request',
+    async (verificationStatus) => {
+      vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
+        user: {
+          id: 'roleless-professional',
+          email: null,
+          display_name: 'Roleless professional',
+          phone: null,
+          status: 'active',
+        },
+        roles: [],
+        memberships: [],
+        patient_profile: null,
+        professional_profile: {
+          user_id: 'roleless-professional',
+          role: 'doctor',
+          doctor_reference: null,
+          registration_number: null,
+          qualifications: null,
+          specialty: null,
+          verification_status: verificationStatus,
+          created_at: '',
+          updated_at: '',
+        },
+      });
+      TestBed.inject(ActiveRoleService).setAccountRoles('roleless-professional', []);
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+
+      expect(TestBed.inject(Router).url).toBe(
+        '/workspace/professional-verification/membership-request',
+      );
+      expect(TestBed.inject(ActiveRoleService).roles()).toEqual([]);
+    },
+  );
+
+  it('denies a roleless professional after approval until a role is assigned', async () => {
+    vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
+      user: {
+        id: 'approved-roleless-professional',
+        email: null,
+        display_name: 'Approved professional',
+        phone: null,
+        status: 'active',
+      },
+      roles: [],
+      memberships: [],
+      patient_profile: null,
+      professional_profile: {
+        user_id: 'approved-roleless-professional',
+        role: 'doctor',
+        doctor_reference: null,
+        registration_number: 'D123',
+        qualifications: null,
+        specialty: null,
+        verification_status: 'approved',
+        created_at: '',
+        updated_at: '',
+      },
+    });
+    TestBed.inject(ActiveRoleService).setAccountRoles('approved-roleless-professional', []);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+  });
+
+  it('denies membership requests for non-professional profiles', async () => {
+    vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
+      user: {
+        id: 'patient-account',
+        email: null,
+        display_name: 'Patient',
+        phone: null,
+        status: 'active',
+      },
+      roles: ['patient'],
+      memberships: [],
+      patient_profile: null,
+      professional_profile: null,
+    });
+    TestBed.inject(ActiveRoleService).setAccountRoles('patient-account', ['patient']);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/professional-verification/membership-request');
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+  });
   it('restores a Doctor session before opening the patient queue directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
