@@ -83,6 +83,7 @@ h1 {
 
 .qr-card,
 .details-card {
+  min-width: 0;
   padding: 26px;
   border: 1px solid #e3edf3;
   border-radius: 14px;
@@ -108,11 +109,11 @@ h1 {
   }
 }
 
-.demo-badge {
+.verified-badge {
   padding: 6px 11px;
   border-radius: 20px;
-  background: #fff4dc;
-  color: #986a13;
+  background: #e8f6ee;
+  color: #267447;
   font-size: 12px;
   font-weight: 700;
 }
@@ -135,6 +136,24 @@ h1 {
   }
 }
 
+.state-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 560px;
+  margin: 48px auto;
+  padding: 36px;
+  border: 1px solid #e3edf3;
+  border-radius: 14px;
+  text-align: center;
+  background: #fff;
+  p { color: #668093; line-height: 1.6; }
+  > .material-symbols-outlined { color: #137fac; font-size: 34px; }
+}
+
+.error-state > .material-symbols-outlined { color: #a33d3d; }
+.secondary-button { padding: 10px 14px; border: 1px solid #cbdce6; border-radius: 8px; background: white; color: #24536e; cursor: pointer; }
+
 .qr-card > h3 {
   margin: 0;
   text-align: center;
@@ -152,7 +171,8 @@ h1 {
 
 .reference-box {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  min-width: 0;
   gap: 12px;
   padding: 15px;
   border: 1px solid #e3edf3;
@@ -166,6 +186,8 @@ h1 {
 
   strong {
     color: #526c80;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 

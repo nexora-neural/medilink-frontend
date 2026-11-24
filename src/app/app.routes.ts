@@ -21,8 +21,6 @@ import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/d
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 import { PatientMeasurements } from './features/measurements/pages/patient-measurements/patient-measurements';
-import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
-import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
@@ -153,7 +151,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/access',
-    component: PatientDoctorAccess,
+    loadComponent: () =>
+      import('./features/patients/pages/patient-doctor-access/patient-doctor-access').then(
+        (module) => module.PatientDoctorAccess,
+      ),
     canActivate: [roleGuard],
     data: {
       allowedRoles: ['Patient'],
@@ -277,7 +278,10 @@ export const routes: Routes = [
       ),
       {
         path: 'doctor/qr',
-        component: DoctorQrPage,
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-qr-page/doctor-qr-page').then(
+            (module) => module.DoctorQrPage,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
