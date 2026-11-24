@@ -1,0 +1,7 @@
+<label
+  >Reason for withdrawal *<textarea
+    rows="3"
+    [ngModel]="reason()"
+    (ngModelChange)="reasonChange.emit($event)"
+  ></textarea>
+</label>

@@ -27,6 +27,7 @@ import { AdminDashboard } from './features/administration/admin-dashboard/admin-
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
 import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
+
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -110,7 +111,6 @@ const rolePages: Route[] = [
     title: 'My prescriptions | MediLink',
     data: { allowedRoles: ['Patient'] },
   },
-
   {
     path: 'patient/history',
     component: ClinicalRecords,
@@ -121,12 +121,15 @@ const rolePages: Route[] = [
       audience: 'patient',
     },
   },
-  rolePage(
-    'patient/reports',
-    ['Patient'],
-    'Reports',
-    'A protected patient route for the reports workspace.',
-  ),
+  {
+    path: 'patient/reports',
+    loadChildren: () =>
+      import('./features/report-corrections/report-corrections.routes').then(
+        (m) => m.REPORT_CORRECTION_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    data: { allowedRoles: ['Patient'], audience: 'patient' },
+  },
   {
     path: 'patient/vaccinations',
     loadComponent: () =>
@@ -187,12 +190,15 @@ const rolePages: Route[] = [
     title: 'Dispensing | MediLink',
     data: { allowedRoles: ['Pharmacist'] },
   },
-  rolePage(
-    'lab-staff/reports',
-    ['Lab Staff'],
-    'Laboratory reports',
-    'A protected lab staff route for the report workspace.',
-  ),
+  {
+    path: 'lab-staff/reports',
+    loadChildren: () =>
+      import('./features/report-corrections/report-corrections.routes').then(
+        (m) => m.REPORT_CORRECTION_ROUTES,
+      ),
+    canActivate: [roleGuard],
+    data: { allowedRoles: ['Lab Staff'], audience: 'lab' },
+  },
 ];
 
 const doctorPreview = (path: string, title: string, description: string, qr = false): Route => ({
@@ -243,7 +249,6 @@ export const routes: Routes = [
           description: 'A responsive MediLink workspace foundation for role-aware navigation.',
         },
       },
-
       {
         path: 'doctor/dashboard',
         component: DoctorDashboard,
@@ -303,7 +308,6 @@ export const routes: Routes = [
         'Laboratory reports',
         'Authorized laboratory reports will be available after integration.',
       ),
-
       {
         path: 'patient/profile',
         component: PatientProfile,
@@ -333,7 +337,6 @@ export const routes: Routes = [
           allowPendingProfessionalApplicant: true,
         },
       },
-
       {
         path: 'admin/dashboard',
         component: AdminDashboard,
@@ -343,7 +346,6 @@ export const routes: Routes = [
           allowedRoles: ['Admin'],
         },
       },
-
       {
         path: 'admin/applications',
         loadComponent: () =>
@@ -364,7 +366,6 @@ export const routes: Routes = [
         title: 'Application review | MediLink',
         data: { allowedRoles: ['Admin'] },
       },
-
       {
         path: 'admin/account-support',
         component: AccountSupport,
@@ -373,7 +374,6 @@ export const routes: Routes = [
           allowedRoles: ['Admin', 'Super Admin'],
         },
       },
-
       {
         path: 'patient/correction-request',
         loadComponent: () =>
@@ -386,7 +386,6 @@ export const routes: Routes = [
           mode: 'request',
         },
       },
-
       {
         path: 'patient/correction-history',
         loadComponent: () =>
@@ -399,7 +398,6 @@ export const routes: Routes = [
           mode: 'history',
         },
       },
-
       {
         path: 'doctor/correction-requests',
         loadComponent: () =>
@@ -412,7 +410,6 @@ export const routes: Routes = [
           mode: 'decision',
         },
       },
-
       {
         path: 'doctor/corrections',
         loadComponent: () =>
@@ -425,7 +422,6 @@ export const routes: Routes = [
           mode: 'correction',
         },
       },
-
       {
         path: 'doctor/correction-history',
         loadComponent: () =>
@@ -438,11 +434,9 @@ export const routes: Routes = [
           mode: 'history',
         },
       },
-
       ...rolePages,
     ],
   },
-
   {
     path: 'super-admin',
     component: SuperAdminShell,

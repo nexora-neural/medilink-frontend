@@ -124,6 +124,22 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/patient/reports',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/reports/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/reports',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/reports/**',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },

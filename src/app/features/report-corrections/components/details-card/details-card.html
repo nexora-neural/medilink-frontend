@@ -1,0 +1,54 @@
+<section class="panel">
+  <div class="eyebrow">REPORT DETAILS</div>
+  <h1>{{ report().type }} · v{{ report().version }}</h1>
+  <p>
+    <span
+      class="badge"
+      [class.green]="report().status === 'Published'"
+      [class.amber]="report().status !== 'Published'"
+      >{{ report().status }}</span
+    >
+  </p>
+  <div class="record">
+    <strong>Patient</strong><span>{{ report().patient }}</span>
+  </div>
+  <div class="record">
+    <strong>Request</strong><span>{{ report().request }}</span>
+  </div>
+  <div class="record">
+    <strong>Report date / reference</strong
+    ><span>{{ report().date }} · {{ report().reference }}</span>
+  </div>
+  <div class="record">
+    <strong>File</strong
+    ><a [href]="report().url" target="_blank" rel="noopener">{{ report().file }} ?</a>
+  </div>
+  <div class="record">
+    <strong>Notes</strong><span>{{ report().notes || 'None' }}</span>
+  </div>
+  @if (report().previous; as previous) {
+    <div class="record">
+      <strong>Previous version</strong
+      ><span><app-report-version-link [previous]="previous" [base]="base()" /></span>
+    </div>
+  }
+  @if (report().reason) {
+    <div class="record">
+      <strong>Reason</strong><span>{{ report().reason }}</span>
+    </div>
+  }
+  @if (report().status === 'Published' && (canCorrect() || canWithdraw())) {
+    <div class="actions">
+      @if (canCorrect()) {
+        <button class="button primary" type="button" (click)="correction.emit()">
+          Correct report
+        </button>
+      }
+      @if (canWithdraw()) {
+        <a class="button secondary" [routerLink]="[base(), report().id, 'withdraw']"
+          >Withdraw report</a
+        >
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,30 @@
+<a class="back" [routerLink]="[s.base, s.selectedId]">← Report details</a>
+@if (s.canWithdraw) {
+  <section class="panel form-panel" [attr.aria-busy]="s.pending">
+    <div class="eyebrow">WITHDRAW REPORT</div>
+    <h1>Withdraw this report?</h1>
+    <p>The report remains in history with a withdrawn status.</p>
+    <app-report-withdrawal-reason [(reason)]="s.correctionReason" (reasonChange)="s.markDirty()" />
+    <div class="actions">
+      <a class="button secondary" [routerLink]="[s.base, s.selectedId]">Cancel</a
+      ><button
+        class="button primary"
+        type="button"
+        [disabled]="s.pending"
+        (click)="s.reviewWithdrawal()"
+      >
+        Review withdrawal
+      </button>
+    </div>
+    @if (s.showConfirm) {
+      <app-report-withdrawal-confirmation
+        [reason]="s.correctionReason"
+        [pending]="s.pending"
+        (back)="s.showConfirm = false"
+        (confirmed)="s.withdraw()"
+      />
+    }
+  </section>
+} @else {
+  <app-report-empty-state [base]="s.base" />
+}
