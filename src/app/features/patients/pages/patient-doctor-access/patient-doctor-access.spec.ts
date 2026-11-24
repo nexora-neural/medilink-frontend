@@ -151,6 +151,49 @@ describe('PatientDoctorAccess', () => {
     expect(component.reviewStatus()).toBe('empty');
   });
 
+  it.each(['success', 'error'] as const)(
+    'ignores an older %s response after the same reference is resubmitted',
+    async (olderOutcome) => {
+      let finishOld!: (value: unknown) => void;
+      let failOld!: (reason: unknown) => void;
+      identityApi.resolve.mockReset();
+      identityApi.resolve.mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          finishOld = resolve;
+          failOld = reject;
+        }),
+      );
+      identityApi.resolve.mockResolvedValueOnce({
+        user_id: 'doctor-1',
+        role: 'doctor',
+        display_name: 'Dr Test',
+        verification_status: 'suspended',
+      });
+      component.codeForm.controls.doctorCode.setValue('SAME-REFERENCE');
+      component.reviewCode();
+      component.clearCode();
+      component.codeForm.controls.doctorCode.setValue('SAME-REFERENCE');
+      component.reviewCode();
+      await vi.waitFor(() =>
+        expect(component.resolvedDoctor()?.verification_status).toBe('suspended'),
+      );
+
+      if (olderOutcome === 'success') {
+        finishOld({
+          user_id: 'doctor-1',
+          role: 'doctor',
+          display_name: 'Dr Test',
+          verification_status: 'approved',
+        });
+      } else {
+        failOld(new HttpErrorResponse({ status: 404 }));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(component.reviewStatus()).toBe('ready');
+      expect(component.resolvedDoctor()?.verification_status).toBe('suspended');
+    },
+  );
+
   it('automatically updates the visible screen when camera permission is denied', async () => {
     getUserMedia.mockRejectedValue(new Error('Permission denied'));
 

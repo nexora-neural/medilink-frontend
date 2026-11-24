@@ -265,6 +265,7 @@ export class PatientDoctorAccess implements OnDestroy {
   private detector?: BarcodeDetectorLike;
   private scanTimer?: ReturnType<typeof setTimeout>;
   readonly resolvedDoctor = signal<DoctorIdentity | null>(null);
+  private reviewRequestId = 0;
 
   private cameraSession = 0;
   private scanInProgress = false;
@@ -464,6 +465,7 @@ export class PatientDoctorAccess implements OnDestroy {
 
   reviewCode(): void {
     this.clearGrantReview();
+    const requestId = ++this.reviewRequestId;
     const code = this.codeForm.controls.doctorCode.value.trim();
 
     if (!code) {
@@ -478,11 +480,12 @@ export class PatientDoctorAccess implements OnDestroy {
     this.reviewStatus.set('loading');
     this.reviewMessage.set('Verifying the current doctor identity with the server...');
     this.resolvedDoctor.set(null);
-    void this.resolveCode(code);
+    void this.resolveCode(code, requestId);
   }
 
   onReferenceInput(): void {
     this.clearGrantReview();
+    this.reviewRequestId++;
     if (this.enteredCode()) {
       this.enteredCode.set('');
       this.resolvedDoctor.set(null);
@@ -491,17 +494,17 @@ export class PatientDoctorAccess implements OnDestroy {
     }
   }
 
-  private async resolveCode(code: string): Promise<void> {
+  private async resolveCode(code: string, requestId: number): Promise<void> {
     try {
       const identity = await this.doctorIdentity.resolve(code);
-      if (this.destroyed || this.enteredCode() !== code) return;
+      if (this.destroyed || this.reviewRequestId !== requestId) return;
       this.resolvedDoctor.set(identity);
       this.reviewStatus.set('ready');
       this.reviewMessage.set(
         'Doctor identity was returned by the server. Review it before making any access decision.',
       );
     } catch (error) {
-      if (this.destroyed || this.enteredCode() !== code) return;
+      if (this.destroyed || this.reviewRequestId !== requestId) return;
       this.resolvedDoctor.set(null);
       this.reviewStatus.set('error');
       const status = error instanceof HttpErrorResponse ? error.status : 0;
@@ -518,6 +521,7 @@ export class PatientDoctorAccess implements OnDestroy {
   }
 
   clearCode(): void {
+    this.reviewRequestId++;
     this.clearGrantReview();
 
     this.stopCamera();
@@ -533,6 +537,7 @@ export class PatientDoctorAccess implements OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    this.reviewRequestId++;
 
     this.stopCamera();
   }
