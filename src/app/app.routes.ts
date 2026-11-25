@@ -577,8 +577,6 @@ export const routes: Routes = [
         title: 'Privileged audit and recovery | MediLink',
         data: {
           auditAudience: 'super-admin',
-        data: {
-          previewPage: 'audit',
         },
       },
       {
