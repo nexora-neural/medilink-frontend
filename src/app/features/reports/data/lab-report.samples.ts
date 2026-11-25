@@ -1,0 +1,41 @@
+import type { LabReport } from '../models/lab-report.model';
+import { SAMPLE_ACTIVE_REFERENCE } from '../../lab-upload-requests/data/lab-upload-request.samples';
+
+export const SAMPLE_LAB_REPORTS: LabReport[] = [
+  {
+    id: 'report-001',
+    reference: 'MLR-2026-001',
+    uploadRequestReference: SAMPLE_ACTIVE_REFERENCE,
+    patientId: 'sample-patient',
+    patientName: 'Kasun Perera',
+    labId: 'sample-lab-01',
+    labName: 'Example Central Laboratory',
+    reportType: 'Full Blood Count',
+    reportDate: '2026-11-18',
+    notes: 'Routine blood test report.',
+    source: 'patient',
+    fileName: 'full-blood-count.pdf',
+    fileType: 'application/pdf',
+    status: 'pending',
+    uploadedAt: '2026-11-19T09:30:00',
+    reviewedAt: null,
+  },
+  {
+    id: 'report-002',
+    reference: 'MLR-2026-002',
+    uploadRequestReference: SAMPLE_ACTIVE_REFERENCE,
+    patientId: 'sample-patient',
+    patientName: 'Kasun Perera',
+    labId: 'sample-lab-01',
+    labName: 'Example Central Laboratory',
+    reportType: 'Lipid Profile',
+    reportDate: '2026-11-15',
+    notes: 'Cholesterol test results.',
+    source: 'laboratory',
+    fileName: 'lipid-profile.pdf',
+    fileType: 'application/pdf',
+    status: 'accepted',
+    uploadedAt: '2026-11-16T11:15:00',
+    reviewedAt: '2026-11-17T08:45:00',
+  },
+];

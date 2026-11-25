@@ -1,0 +1,525 @@
+﻿:host {
+  display: block;
+  color: #243247;
+}
+
+.vaccination-page {
+  width: min(100% - 32px, 1180px);
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.page-heading {
+  margin-bottom: 24px;
+
+  .eyebrow {
+    color: #397c75;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  h1 {
+    margin: 8px 0;
+    color: #172b43;
+    font-size: clamp(1.7rem, 4vw, 2.2rem);
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+  }
+}
+
+.preview-notice,
+.access-warning,
+.access-success,
+.form-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+
+  .material-symbols-outlined {
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+}
+
+.preview-notice {
+  margin-bottom: 20px;
+  background: #eff6ff;
+  color: #315b87;
+}
+
+.vaccination-card {
+  padding: 24px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgb(15 23 42 / 4%);
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+
+  h2 {
+    margin: 0 0 6px;
+    color: #172b43;
+    font-size: 1.15rem;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > span {
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 12px;
+    color: #243247;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.92rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: #397c75;
+      box-shadow: 0 0 0 3px rgb(57 124 117 / 14%);
+    }
+
+    &:disabled {
+      background: #f1f5f9;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.patient-card > .field {
+  max-width: 520px;
+}
+
+.patient-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  strong {
+    color: #243247;
+    font-size: 0.94rem;
+  }
+}
+
+.summary-label {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-success {
+  color: #17633f;
+  background: #dcfce7;
+}
+
+.status-danger {
+  color: #9f3030;
+  background: #fee2e2;
+}
+
+.access-warning {
+  margin-top: 18px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.access-success {
+  margin-top: 18px;
+  color: #17633f;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.source-label {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  color: #315b87;
+  background: #eff6ff;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.form-message {
+  margin-bottom: 18px;
+}
+
+.error-message {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.optional {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.82rem;
+  }
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 11px 18px;
+  color: #fff;
+  background: #28766d;
+  border: 1px solid #28766d;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #205f58;
+    border-color: #205f58;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgb(40 118 109 / 30%);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .material-symbols-outlined {
+    font-size: 19px;
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .vaccination-page {
+    width: min(100% - 24px, 1180px);
+    padding-top: 24px;
+  }
+
+  .vaccination-card {
+    padding: 18px;
+  }
+
+  .patient-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .section-heading {
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .form-footer {
+    align-items: stretch;
+    flex-direction: column;
+
+    .primary-button {
+      width: 100%;
+    }
+  }
+
+  .patient-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 15px;
+  color: #315b68;
+  background: #fff;
+  border: 1px solid #b8cbd0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f0f7f7;
+    border-color: #397c75;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgb(40 118 109 / 25%);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+.field-hint {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.records-card {
+  margin-bottom: 20px;
+}
+
+.record-count {
+  flex-shrink: 0;
+  padding: 6px 11px;
+  color: #315b87;
+  background: #eff6ff;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.record-details {
+  min-width: 0;
+
+  h3 {
+    margin: 0;
+    color: #172b43;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    color: #334155;
+  }
+
+  .record-date {
+    color: #334155;
+    font-weight: 600;
+  }
+
+  .record-source {
+    font-size: 0.78rem;
+    text-transform: capitalize;
+  }
+}
+
+.record-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.correction-button {
+  flex-shrink: 0;
+}
+
+.records-empty {
+  padding: 30px 16px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+
+  > .material-symbols-outlined {
+    color: #64748b;
+    font-size: 32px;
+  }
+
+  h3 {
+    margin: 10px 0 6px;
+    color: #243247;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .record-item {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .correction-button {
+    width: 100%;
+  }
+
+  .form-actions {
+    width: 100%;
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .record-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -37,6 +37,8 @@ const activityLabels = new Map([
 
 type OrganizationSummary = Pick<Organization, 'id' | 'name' | 'type' | 'status'>;
 
+type ActivityItem = { id: string; label: string; createdAt: string };
+
 export interface DashboardSnapshot {
   organizations: OrganizationSummary[];
   pendingOrganizations: number;
@@ -45,7 +47,7 @@ export interface DashboardSnapshot {
   failedJobs: number;
   pendingVerifications: number;
   lastBackupAt: string | null;
-  activity: { id: string; label: string; createdAt: string }[];
+  activity: ActivityItem[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,7 +55,7 @@ export class SuperAdminDashboardApiService {
   private readonly auth = inject(AuthService);
 
   async load(): Promise<DashboardSnapshot> {
-    const [organizations, clients, operations, audit] = await Promise.all([
+    const [organizations, clients, operations, activity] = await Promise.all([
       this.auth.getAuthorized<Page<OrganizationSummary>>(
         '/admin/organizations?status=pending&page=1&page_size=5',
       ),
@@ -61,7 +63,7 @@ export class SuperAdminDashboardApiService {
         '/admin/integration-clients?page=1&page_size=1',
       ),
       this.auth.getAuthorized<OperationalSummary>('/admin/operations'),
-      this.auth.getAuthorized<Page<AuditEvent>>('/admin/audit-events?page=1&page_size=20'),
+      this.recentAdministrativeActivity(),
     ]);
 
     return {
@@ -77,12 +79,31 @@ export class SuperAdminDashboardApiService {
       failedJobs: operations.failed_jobs,
       pendingVerifications: operations.pending_verifications,
       lastBackupAt: operations.last_backup_at,
-      activity: audit.items
-        .flatMap(({ id, action, created_at }) => {
-          const label = activityLabels.get(action);
-          return label ? [{ id, label, createdAt: created_at }] : [];
-        })
-        .slice(0, 3),
+      activity,
     };
+  }
+
+  private async recentAdministrativeActivity(): Promise<ActivityItem[]> {
+    // Filter before pagination: noisy request/clinical events must not hide admin actions.
+    // Three newest per allowed action contain the global three newest matching events.
+    // This bounds the work to one small page per action, regardless of audit-log size.
+    const groups = await Promise.all(
+      [...activityLabels].map(async ([action, label]) => {
+        const page = await this.auth.getAuthorized<Page<AuditEvent>>(
+          `/admin/audit-events?action=${encodeURIComponent(action)}&page=1&page_size=3`,
+        );
+        return page.items
+          .filter((event) => event.action === action)
+          .map(({ id, created_at }) => ({ id, label, createdAt: created_at }));
+      }),
+    );
+    return groups
+      .flat()
+      .sort((a, b) => {
+        const time = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+        // Match the server's created_at DESC, id DESC order for timestamp ties.
+        return time || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+      })
+      .slice(0, 3);
   }
 }

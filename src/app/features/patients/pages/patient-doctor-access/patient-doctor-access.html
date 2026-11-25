@@ -126,7 +126,7 @@
           placeholder="Enter doctor reference"
           autocomplete="off"
           aria-describedby="code-help code-error"
-          (input)="clearGrantReview()"
+          (input)="onReferenceInput()"
         />
 
         <p id="code-help" class="field-help">Enter the reference provided by the doctor.</p>
@@ -137,7 +137,9 @@
           </p>
         }
 
-        <button type="submit" class="primary-button">Review reference</button>
+        <button type="submit" class="primary-button" [disabled]="reviewStatus() === 'loading'">
+          {{ reviewStatus() === 'loading' ? 'Reviewing…' : 'Review reference' }}
+        </button>
       </form>
     </article>
   </section>
@@ -159,7 +161,7 @@
     @if (reviewStatus() === 'loading') {
       <div class="review-state loading-state" role="status" aria-live="polite">
         <span class="material-symbols-outlined">progress_activity</span>
-        <h3>Loading sample review</h3>
+        <h3>Verifying doctor identity</h3>
         <p>{{ reviewMessage() }}</p>
 
         @if (enteredCode()) {
@@ -176,25 +178,32 @@
     @if (reviewStatus() === 'ready') {
       <div class="review-state ready-state" role="status">
         <span class="material-symbols-outlined">info</span>
-        <h3>Sample review ready</h3>
+        <h3>Doctor reference resolved</h3>
         <p>{{ reviewMessage() }}</p>
 
-        <div class="review-details">
-          <div>
-            <span>Entered reference</span>
-            <strong>{{ enteredCode() }}</strong>
-          </div>
+        @if (resolvedDoctor(); as doctor) {
+          <div class="review-details">
+            <div>
+              <span>Doctor</span>
+              <strong>{{ doctor.display_name }}</strong>
+            </div>
 
-          <div>
-            <span>Doctor identity</span>
-            <strong>Awaiting server verification</strong>
-          </div>
+            <div>
+              <span>Professional role</span>
+              <strong>{{ doctor.role }}</strong>
+            </div>
 
-          <div>
-            <span>Verification status</span>
-            <strong>Not verified</strong>
+            <div>
+              <span>Verification status</span>
+              <strong>{{ doctor.verification_status }}</strong>
+            </div>
+            @if (doctor.organization_name) {
+              <div>
+                <span>Clinic / Organization</span><strong>{{ doctor.organization_name }}</strong>
+              </div>
+            }
           </div>
-        </div>
+        }
       </div>
     }
 
@@ -213,15 +222,15 @@
     }
 
     <p class="verification-notice">
-      This is a frontend sample preview. Doctor identity verification and access granting require
-      the backend API and are not available here.
+      Identity is resolved by the server using the current doctor record. Reviewing a QR does not
+      grant access; access grants are handled separately.
     </p>
   </section>
 
   <section class="review-card grant-card" aria-labelledby="grant-heading">
     <div class="section-heading">
       <h2 id="grant-heading">Choose doctor access</h2>
-      <p>Sample preview only. These choices do not give a doctor access to your records.</p>
+      <p>Choose what this verified doctor may access and confirm before granting permission.</p>
     </div>
 
     <form
@@ -294,33 +303,30 @@
           <input type="checkbox" formControlName="confirmed" />
           <span>
             I have reviewed the selected categories, duration and consultation permission for this
-            sample preview.
+            doctor access grant.
           </span>
         </label>
       </fieldset>
 
-      <p class="verification-notice">
-        No access has been granted. Doctor identity and organization must be verified by the server
-        before real access can be granted.
-      </p>
+      <p class="verification-notice">Review the verified doctor above before granting access.</p>
       @if (grantError()) {
         <p class="error-message" role="alert">
           {{ grantError() }}
         </p>
       }
 
-      <button type="submit" class="primary-button">Review sample access choices</button>
+      <button type="submit" class="primary-button">Review access choices</button>
     </form>
     @if (grantSummary(); as summary) {
       <section class="grant-summary" aria-labelledby="grant-summary-heading">
-        <h3 id="grant-summary-heading">Sample access summary</h3>
+        <h3 id="grant-summary-heading">Confirm doctor access</h3>
 
         <p class="verification-notice" role="status">
-          Preview only. No access has been granted and doctor identity remains unverified.
+          Confirm below to grant the selected access to {{ resolvedDoctor()?.display_name }}.
         </p>
 
         <dl>
-          <dt>Entered doctor reference — unverified</dt>
+          <dt>Verified doctor reference</dt>
           <dd>{{ summary.reference }}</dd>
 
           <dt>Selected record categories</dt>
@@ -338,117 +344,119 @@
           <dt>Allow consultation</dt>
           <dd>{{ summary.allowConsultation ? 'Yes' : 'No' }}</dd>
         </dl>
+
+        @if (grantCreateError()) {
+          <p class="error-message" role="alert">{{ grantCreateError() }}</p>
+        }
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="createGrant()"
+          [disabled]="grantInProgress()"
+        >
+          {{ grantInProgress() ? 'Saving access…' : 'Confirm and grant access' }}
+        </button>
       </section>
     }
   </section>
   <section class="review-card grants-list" aria-labelledby="grants-heading">
     <div class="section-heading">
-      <h2 id="grants-heading">Sample doctor access grants</h2>
-      <p>
-        Fictional records with fixed example dates and statuses. No grants were retrieved from the
-        server. Grant history is separate from record-access activity.
-      </p>
+      <h2 id="grants-heading">Doctor access grants</h2>
+      @if (grantSuccess()) {
+        <p role="status">{{ grantSuccess() }}</p>
+      }
+      <p>Grants saved for your account. Active grants end at expiry or when you revoke them.</p>
     </div>
 
     <div class="camera-actions" role="group" aria-label="Grant list preview state">
       <button
         type="button"
         class="secondary-button"
-        [attr.aria-pressed]="grantsView() === 'ready'"
-        (click)="grantsView.set('ready')"
+        (click)="loadGrants()"
+        [disabled]="grantsView() === 'loading'"
       >
-        Sample records
-      </button>
-      <button
-        type="button"
-        class="secondary-button"
-        [attr.aria-pressed]="grantsView() === 'loading'"
-        (click)="grantsView.set('loading')"
-      >
-        Loading
-      </button>
-      <button
-        type="button"
-        class="secondary-button"
-        [attr.aria-pressed]="grantsView() === 'empty'"
-        (click)="grantsView.set('empty')"
-      >
-        Empty
-      </button>
-      <button
-        type="button"
-        class="secondary-button"
-        [attr.aria-pressed]="grantsView() === 'error'"
-        (click)="grantsView.set('error')"
-      >
-        Error
+        Refresh grants
       </button>
     </div>
 
     <div [attr.aria-busy]="grantsView() === 'loading'">
       <p role="status" aria-atomic="true">
         @if (grantsView() === 'loading') {
-          Loading sample grants...
-        } @else if (grantsView() === 'empty') {
-          No sample grants to display.
+          Loading access grants…
         }
       </p>
 
       @if (grantsView() === 'error') {
-        <p class="error-message" role="alert">Sample error: grants could not be loaded.</p>
-        <button type="button" class="secondary-button" (click)="grantsView.set('ready')">
-          Retry sample list
+        <p class="error-message" role="alert">{{ grantsError() }}</p>
+        <button type="button" class="secondary-button" (click)="loadGrants()">
+          Retry loading grants
         </button>
       }
 
       @if (grantsView() === 'ready') {
-        <h3>Active sample grants</h3>
+        <h3>Saved active grants</h3>
         <p role="status" aria-atomic="true">{{ revokeMessage() }}</p>
 
-        @if (!sampleGrants().some(isActiveSampleGrant)) {
-          <p>No active sample grants.</p>
+        @if (!grants().some(isActiveGrant)) {
+          <p>No active grants.</p>
         }
 
-        @for (grant of sampleGrants(); track grant.id) {
-          @if (grant.status === 'active') {
+        @for (item of grants(); track item.grant.id) {
+          @let grant = item.grant;
+          @if (grantStatus(item) === 'active') {
             <article class="grant-item">
-              <h4>{{ grant.doctor }}</h4>
-              <p>{{ grant.organization }}</p>
-              <p><strong>Example status:</strong> Active</p>
+              <h4>{{ grantDoctor(item) }}</h4>
+              @if (grant.organization_id) {
+                <p>Organization: {{ grant.organization_id }}</p>
+              }
+              <p><strong>Status:</strong> Active</p>
 
               <ul>
-                @for (category of grant.categories; track category) {
+                @for (category of item.categories; track category) {
                   <li>{{ categoryLabel(category) }}</li>
                 }
               </ul>
 
               <p>
                 <strong>Allow consultation:</strong>
-                {{ grant.allowConsultation ? 'Yes' : 'No' }}
+                {{ grant.allow_consultation ? 'Yes' : 'No' }}
               </p>
               <p>
-                <strong>Example expiry (UTC):</strong>
-                <time [attr.datetime]="grant.expiresAt">
-                  {{ grant.expiresAt }}
+                <strong>Expires:</strong>
+                <time [attr.datetime]="grant.expires_at">
+                  {{ grant.expires_at | date: 'medium' }}
                 </time>
               </p>
               @if (pendingRevokeId() === grant.id) {
                 <div class="revoke-confirmation">
                   <p>
-                    Mark the sample grant for {{ grant.doctor }} at {{ grant.organization }} as
-                    revoked? This changes the local preview only.
+                    Revoke access for {{ grantDoctor(item) }}? The server will apply this change
+                    after confirmation.
                   </p>
+                  <label
+                    >Reason for revocation
+                    <textarea
+                      [value]="revokeReason()"
+                      (input)="revokeReason.set($any($event.target).value)"
+                      maxlength="1000"
+                    ></textarea>
+                  </label>
+                  @if (revokeError()) {
+                    <p class="error-message" role="alert">{{ revokeError() }}</p>
+                  }
 
                   <div class="camera-actions">
                     <button
                       type="button"
                       class="primary-button"
-                      (click)="confirmSampleRevoke(grant.id)"
+                      (click)="confirmRevoke(grant.id)"
+                      [disabled]="revokeInProgress()"
                     >
-                      Confirm sample revoke
+                      Confirm revoke
                     </button>
 
-                    <button type="button" class="secondary-button" (click)="cancelSampleRevoke()">
+                    <button type="button" class="secondary-button" (click)="cancelRevoke()">
                       Cancel
                     </button>
                   </div>
@@ -457,10 +465,10 @@
                 <button
                   type="button"
                   class="secondary-button"
-                  [attr.aria-label]="'Revoke sample grant for ' + grant.doctor"
-                  (click)="requestSampleRevoke(grant.id)"
+                  [attr.aria-label]="'Revoke access for ' + grantDoctor(item)"
+                  (click)="requestRevoke(grant.id)"
                 >
-                  Revoke sample grant
+                  Revoke access
                 </button>
               }
             </article>
@@ -468,32 +476,35 @@
         }
 
         <details class="grant-history">
-          <summary>Review expired and revoked sample grants</summary>
+          <summary>Review expired and revoked grants</summary>
 
-          @for (grant of sampleGrants(); track grant.id) {
-            @if (grant.status !== 'active') {
+          @for (item of grants(); track item.grant.id) {
+            @let grant = item.grant;
+            @if (grantStatus(item) !== 'active') {
               <article class="grant-item">
-                <h4>{{ grant.doctor }}</h4>
-                <p>{{ grant.organization }}</p>
+                <h4>{{ grantDoctor(item) }}</h4>
+                @if (grant.organization_id) {
+                  <p>Organization: {{ grant.organization_id }}</p>
+                }
                 <p>
-                  <strong>Example status:</strong>
-                  {{ grant.status === 'expired' ? 'Expired' : 'Revoked' }}
+                  <strong>Status:</strong>
+                  {{ grantStatus(item) }}
                 </p>
 
                 <ul>
-                  @for (category of grant.categories; track category) {
+                  @for (category of item.categories; track category) {
                     <li>{{ categoryLabel(category) }}</li>
                   }
                 </ul>
 
                 <p>
                   <strong>Allow consultation:</strong>
-                  {{ grant.allowConsultation ? 'Yes' : 'No' }}
+                  {{ grant.allow_consultation ? 'Yes' : 'No' }}
                 </p>
                 <p>
-                  <strong>Example expiry (UTC):</strong>
-                  <time [attr.datetime]="grant.expiresAt">
-                    {{ grant.expiresAt }}
+                  <strong>Expires:</strong>
+                  <time [attr.datetime]="grant.expires_at">
+                    {{ grant.expires_at | date: 'medium' }}
                   </time>
                 </p>
               </article>

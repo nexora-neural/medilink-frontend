@@ -37,24 +37,27 @@ describe('SuperAdminDashboard', () => {
         };
       }
       if (path.startsWith('/admin/audit-events?')) {
+        const action = new URL(path, 'http://test.local').searchParams.get('action');
         return {
-          items: pendingTotal
-            ? [
-                {
-                  id: 'a1',
-                  action: 'clinical_note.created',
-                  created_at: '2026-11-24T12:00:00Z',
-                  metadata: { note: 'PRIVATE-CLINICAL' },
-                },
-                {
-                  id: 'a2',
-                  action: 'integration_client.created',
-                  created_at: '2026-11-24T11:00:00Z',
-                  actor_user_id: 'PRIVATE-ACTOR',
-                  target_id: 'PRIVATE-TARGET',
-                },
-              ]
-            : [],
+          total: pendingTotal && action === 'integration_client.created' ? 1 : 0,
+          items:
+            pendingTotal && action === 'integration_client.created'
+              ? [
+                  {
+                    id: 'a1',
+                    action: 'clinical_note.created',
+                    created_at: '2026-11-24T12:00:00Z',
+                    metadata: { note: 'PRIVATE-CLINICAL' },
+                  },
+                  {
+                    id: 'a2',
+                    action: 'integration_client.created',
+                    created_at: '2026-11-24T11:00:00Z',
+                    actor_user_id: 'PRIVATE-ACTOR',
+                    target_id: 'PRIVATE-TARGET',
+                  },
+                ]
+              : [],
         };
       }
       throw new Error('Unexpected dashboard request');
@@ -88,7 +91,20 @@ describe('SuperAdminDashboard', () => {
       '/admin/organizations?status=pending&page=1&page_size=5',
       '/admin/integration-clients?page=1&page_size=1',
       '/admin/operations',
-      '/admin/audit-events?page=1&page_size=20',
+      ...[
+        'organization.decision',
+        'membership.decision',
+        'integration_client.created',
+        'integration_client.credential_rotated',
+        'integration_client.suspended',
+        'integration_client.revoked',
+        'account.admin.appointed',
+        'account.admin.revoked',
+        'job.retry.requested',
+        'job.retry.completed',
+        'job.retry.cancelled',
+        'backup.run',
+      ].map((action) => `/admin/audit-events?action=${action}&page=1&page_size=3`),
     ]);
     const values = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll('app-dashboard-stat strong'),
@@ -110,7 +126,7 @@ describe('SuperAdminDashboard', () => {
     pendingTotal = 0;
     (fixture.nativeElement.querySelector('.heading button') as HTMLButtonElement).click();
     await settle();
-    expect(getAuthorized).toHaveBeenCalledTimes(8);
+    expect(getAuthorized).toHaveBeenCalledTimes(30);
     expect(text()).toContain('No organizations awaiting review');
     expect(text()).toContain('No recent administrative activity');
     expect(text()).not.toContain('Central Laboratory');

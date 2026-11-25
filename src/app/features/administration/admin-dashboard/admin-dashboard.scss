@@ -258,3 +258,13 @@ a:focus-visible {
     flex: 1 1 calc(50% - 8px);
   }
 }
+
+.refresh-button { margin-top: 16px; }
+.summary-list { display: grid; gap: 12px; margin: 24px 0 0; }
+.summary-list > div { display: flex; justify-content: space-between; gap: 12px; padding-block: 12px; border-top: 1px solid #e6edf3; }
+.summary-list dt { color: #52677b; }
+.summary-list dd { margin: 0; font-weight: 700; text-align: right; }
+.data-list { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+.data-list li { display: grid; gap: 4px; padding: 12px; border: 1px solid #e6edf3; border-radius: 10px; }
+.data-list small { color: #52677b; }
+@media (max-width: 760px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr); } .review-card { grid-row: auto; } }
