@@ -5,6 +5,7 @@ import { FirebaseApp, FirebaseOptions, getApps, initializeApp } from 'firebase/a
 import {
   Auth,
   browserLocalPersistence,
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
   setPersistence,
@@ -17,6 +18,7 @@ import { ActiveOrganizationService } from './context/active-organization.service
 
 export interface MediLinkConfig {
   firebase: FirebaseOptions;
+  authEmulatorUrl?: string;
   apiBaseUrl: string;
 }
 
@@ -73,6 +75,7 @@ export class AuthService {
   private readonly platform = inject(PLATFORM_ID);
   private readonly roleContext = inject(ActiveRoleService);
   private readonly organizationContext = inject(ActiveOrganizationService);
+  private readonly connectedEmulators = new WeakSet<Auth>();
 
   private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
@@ -83,6 +86,10 @@ export class AuthService {
       getApps().find((item) => item.name === 'medilink') ??
       initializeApp(config.firebase, 'medilink');
     const auth = getAuth(app);
+    if (config.authEmulatorUrl && !this.connectedEmulators.has(auth)) {
+      connectAuthEmulator(auth, config.authEmulatorUrl, { disableWarnings: true });
+      this.connectedEmulators.add(auth);
+    }
     await setPersistence(auth, browserLocalPersistence);
     return { auth, config };
   }

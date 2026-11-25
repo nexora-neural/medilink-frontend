@@ -1,0 +1,37 @@
+<div class="review-page">
+  <header class="heading">
+    <div><span class="eyebrow">DOCTOR WORKSPACE / RECORD REVIEW</span><h1>Review patient evidence</h1><p>Review a patient-added prescription and record your outcome.</p></div>
+    <a class="back" routerLink="/workspace/doctor/dashboard">← Back to dashboard</a>
+  </header>
+  <div class="notice" role="note"><strong>Preview only.</strong> This screen uses sample information. Reviews are temporary and are not sent to a server.</div>
+  @if (state === 'loading') {
+    <section class="card" role="status"><h2>Loading evidence</h2><p>Please wait.</p></section>
+  } @else if (state === 'error') {
+    <section class="card" role="alert"><h2>Unable to load evidence</h2><p>Please try again.</p><button type="button" (click)="retry()">Try again</button></section>
+  } @else if (state === 'empty') {
+    <section class="card"><h2>No evidence available</h2><p>There is no patient evidence to review.</p></section>
+  } @else {
+    <section class="card" aria-labelledby="evidence-title">
+      <div class="section-heading"><div><span class="eyebrow">PATIENT-ADDED RECORD</span><h2 id="evidence-title">Prescription evidence</h2><p>Patient: Sample Patient · Record: SAMPLE-001</p></div><span class="badge">Patient-added · Not clinically verified</span></div>
+      <div class="grid"><div class="subcard"><h3>Original document</h3><p>No document is available for this sample record.</p></div><div class="subcard"><h3>Patient-entered details</h3><dl><dt>Medicine</dt><dd>Metformin 500 mg</dd><dt>Instructions</dt><dd>Twice daily</dd><dt>Prescriber</dt><dd>Not specified</dd></dl></div></div>
+      <p class="source-note">This patient-added source remains unchanged when a review is recorded.</p>
+    </section>
+    <div class="grid lower-grid">
+      <section class="card" aria-labelledby="review-heading"><h2 id="review-heading">Record a review</h2><p>Choose the outcome and add notes if needed.</p>
+        <form (ngSubmit)="saveReview()" novalidate>
+          <label for="outcome">Review outcome <span aria-hidden="true">*</span></label>
+          <select id="outcome" name="outcome" [(ngModel)]="outcome" required [attr.aria-invalid]="validation && !outcome ? 'true' : null" [attr.aria-describedby]="validation ? 'review-error' : null"><option value="">Select an outcome</option><option value="Reviewed">Reviewed</option><option value="Needs clarification">Needs clarification</option><option value="Unable to verify">Unable to verify</option></select>
+          <label for="notes">Review notes <span class="optional">(optional)</span></label><textarea id="notes" name="notes" rows="4" maxlength="1000" [(ngModel)]="notes" placeholder="Add review notes"></textarea>
+          @if (validation) { <p id="review-error" class="error" role="alert">{{ validation }}</p> }
+          @if (message) { <p class="success" role="status">{{ message }}</p> }
+          <button type="submit" class="primary">Save review</button>
+        </form>
+      </section>
+      <section class="card" aria-labelledby="history-heading"><h2 id="history-heading">Review history</h2><p>Reviewer, date and outcome for this evidence.</p>
+        @if (reviews.length === 0) { <div class="empty"><strong>No reviews yet</strong><p>Recorded reviews will appear here in this preview.</p></div> }
+        @for (review of reviews; track review) { <article class="history"><span class="outcome">{{ review.outcome }}</span><dl><dt>Reviewer</dt><dd>{{ review.reviewer }} (sample)</dd><dt>Review date</dt><dd>{{ review.date | date:'medium' }}</dd><dt>Notes</dt><dd>{{ review.notes || 'No notes provided' }}</dd></dl></article> }
+      </section>
+    </div>
+    <section class="card"><h2>Doctor order</h2><p>A doctor order is a separate prescription linked to the patient evidence. Creating the link will be available after integration.</p><button type="button" disabled>Create linked doctor order</button><a class="text-link" routerLink="/workspace/doctor/prescriptions">Open prescriptions</a></section>
+  }
+</div>

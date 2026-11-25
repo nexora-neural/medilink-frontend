@@ -98,7 +98,7 @@ describe('ProfessionalApplicationDetail', () => {
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
     const scheduled: Array<() => void> = [];
-    vi.spyOn(window, 'setTimeout').mockImplementation(((handler, delay) => {
+    vi.spyOn(window, 'setTimeout').mockImplementation(((handler: TimerHandler, delay?: number) => {
       if (delay === 1000 && typeof handler === 'function') scheduled.push(handler as () => void);
       return 1;
     }) as typeof window.setTimeout);

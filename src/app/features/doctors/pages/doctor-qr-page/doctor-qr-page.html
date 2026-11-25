@@ -1,101 +1,31 @@
-
 <main class="qr-page">
   <header class="page-header">
     <div>
-      <a class="back-link" routerLink="/workspace/doctor/dashboard">
-        <span class="material-symbols-outlined">arrow_back</span>
-        Back to dashboard
-      </a>
-
-      <p class="eyebrow">DOCTOR IDENTITY</p>
-      <h1>My QR code</h1>
-      <p class="subtitle">
-        Let patients scan your QR code to review your doctor identity
-        before requesting access.
-      </p>
+      <a class="back-link" routerLink="/workspace/doctor/dashboard"><span class="material-symbols-outlined">arrow_back</span>Back to dashboard</a>
+      <p class="eyebrow">DOCTOR IDENTITY</p><h1>My QR code</h1>
+      <p class="subtitle">Let patients scan your QR code to review your current doctor identity before requesting access.</p>
     </div>
-
-    <button class="print-button" type="button" (click)="printQr()">
-      <span class="material-symbols-outlined">print</span>
-      Print QR code
-    </button>
+    @if (state() === 'ready') { <button class="print-button" type="button" (click)="printQr()"><span class="material-symbols-outlined">print</span>Print QR code</button> }
   </header>
 
-  <section class="content-grid">
-    <article class="qr-card">
-      <div class="card-heading">
-        <div>
-          <h2>Your identity QR</h2>
-          <p>Personal doctor identification</p>
-        </div>
-        <span class="demo-badge">Preview</span>
-      </div>
-
-      <div class="qr-frame">
-        <img
-          src="/doctor-qr-placeholder.svg"
-          alt="Non-functional demonstration QR placeholder"
-        />
-      </div>
-
-      <h3>Doctor QR preview</h3>
-      <p class="qr-description">
-        Your scannable identity QR will appear here after backend integration.
-      </p>
-
-      <div class="reference-box">
-        <span>Doctor reference</span>
-        <strong>Not available yet</strong>
-      </div>
-
-      <p class="demo-notice">
-        <span class="material-symbols-outlined">info</span>
-        Preview only. This QR is not scannable and cannot grant access.
-      </p>
-    </article>
-
-    <aside class="details-card">
-      <div class="details-heading">
-        <span class="material-symbols-outlined">medical_information</span>
-        <div>
-          <h2>Doctor information</h2>
-          <p>Your professional identity details</p>
-        </div>
-      </div>
-
-      <div class="info-row">
-        <span>Full name</span>
-        <strong>Will be loaded</strong>
-      </div>
-
-      <div class="info-row">
-        <span>Professional registration</span>
-        <strong>Will be loaded</strong>
-      </div>
-
-      <div class="info-row">
-        <span>Clinic / Organization</span>
-        <strong>Will be loaded</strong>
-      </div>
-
-      <div class="info-row">
-        <span>Verification status</span>
-        <strong class="status-pending">
-          <span class="status-dot"></span>
-          Not available
-        </strong>
-      </div>
-
-      <div class="security-note">
-        <span class="material-symbols-outlined">shield_lock</span>
-        <div>
-          <strong>Your identity is protected</strong>
-          <p>
-            The QR code is intended to contain an opaque doctor reference.
-            It should not expose patient information.
-          </p>
-        </div>
-      </div>
-    </aside>
-  </section>
+  @if (state() === 'loading') { <section class="state-card" role="status" aria-live="polite"><span class="material-symbols-outlined">progress_activity</span><h2>Loading your doctor QR</h2><p>Checking that your doctor account is approved.</p></section> }
+  @if (state() === 'denied' || state() === 'error') {
+    <section class="state-card error-state" [attr.role]="state() === 'denied' ? 'status' : 'alert'"><span class="material-symbols-outlined">{{ state() === 'denied' ? 'verified_user' : 'error' }}</span><h2>{{ state() === 'denied' ? 'QR code unavailable' : 'Unable to load doctor QR' }}</h2><p>{{ errorMessage() }}</p>
+      @if (state() === 'error') { <button class="print-button" type="button" (click)="loadQr()">Try again</button> }
+    </section>
+  }
+  @if (state() === 'ready' && qr(); as data) {
+    <section class="content-grid">
+      <article class="qr-card">
+        <div class="card-heading"><div><h2>Your identity QR</h2><p>Opaque doctor reference</p></div><span class="verified-badge">{{ qrStatusLabel() }}</span></div>
+        <div class="qr-frame"><img [src]="qrImage()" alt="Scannable doctor identity QR code" /></div>
+        <h3>Scan to verify identity</h3><p class="qr-description">Patients can scan this QR to retrieve your current server verified professional identity.</p>
+        <div class="reference-box"><span>Doctor reference</span><strong>{{ data.doctor_reference }}</strong><small>Verification: {{ qrStatusLabel() }}</small></div>
+      </article>
+      <aside class="details-card"><div class="details-heading"><span class="material-symbols-outlined">shield_lock</span><div><h2>Identity privacy</h2><p>Only an opaque reference is encoded</p></div></div>
+        <p>The QR contains no name, registration details, clinic data, patient information, or access grant. The patient app asks the server for your current identity when scanned.</p>
+        <button class="secondary-button" type="button" (click)="loadQr()">Refresh identity</button>
+      </aside>
+    </section>
+  }
 </main>

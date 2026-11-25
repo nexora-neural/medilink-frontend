@@ -1,0 +1,293 @@
+﻿
+<div class="vaccination-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">DOCTOR WORKSPACE</span>
+      <h1>Vaccination Entry</h1>
+      <p>Record and correct a patient's vaccination during an active consultation.</p>
+    </div>
+  </header>
+
+  <div class="preview-notice" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      Preview mode: Patient and consultation information is sample data.
+      Records are stored locally and are not sent to the backend.
+    </p>
+  </div>
+
+  <section class="vaccination-card patient-card">
+    <div class="section-heading">
+      <div>
+        <h2>Patient and consultation</h2>
+        <p>Select the patient currently attending your consultation.</p>
+      </div>
+    </div>
+
+    <label class="field">
+      <span>Select patient</span>
+      <select
+        [value]="selectedPatientId()"
+        (change)="updatePatient($any($event.target).value)"
+      >
+        @for (patient of patients(); track patient.id) {
+          <option [value]="patient.id">
+            {{ patient.name }} ({{ patient.referenceNumber }})
+          </option>
+        }
+      </select>
+    </label>
+
+    @if (selectedPatient(); as patient) {
+      <div class="patient-summary">
+        <div>
+          <span class="summary-label">Patient</span>
+          <strong>{{ patient.name }}</strong>
+        </div>
+        <div>
+          <span class="summary-label">Medical record access</span>
+          <span
+            class="status-badge"
+            [class.status-success]="patient.readAccess === 'active'"
+            [class.status-danger]="patient.readAccess !== 'active'"
+          >
+            {{ patient.readAccess === 'active' ? 'Active' : patient.readAccess }}
+          </span>
+        </div>
+        <div>
+          <span class="summary-label">Consultation permission</span>
+          <span
+            class="status-badge"
+            [class.status-success]="patient.consultationPermission === 'granted'"
+            [class.status-danger]="patient.consultationPermission !== 'granted'"
+          >
+            {{ patient.consultationPermission === 'granted' ? 'Granted' : patient.consultationPermission }}
+          </span>
+        </div>
+        <div>
+          <span class="summary-label">Consultation status</span>
+          <span
+            class="status-badge"
+            [class.status-success]="patient.status === 'in-consultation'"
+            [class.status-danger]="patient.status !== 'in-consultation'"
+          >
+            {{ patient.status === 'in-consultation' ? 'In consultation' : patient.status }}
+          </span>
+        </div>
+      </div>
+    }
+
+    @if (!canRecord()) {
+      <div class="access-warning" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <p>
+          Vaccination entry is unavailable. An active consultation, active
+          medical record access and granted consultation permission are required.
+        </p>
+      </div>
+    } @else {
+      <div class="access-success" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        <p>Consultation requirements satisfied. You can record or correct a vaccination.</p>
+      </div>
+    }
+  </section>
+
+  <section class="vaccination-card form-card">
+    <div class="section-heading">
+      <div>
+        <h2>
+          {{ formMode() === 'correction' ? 'Correct vaccination record' : 'Vaccination details' }}
+        </h2>
+        <p>
+          {{
+            formMode() === 'correction'
+              ? 'Update the selected record. The original version will be preserved.'
+              : 'Enter the baseline vaccination information below.'
+          }}
+        </p>
+      </div>
+      <span class="source-label">Source: Doctor</span>
+    </div>
+
+    @if (error()) {
+      <div class="form-message error-message" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        {{ error() }}
+      </div>
+    }
+
+    @if (message()) {
+      <div class="form-message success-message" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+        {{ message() }}
+      </div>
+    }
+
+    <form
+      (submit)="$event.preventDefault(); formMode() === 'correction' ? saveCorrection() : save()"
+    >
+      <div class="form-grid">
+        <label class="field full-width">
+          <span>Vaccine name <span class="required">*</span></span>
+          <input
+            type="text"
+            placeholder="e.g. Influenza, COVID-19"
+            [value]="vaccineName()"
+            (input)="vaccineName.set($any($event.target).value)"
+            required
+            maxlength="200"
+          />
+        </label>
+
+        <label class="field">
+          <span>Administered date <span class="required">*</span></span>
+          <input
+            type="date"
+            [value]="administeredOn()"
+            (input)="administeredOn.set($any($event.target).value)"
+            required
+          />
+        </label>
+
+        <label class="field">
+          <span>Next dose date <span class="optional">(Optional)</span></span>
+          <input
+            type="date"
+            [value]="nextDoseOn()"
+            (input)="nextDoseOn.set($any($event.target).value)"
+          />
+        </label>
+
+        <label class="field full-width">
+          <span>Dose details</span>
+          <input
+            type="text"
+            placeholder="e.g. First dose, Booster dose"
+            [value]="doseDetails()"
+            (input)="doseDetails.set($any($event.target).value)"
+            maxlength="500"
+          />
+        </label>
+
+        <label class="field full-width">
+          <span>Notes</span>
+          <textarea
+            rows="4"
+            placeholder="Additional vaccination information (optional)"
+            [value]="notes()"
+            (input)="notes.set($any($event.target).value)"
+            maxlength="2000"
+          ></textarea>
+        </label>
+
+        @if (formMode() === 'correction') {
+          <label class="field full-width">
+            <span>Correction reason <span class="required">*</span></span>
+            <textarea
+              rows="3"
+              placeholder="Explain why this vaccination record needs correction"
+              [value]="correctionReason()"
+              (input)="correctionReason.set($any($event.target).value)"
+              maxlength="500"
+              required
+            ></textarea>
+            <span class="field-hint">Required. Maximum 500 characters.</span>
+          </label>
+        }
+      </div>
+
+      <div class="form-footer">
+        <p><span class="required">*</span> Required fields</p>
+
+        <div class="form-actions">
+          @if (formMode() === 'correction') {
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="cancelCorrection()"
+              [disabled]="saving()"
+            >
+              Cancel
+            </button>
+          }
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="!canRecord() || saving()"
+          >
+            @if (saving()) {
+              <span class="material-symbols-outlined spinning" aria-hidden="true">progress_activity</span>
+              Saving...
+            } @else {
+              <span class="material-symbols-outlined" aria-hidden="true">save</span>
+              {{ formMode() === 'correction' ? 'Save correction' : 'Save vaccination' }}
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section class="vaccination-card records-card">
+    <div class="section-heading">
+      <div>
+        <h2>Existing vaccination records</h2>
+        <p>Select a record to create a corrected version.</p>
+      </div>
+      <span class="record-count">{{ sortedRecords().length }} records</span>
+    </div>
+
+    @if (sortedRecords().length === 0) {
+      <div class="records-empty" role="status">
+        <span class="material-symbols-outlined" aria-hidden="true">vaccines</span>
+        <h3>No vaccination records</h3>
+        <p>There are no active vaccination records available in this preview.</p>
+      </div>
+    } @else {
+      <div class="record-list">
+        @for (record of sortedRecords(); track record.id) {
+          <article class="record-item">
+            <div class="record-details">
+              <div class="record-title-row">
+                <h3>{{ record.vaccineName }}</h3>
+                <span class="status-badge status-success">Current version</span>
+              </div>
+
+              <p class="record-date">
+                Administered: {{ formatDate(record.administeredOn) }}
+              </p>
+
+              @if (record.doseDetails) {
+                <p><strong>Dose:</strong> {{ record.doseDetails }}</p>
+              }
+
+              @if (record.nextDoseOn) {
+                <p><strong>Next dose:</strong> {{ formatDate(record.nextDoseOn) }}</p>
+              }
+
+              @if (record.notes) {
+                <p><strong>Notes:</strong> {{ record.notes }}</p>
+              }
+
+              <p class="record-source">
+                Source: {{ sourceLabel(record.source) }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button correction-button"
+              (click)="startCorrection(record)"
+              [disabled]="!canRecord() || saving()"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+              Correct record
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
