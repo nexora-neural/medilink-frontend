@@ -76,6 +76,10 @@ export class PrescriptionDetail {
     try {
       const updated = this.store.finish(this.prescriptionId(), this.action(), this.reason());
 
+      if (updated.status === 'completed' && this.linkedAction() === 'correct') {
+        this.linkedAction.set('renew');
+      }
+
       this.reason.set('');
       this.actionMessage.set(`Sample prescription marked as ${updated.status}.`);
     } catch (error) {
@@ -89,7 +93,12 @@ export class PrescriptionDetail {
 
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      this.prescriptionId.set(params.get('id') ?? '');
+      const id = params.get('id') ?? '';
+
+      if (id !== this.prescriptionId()) {
+        this.prescriptionId.set(id);
+        this.resetPrescriptionForms(id);
+      }
     });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
@@ -169,5 +178,18 @@ export class PrescriptionDetail {
     } catch {
       this.linkedError.set('Draft created. Open the linked prescription from History.');
     }
+  }
+  private resetPrescriptionForms(id: string): void {
+    this.action.set('complete');
+    this.reason.set('');
+    this.actionError.set('');
+    this.actionMessage.set('');
+
+    this.linkedReason.set('');
+    this.linkedError.set('');
+
+    const prescription = this.store.find(id);
+
+    this.linkedAction.set(prescription?.status === 'completed' ? 'renew' : 'correct');
   }
 }
