@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ActiveRoleService } from '../../core/context/active-role.service';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { REPORT_CORRECTION_ROUTES } from './report-corrections.routes';
@@ -20,6 +21,7 @@ describe('reference report layouts', () => {
     }),
   );
   function existingUpload(): void {
+    TestBed.inject(ActiveRoleService).setAccountRoles('test-lab-user', ['lab_staff']);
     TestBed.inject(ReportCorrectionStore).setReports(
       [
         {

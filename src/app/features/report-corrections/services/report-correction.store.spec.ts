@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { ActiveRoleService } from '../../../core/context/active-role.service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LabReport } from '../models/report-correction.models';
 import { ReportCorrectionStore } from './report-correction.store';
@@ -26,6 +27,7 @@ describe('report correction store', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     store = TestBed.inject(ReportCorrectionStore);
+    TestBed.inject(ActiveRoleService).setAccountRoles('test-lab-user', ['lab_staff']);
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     vi.useFakeTimers();
   });
@@ -112,5 +114,58 @@ describe('report correction store', () => {
     expect(store.correctionDraft.file).toBe('replacement.pdf');
     expect(store.correctionReason).toBe('Corrected report');
     expect(store.reports).toHaveLength(1);
+  });
+
+  it('allows a patient with explicit capabilities in the patient workspace', () => {
+    const roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('test-patient', ['patient']);
+    store.base = '/workspace/patient/reports';
+    prepare();
+    expect(store.canCorrect).toBe(true);
+    expect(store.canWithdraw).toBe(true);
+  });
+
+  it('blocks patient actions in the laboratory workspace', () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('test-patient', ['patient']);
+    prepare();
+    expect(store.canCorrect).toBe(false);
+    expect(store.canWithdraw).toBe(false);
+  });
+
+  it('blocks laboratory actions in the patient workspace', () => {
+    store.base = '/workspace/patient/reports';
+    prepare();
+    expect(store.canCorrect).toBe(false);
+    expect(store.canWithdraw).toBe(false);
+  });
+
+  it('blocks other roles even when capabilities are supplied', () => {
+    prepare();
+    const roles = TestBed.inject(ActiveRoleService);
+    for (const role of ['doctor', 'pharmacist', 'admin', 'super_admin']) {
+      roles.setAccountRoles('test-' + role, [role]);
+      expect(store.canCorrect).toBe(false);
+      expect(store.canWithdraw).toBe(false);
+    }
+  });
+
+  it('blocks direct actions when the active role changes after confirmation', () => {
+    prepare();
+    const original = { ...store.selected! };
+    store.reviewCorrection();
+    expect(store.showConfirm).toBe(true);
+    TestBed.inject(ActiveRoleService).setAccountRoles('test-doctor', ['doctor']);
+    store.correct();
+    store.withdraw();
+    vi.advanceTimersByTime(400);
+    expect(store.reports).toEqual([original]);
+    expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+  });
+
+  it('blocks actions after logout', () => {
+    prepare();
+    TestBed.inject(ActiveRoleService).clear();
+    expect(store.canCorrect).toBe(false);
+    expect(store.canWithdraw).toBe(false);
   });
 });

@@ -1,10 +1,26 @@
 import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { ActiveRoleService } from '../../../core/context/active-role.service';
 import { LabReport, ReportDraft, ReportPermissions } from '../models/report-correction.models';
 
 @Injectable({ providedIn: 'root' })
 export class ReportCorrectionStore implements OnDestroy {
   private readonly router = inject(Router);
+  private readonly roleContext = inject(ActiveRoleService);
+
+  private get hasActionRole(): boolean {
+    const role = this.roleContext.activeRole();
+
+    if (!this.roleContext.activeAccountId() || !this.roleContext.roles().includes(role)) {
+      return false;
+    }
+
+    return (
+      (role === 'Patient' && this.base === '/workspace/patient/reports') ||
+      (role === 'Lab Staff' && this.base === '/workspace/lab-staff/reports')
+    );
+  }
+
   // Matches LabData: no reports exist until the upload/integration flow supplies them.
   reports: LabReport[] = [];
   laboratory = 'Central Laboratory';
@@ -38,15 +54,27 @@ export class ReportCorrectionStore implements OnDestroy {
   }
   get canCorrect(): boolean {
     return (
-      this.selected?.status === 'Published' && this.permissions[this.selectedId]?.correct === true
+      this.hasActionRole &&
+      this.selected?.status === 'Published' &&
+      this.permissions[this.selectedId]?.correct === true
     );
   }
   get canWithdraw(): boolean {
     return (
-      this.selected?.status === 'Published' && this.permissions[this.selectedId]?.withdraw === true
+      this.hasActionRole &&
+      this.selected?.status === 'Published' &&
+      this.permissions[this.selectedId]?.withdraw === true
     );
   }
 
+  /**
+   * ML-143 must supply only reports authorized for the signed-in account.
+   * Patient views must receive only reports the patient may access.
+   * Action capabilities must come from trusted source, ownership,
+   * verified-staff and original-laboratory checks.
+   * Patient display names must never be used as ownership identifiers.
+   * The API must authorize every read, correction and withdrawal.
+   */
   setReports(
     reports: readonly LabReport[],
     permissions: Readonly<Record<string, ReportPermissions>>,
