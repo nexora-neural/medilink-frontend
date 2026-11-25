@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { DoctorIdentityService } from '../../../doctor-identity/doctor-identity.service';
+import { AccessGrantsApiService } from './access-grants-api.service';
 import { PatientDoctorAccess } from './patient-doctor-access';
 
 describe('PatientDoctorAccess', () => {
@@ -10,7 +11,13 @@ describe('PatientDoctorAccess', () => {
   let getUserMedia: ReturnType<typeof vi.fn>;
   let detectQr: ReturnType<typeof vi.fn>;
   let originalMediaDevices: PropertyDescriptor | undefined;
-  let identityApi: { resolve: ReturnType<typeof vi.fn> };
+  let identityApi: {
+    resolve: ReturnType<typeof vi.fn>;
+    resolveDoctor: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    list: ReturnType<typeof vi.fn>;
+    revoke: ReturnType<typeof vi.fn>;
+  };
 
   const createStream = () => {
     const stopTrack = vi.fn();
@@ -33,15 +40,20 @@ describe('PatientDoctorAccess', () => {
   beforeEach(async () => {
     getUserMedia = vi.fn();
     detectQr = vi.fn().mockResolvedValue([]);
+    const resolveDoctor = vi.fn().mockResolvedValue({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Dr Test',
+      verification_status: 'approved',
+      organization_id: 'clinic-1',
+      organization_name: 'Test Clinic',
+    });
     identityApi = {
-      resolve: vi.fn().mockResolvedValue({
-        user_id: 'doctor-1',
-        role: 'doctor',
-        display_name: 'Dr Test',
-        verification_status: 'approved',
-        organization_id: 'clinic-1',
-        organization_name: 'Test Clinic',
-      }),
+      resolve: resolveDoctor,
+      resolveDoctor,
+      create: vi.fn().mockResolvedValue({}),
+      list: vi.fn().mockResolvedValue({ items: [], page: 1, page_size: 100, total: 0 }),
+      revoke: vi.fn().mockResolvedValue({}),
     };
 
     originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
@@ -55,7 +67,11 @@ describe('PatientDoctorAccess', () => {
 
     await TestBed.configureTestingModule({
       imports: [PatientDoctorAccess],
-      providers: [provideRouter([]), { provide: DoctorIdentityService, useValue: identityApi }],
+      providers: [
+        provideRouter([]),
+        { provide: DoctorIdentityService, useValue: { resolve: identityApi.resolve } },
+        { provide: AccessGrantsApiService, useValue: identityApi },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PatientDoctorAccess);
@@ -127,7 +143,9 @@ describe('PatientDoctorAccess', () => {
     component.reviewCode();
 
     await fixture!.whenStable();
-    await vi.waitFor(() => expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-DOCTOR-01'));
+    await vi.waitFor(() =>
+      expect(identityApi.resolveDoctor).toHaveBeenCalledWith('DEMO-DOCTOR-01'),
+    );
 
     expect(component.reviewStatus()).toBe('ready');
     expect(component.enteredCode()).toBe('DEMO-DOCTOR-01');
@@ -156,14 +174,14 @@ describe('PatientDoctorAccess', () => {
     async (olderOutcome) => {
       let finishOld!: (value: unknown) => void;
       let failOld!: (reason: unknown) => void;
-      identityApi.resolve.mockReset();
-      identityApi.resolve.mockReturnValueOnce(
+      identityApi.resolveDoctor.mockReset();
+      identityApi.resolveDoctor.mockReturnValueOnce(
         new Promise((resolve, reject) => {
           finishOld = resolve;
           failOld = reject;
         }),
       );
-      identityApi.resolve.mockResolvedValueOnce({
+      identityApi.resolveDoctor.mockResolvedValueOnce({
         user_id: 'doctor-1',
         role: 'doctor',
         display_name: 'Dr Test',
@@ -240,7 +258,9 @@ describe('PatientDoctorAccess', () => {
     await component.startCamera();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
-    await vi.waitFor(() => expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01'));
+    await vi.waitFor(() =>
+      expect(identityApi.resolveDoctor).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01'),
+    );
     await fixture!.whenStable();
 
     expect(detectQr).toHaveBeenCalled();
@@ -251,7 +271,7 @@ describe('PatientDoctorAccess', () => {
     expect(component.enteredCode()).toBe('DEMO-QR-DOCTOR-01');
 
     expect(getScreenText()).toContain('QR reference captured');
-    expect(identityApi.resolve).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01');
+    expect(identityApi.resolveDoctor).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01');
     expect(getScreenText()).toContain('Doctor reference resolved');
   });
 
@@ -260,7 +280,7 @@ describe('PatientDoctorAccess', () => {
     [403, 'not allowed to verify'],
     [0, 'service is unavailable'],
   ])('shows a safe server error state for status %s', async (status, message) => {
-    identityApi.resolve.mockRejectedValue(new HttpErrorResponse({ status }));
+    identityApi.resolveDoctor.mockRejectedValue(new HttpErrorResponse({ status }));
     component.codeForm.controls.doctorCode.setValue('OPAQUE-REF');
     component.reviewCode();
     await vi.waitFor(() => expect(component.reviewStatus()).toBe('error'));
@@ -396,6 +416,12 @@ describe('PatientDoctorAccess', () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
     component.enteredCode.set('DEMO-DOCTOR-01');
     component.reviewStatus.set('ready');
+    component.resolvedDoctor.set({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Dr Test',
+      verification_status: 'approved',
+    });
 
     component.reviewGrantChoices();
     expect(component.grantError()).toContain('at least one');
@@ -420,6 +446,12 @@ describe('PatientDoctorAccess', () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
     component.enteredCode.set('DEMO-DOCTOR-01');
     component.reviewStatus.set('ready');
+    component.resolvedDoctor.set({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Dr Test',
+      verification_status: 'approved',
+    });
     component.grantForm.patchValue({
       prescriptions: true,
       confirmed: true,
@@ -441,46 +473,89 @@ describe('PatientDoctorAccess', () => {
     expect(fixture!.nativeElement.querySelector('.grant-summary')).toBeNull();
   });
 
-  it('requires matching confirmation before revoking a sample grant', () => {
-    const id = 'sample-grant-active';
-
-    component.confirmSampleRevoke(id);
-    expect(component.sampleGrants().find((grant) => grant.id === id)?.status).toBe('active');
-
-    component.requestSampleRevoke(id);
-    component.cancelSampleRevoke();
-    component.confirmSampleRevoke(id);
-
-    expect(component.sampleGrants().find((grant) => grant.id === id)?.status).toBe('active');
+  it('creates a real grant with the reviewed doctor and selected scope', async () => {
+    component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
+    component.enteredCode.set('DEMO-DOCTOR-01');
+    component.resolvedDoctor.set({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Dr Test',
+      verification_status: 'approved',
+      organization_id: 'clinic-1',
+      organization_name: 'Test Clinic',
+    });
+    component.reviewStatus.set('ready');
+    component.grantForm.patchValue({
+      prescriptions: true,
+      duration: '7d',
+      allowConsultation: true,
+      confirmed: true,
+    });
+    component.reviewGrantChoices();
+    fixture!.detectChanges();
+    const confirmButton = fixture!.nativeElement.querySelector(
+      '.grant-summary button',
+    ) as HTMLButtonElement;
+    expect(confirmButton.textContent).toContain('Confirm and grant access');
+    confirmButton.click();
+    await fixture!.whenStable();
+    expect(identityApi.create).toHaveBeenCalledWith({
+      doctor_reference: 'DEMO-DOCTOR-01',
+      organization_id: 'clinic-1',
+      categories: ['prescriptions'],
+      duration_hours: 168,
+      allow_consultation: true,
+    });
+    expect(identityApi.list).toHaveBeenCalled();
+    expect(component.grantSuccess()).toContain('successfully');
   });
 
-  it('moves a confirmed sample revoke into history and shows the empty active state', async () => {
-    const root = fixture!.nativeElement as HTMLElement;
+  it('requires a revoke reason and only reports success after the API confirms', async () => {
+    const grant = {
+      grant: {
+        id: 'grant-1',
+        patient_user_id: 'patient-1',
+        professional_user_id: 'doctor-1',
+        organization_id: null,
+        allow_consultation: false,
+        status: 'active',
+        starts_at: '2026-11-25T00:00:00Z',
+        expires_at: '2026-11-26T00:00:00Z',
+        revoked_at: null,
+        created_at: '2026-11-25T00:00:00Z',
+      },
+      categories: ['prescriptions'],
+    };
+    identityApi.list.mockResolvedValue({ items: [grant], page: 1, page_size: 100, total: 1 });
+    await component.loadGrants();
+    component.requestRevoke('grant-1');
+    await component.confirmRevoke('grant-1');
+    expect(component.revokeError()).toContain('reason');
+    expect(identityApi.revoke).not.toHaveBeenCalled();
+    component.revokeReason.set('Patient requested access removal');
+    await component.confirmRevoke('grant-1');
+    expect(identityApi.revoke).toHaveBeenCalledWith('grant-1', 'Patient requested access removal');
+    expect(component.revokeMessage()).toContain('successfully');
+    expect(component.grants()).toEqual([grant]);
+  });
 
-    const revoke = root.querySelector(
-      'button[aria-label="Revoke sample grant for Sample Doctor A"]',
-    ) as HTMLButtonElement;
-
-    revoke.click();
+  it('does not claim a grant was saved when the API fails', async () => {
+    component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
+    component.enteredCode.set('DEMO-DOCTOR-01');
+    component.resolvedDoctor.set({
+      user_id: 'doctor-1',
+      role: 'doctor',
+      display_name: 'Dr Test',
+      verification_status: 'approved',
+    });
+    component.reviewStatus.set('ready');
+    component.grantForm.patchValue({ prescriptions: true, confirmed: true });
+    component.reviewGrantChoices();
+    identityApi.create.mockRejectedValue(new HttpErrorResponse({ status: 503 }));
+    await component.createGrant();
+    expect(component.grantSuccess()).toBe('');
+    expect(component.grantCreateError()).toContain('unavailable');
     await fixture!.whenStable();
-
-    const confirm = Array.from(root.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Confirm sample revoke',
-    );
-
-    expect(confirm).toBeDefined();
-    confirm!.click();
-    await fixture!.whenStable();
-
-    expect(getScreenText()).toContain('No active sample grants.');
-    expect(getScreenText()).toContain('No server permissions were changed.');
-
-    const history = root.querySelector('.grant-history') as HTMLDetailsElement;
-
-    expect(history.textContent).toContain('Sample Doctor A');
-    expect(history.textContent).toContain('Revoked');
-    expect(
-      root.querySelector('button[aria-label="Revoke sample grant for Sample Doctor A"]'),
-    ).toBeNull();
+    expect(getScreenText()).toContain('service is unavailable');
   });
 });
