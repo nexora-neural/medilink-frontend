@@ -287,9 +287,7 @@ export class PatientDoctorAccess implements OnDestroy {
   }
 
   grantStatus(item: AccessGrant): GrantStatus {
-    return item.grant.status === 'active' && Date.parse(item.grant.expires_at) <= Date.now()
-      ? 'expired'
-      : item.grant.status;
+    return item.grant.status;
   }
   categoryLabel(code: GrantCategory): string {
     return this.grantCategories.find((item) => item.code === code)?.label ?? code;

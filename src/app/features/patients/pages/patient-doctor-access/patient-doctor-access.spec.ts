@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { DoctorIdentityService } from '../../../doctor-identity/doctor-identity.service';
-import { AccessGrantsApiService } from './access-grants-api.service';
+import { AccessGrant, AccessGrantsApiService } from './access-grants-api.service';
 import { PatientDoctorAccess } from './patient-doctor-access';
 
 describe('PatientDoctorAccess', () => {
@@ -508,6 +508,42 @@ describe('PatientDoctorAccess', () => {
     });
     expect(identityApi.list).toHaveBeenCalled();
     expect(component.grantSuccess()).toContain('successfully');
+  });
+
+  it('keeps a server-active grant revocable when the device clock is ahead', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-25T12:30:00Z'));
+    const grant: AccessGrant = {
+      grant: {
+        id: 'clock-skew-grant',
+        patient_user_id: 'patient-1',
+        professional_user_id: 'doctor-1',
+        organization_id: null,
+        allow_consultation: false,
+        status: 'active',
+        starts_at: '2026-11-25T00:00:00Z',
+        expires_at: '2026-11-25T12:20:00Z',
+        revoked_at: null,
+        created_at: '2026-11-25T00:00:00Z',
+      },
+      doctor_display_name: 'Dr Clock Test',
+      categories: ['prescriptions'],
+    };
+    identityApi.list.mockResolvedValue({ items: [grant], page: 1, page_size: 100, total: 1 });
+
+    await component.loadGrants();
+    fixture!.detectChanges();
+    expect(component.grantStatus(grant)).toBe('active');
+    const revoke = fixture!.nativeElement.querySelector(
+      '[aria-label="Revoke access for Dr Clock Test"]',
+    ) as HTMLButtonElement | null;
+    expect(revoke).not.toBeNull();
+    revoke!.click();
+    component.revokeReason.set('Patient requested access removal');
+    await component.confirmRevoke('clock-skew-grant');
+    expect(identityApi.revoke).toHaveBeenCalledWith(
+      'clock-skew-grant',
+      'Patient requested access removal',
+    );
   });
 
   it('requires a revoke reason and only reports success after the API confirms', async () => {
