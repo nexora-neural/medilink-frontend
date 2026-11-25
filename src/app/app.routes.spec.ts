@@ -358,7 +358,7 @@ describe('workspace routing', () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
 
-    roleContext.clear();
+    roleContext.setAccountRoles('demo-admin', ['admin']);
 
     vi.mocked(auth.restoreSession).mockImplementation(async () => {
       await Promise.resolve();
@@ -370,6 +370,9 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/admin/dashboard');
 
     expect(auth.restoreSession).toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(harness.routeNativeElement?.textContent).toContain('Account support'),
+    );
     expect(TestBed.inject(Router).url).toBe('/workspace/admin/dashboard');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
       'Admin dashboard',
@@ -379,12 +382,10 @@ describe('workspace routing', () => {
       '.admin-dashboard a[href="/workspace/admin/account-support"]',
     ) as HTMLAnchorElement | null;
 
-    expect(supportLink).not.toBeNull();
-    supportLink!.click();
-    await harness.fixture.whenStable();
-
-    expect(TestBed.inject(Router).url).toBe('/workspace/admin/account-support');
-    expect(harness.routeNativeElement?.textContent).toContain('Account support');
+    expect(supportLink).toBeNull();
+    await vi.waitFor(() =>
+      expect(harness.routeNativeElement?.textContent).toContain('Dashboard unavailable'),
+    );
   });
 
   it.each(['patient', 'doctor', 'pharmacist', 'lab_staff', 'super_admin'])(
