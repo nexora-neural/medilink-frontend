@@ -1,0 +1,421 @@
+
+<section class="reports-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">MEDICAL RECORDS</p>
+      <h1>My Lab Reports</h1>
+      <p>Upload and manage your laboratory reports securely.</p>
+    </div>
+
+    @if (canUpload()) {
+      <button type="button" class="primary-button" (click)="openForm()">
+        Upload a report
+      </button>
+    }
+  </header>
+
+  @if (message()) {
+    <p class="feedback-message" role="status">{{ message() }}</p>
+  }
+
+  @if (!permitted() || pageState() === 'denied') {
+    <div class="state-panel denied-state" role="alert">
+      <h2>Access restricted</h2>
+      <p>You need an active patient account to access your reports.</p>
+    </div>
+  } @else {
+    @if (formOpen()) {
+      <section class="upload-panel" aria-labelledby="upload-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="upload-heading">Upload laboratory report</h2>
+            <p>Enter the report details and select your document.</p>
+          </div>
+
+          @if (uploadState() !== 'uploading') {
+            <button type="button" class="secondary-button" (click)="closeForm()">
+              Cancel
+            </button>
+          }
+        </div>
+
+        <form (submit)="$event.preventDefault(); save()" novalidate>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="report-type">Report type *</label>
+              <input
+                id="report-type"
+                type="text"
+                [value]="reportType()"
+                (input)="reportType.set($any($event.target).value)"
+                maxlength="120"
+                required
+                placeholder="e.g. Full Blood Count"
+                [disabled]="uploadState() === 'uploading'"
+                [attr.aria-invalid]="submitted() && !reportType().trim()"
+              />
+              @if (submitted() && !reportType().trim()) {
+                <small class="field-error">Enter the report type.</small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="report-date">Report date *</label>
+              <input
+                id="report-date"
+                type="date"
+                [value]="reportDate()"
+                (input)="reportDate.set($any($event.target).value)"
+                required
+                [disabled]="uploadState() === 'uploading'"
+                [attr.aria-invalid]="submitted() && !reportDate()"
+              />
+              @if (submitted() && !reportDate()) {
+                <small class="field-error">Select the report date.</small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="report-reference">Reference number</label>
+              <input
+                id="report-reference"
+                type="text"
+                [value]="reference()"
+                (input)="reference.set($any($event.target).value)"
+                maxlength="100"
+                placeholder="Enter laboratory reference"
+                [disabled]="uploadState() === 'uploading'"
+              />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="report-notes">Notes</label>
+              <textarea
+                id="report-notes"
+                rows="3"
+                [value]="notes()"
+                (input)="notes.set($any($event.target).value)"
+                maxlength="1000"
+                placeholder="Additional information about this report"
+                [disabled]="uploadState() === 'uploading'"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form-field upload-field">
+            <app-document-upload
+              inputId="patient-report-file"
+              label="Laboratory report document *"
+              [files]="selectedFiles()"
+              (filesChange)="onFilesChange($event)"
+            />
+          </div>
+
+          @if (submitted() && selectedFiles().length === 0) {
+            <p class="field-error" role="alert">Select at least one report document.</p>
+          }
+
+          <section class="confirmation-panel" aria-labelledby="confirmation-heading">
+            <h3 id="confirmation-heading">Confirm report details</h3>
+            <p>
+              Patient account:
+              <strong>Verified current patient account</strong>
+            </p>
+            <p>
+              Laboratory:
+              <strong>Not assigned</strong>
+            </p>
+            <p class="confirmation-note">
+              This patient upload is not linked to a laboratory request.
+              A laboratory assignment has not been verified.
+            </p>
+
+            <label class="confirmation-checkbox">
+              <input
+                type="checkbox"
+                [checked]="detailsConfirmed()"
+                (change)="detailsConfirmed.set($any($event.target).checked)"
+                [disabled]="uploadState() === 'uploading'"
+              />
+              I confirm that this is my report and understand that no laboratory
+              assignment is linked to this upload.
+            </label>
+          </section>
+
+          @if (formError()) {
+            <p class="form-error" role="alert">{{ formError() }}</p>
+          }
+
+          @if (uploadState() === 'uploading') {
+            <section class="upload-progress" aria-live="polite">
+              <div class="progress-heading">
+                <strong>Uploading sample report...</strong>
+                <span>{{ uploadProgress() }}%</span>
+              </div>
+              <progress
+                class="progress-track"
+                [value]="uploadProgress()"
+                max="100"
+                aria-label="Sample upload progress"
+              ></progress>
+              <p>Please wait while the local upload preview runs.</p>
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="cancelUpload()"
+              >
+                Cancel upload
+              </button>
+            </section>
+          }
+
+          @if (uploadState() === 'failed') {
+            <section class="upload-failure" role="alert">
+              <h3>Upload could not be completed</h3>
+              <p>
+                Your selected report details are preserved. You can retry the
+                sample upload or cancel.
+              </p>
+              <button
+                type="button"
+                class="primary-button"
+                (click)="retryUpload()"
+              >
+                Retry upload
+              </button>
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="closeForm()"
+              >
+                Cancel
+              </button>
+            </section>
+          }
+
+          @if (uploadState() === 'complete') {
+            <p class="feedback-message" role="status">
+              Sample upload completed.
+            </p>
+          }
+
+          @if (uploadState() === 'idle') {
+            <div class="form-actions">
+              <button type="button" class="secondary-button" (click)="closeForm()">
+                Cancel
+              </button>
+              <button type="submit" class="primary-button">
+                Start sample upload
+              </button>
+            </div>
+          }
+        </form>
+      </section>
+    }
+
+    @if (pageState() === 'loading') {
+      <app-ui-state
+        kind="loading"
+        title="Loading reports"
+        description="Please wait while your laboratory reports are loaded."
+      />
+    } @else if (pageState() === 'error') {
+      <app-ui-state
+        kind="error"
+        title="Unable to load reports"
+        description="Something went wrong while loading your reports. Please try again."
+        actionLabel="Try again"
+        (action)="retry()"
+      />
+    } @else if (pageState() === 'empty' || visibleReports().length === 0) {
+      <app-ui-state
+        kind="empty"
+        title="No laboratory reports yet"
+        description="Your uploaded laboratory reports will appear here."
+      />
+
+      @if (canUpload() && !formOpen()) {
+        <div class="empty-action">
+          <button type="button" class="primary-button" (click)="openForm()">
+            Upload your first report
+          </button>
+        </div>
+      }
+    } @else {
+      <section class="reports-section" aria-labelledby="reports-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="reports-heading">Your reports</h2>
+            <p>{{ visibleReports().length }} report(s) available</p>
+          </div>
+        </div>
+
+        <div class="reports-list">
+          @for (report of visibleReports(); track report.id) {
+            <article class="report-card">
+              <div class="report-icon" aria-hidden="true">
+                <span>PDF</span>
+              </div>
+
+              <div class="report-details">
+                <h3>{{ report.reportType }}</h3>
+
+                @if (report.attachments?.length) {
+                  @for (attachment of report.attachments; track attachment.fileName) {
+                    <p class="report-filename">{{ attachment.fileName }}</p>
+                  }
+                } @else {
+                  <p class="report-filename">{{ report.fileName }}</p>
+                }
+
+                <p>Report date: {{ report.reportDate | date: 'mediumDate' }}</p>
+                <p>Reference: {{ report.reference || 'Not provided' }}</p>
+                <p>
+                  Source:
+                  {{ report.source === 'patient' ? 'Patient upload' : 'Laboratory' }}
+                </p>
+
+                @if (report.notes) {
+                  <p class="report-notes">{{ report.notes }}</p>
+                }
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="viewReport(report)"
+                  [attr.aria-label]="'View details for ' + report.reportType"
+                  [attr.aria-expanded]="selectedReport()?.id === report.id"
+                >
+                  View details
+                </button>
+              </div>
+
+              <div class="report-status">
+                <span class="status-badge" [class]="'status-badge status-' + report.status">
+                  {{
+                    report.status === 'pending'
+                      ? 'Pending review'
+                      : report.status === 'accepted'
+                        ? 'Accepted'
+                        : 'Rejected'
+                  }}
+                </span>
+                <p>Uploaded {{ report.uploadedAt | date: 'mediumDate' }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      @if (selectedReport(); as report) {
+        <section
+          class="upload-panel report-detail-panel"
+          aria-labelledby="report-detail-heading"
+          aria-live="polite"
+        >
+          <div class="section-heading">
+            <div>
+              <h2 id="report-detail-heading">Report details</h2>
+              <p>Complete information about your selected laboratory report.</p>
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="closeReportDetails()"
+            >
+              Close details
+            </button>
+          </div>
+
+          <dl class="report-detail-grid">
+            <div class="detail-item">
+              <dt>Report type</dt>
+              <dd>{{ report.reportType }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Report reference</dt>
+              <dd>{{ report.reference || 'Not provided' }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Report date</dt>
+              <dd>{{ report.reportDate | date: 'mediumDate' }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Upload date</dt>
+              <dd>{{ report.uploadedAt | date: 'medium' }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Patient</dt>
+              <dd>{{ report.patientName }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Laboratory</dt>
+              <dd>{{ report.labName || 'Not assigned' }}</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Source</dt>
+              <dd>
+                {{ report.source === 'patient' ? 'Patient upload' : 'Laboratory upload' }}
+              </dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Review status</dt>
+              <dd>
+                {{
+                  report.status === 'pending'
+                    ? 'Pending review'
+                    : report.status === 'accepted'
+                      ? 'Accepted'
+                      : 'Rejected'
+                }}
+              </dd>
+            </div>
+
+            <div class="detail-item full-width">
+              <dt>Files</dt>
+              <dd>
+                @if (report.attachments?.length) {
+                  <ul>
+                    @for (attachment of report.attachments; track attachment.fileName) {
+                      <li>
+                        {{ attachment.fileName }}
+                        <span>({{ attachment.fileType || 'Not specified' }})</span>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  {{ report.fileName }} ({{ report.fileType || 'Not specified' }})
+                }
+              </dd>
+            </div>
+
+            @if (report.reviewedAt) {
+              <div class="detail-item">
+                <dt>Reviewed date</dt>
+                <dd>{{ report.reviewedAt | date: 'medium' }}</dd>
+              </div>
+            }
+
+            <div class="detail-item full-width">
+              <dt>Notes</dt>
+              <dd>{{ report.notes || 'No additional notes provided.' }}</dd>
+            </div>
+          </dl>
+
+          <p class="detail-notice">
+            The original uploaded documents are stored only as local preview metadata
+            in this sample implementation.
+          </p>
+        </section>
+      }
+    }
+  }
+</section>

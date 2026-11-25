@@ -1,21 +1,58 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
-  { path: 'workspace/patient/prescription-shares', renderMode: RenderMode.Client },
-  { path: 'workspace/pharmacist/prescription-shares', renderMode: RenderMode.Client },
-  { path: 'workspace/pharmacist/dispensing', renderMode: RenderMode.Client },
-  { path: 'workspace/patient/prescriptions', renderMode: RenderMode.Client },
-  { path: 'workspace/doctor/prescriptions/:id/issue', renderMode: RenderMode.Client },
-  { path: 'super-admin/dashboard', renderMode: RenderMode.Client },
-  { path: 'super-admin/organizations/preview/:id', renderMode: RenderMode.Client },
-  { path: 'super-admin/integrations', renderMode: RenderMode.Client },
-  { path: 'super-admin/integrations/preview/:id', renderMode: RenderMode.Client },
-  { path: 'super-admin/security', renderMode: RenderMode.Client },
-  { path: 'super-admin/audit', renderMode: RenderMode.Client },
-  { path: 'super-admin/notifications', renderMode: RenderMode.Client },
-
-  { path: 'super-admin/integrations/submissions', renderMode: RenderMode.Client },
-
+  {
+    path: 'workspace/patient/prescription-shares',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/pharmacist/prescription-shares',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/pharmacist/dispensing',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/prescriptions',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescriptions/:id/issue',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/dashboard',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/organizations/preview/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/integrations',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/integrations/preview/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/security',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/audit',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/notifications',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'super-admin/integrations/submissions',
+    renderMode: RenderMode.Client,
+  },
   {
     path: 'super-admin/organizations',
     renderMode: RenderMode.Client,
@@ -24,8 +61,14 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/admin/dashboard',
     renderMode: RenderMode.Client,
   },
-  { path: 'workspace/admin/applications', renderMode: RenderMode.Client },
-  { path: 'workspace/admin/applications/:id', renderMode: RenderMode.Client },
+  {
+    path: 'workspace/admin/applications',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/admin/applications/:id',
+    renderMode: RenderMode.Client,
+  },
   {
     path: 'workspace/patient/profile',
     renderMode: RenderMode.Client,
@@ -90,11 +133,26 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/doctor/vaccinations',
     renderMode: RenderMode.Client,
   },
-  { path: 'workspace/patient/correction-request', renderMode: RenderMode.Client },
-  { path: 'workspace/patient/correction-history', renderMode: RenderMode.Client },
-  { path: 'workspace/doctor/correction-requests', renderMode: RenderMode.Client },
-  { path: 'workspace/doctor/corrections', renderMode: RenderMode.Client },
-  { path: 'workspace/doctor/correction-history', renderMode: RenderMode.Client },
+  {
+    path: 'workspace/patient/correction-request',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/correction-history',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/correction-requests',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/corrections',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/correction-history',
+    renderMode: RenderMode.Client,
+  },
   {
     path: 'workspace/patient/history',
     renderMode: RenderMode.Client,
@@ -105,6 +163,14 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/patient/lab-upload-requests',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/reports',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/reports',
     renderMode: RenderMode.Client,
   },
   {
@@ -124,15 +190,11 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    path: 'workspace/patient/reports',
+    path: 'workspace/doctor/prescription-review',
     renderMode: RenderMode.Client,
   },
   {
     path: 'workspace/patient/reports/**',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'workspace/lab-staff/reports',
     renderMode: RenderMode.Client,
   },
   {

@@ -21,8 +21,6 @@ import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/d
 import { AccountSupport } from './features/administration/account-support/account-support';
 import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
 import { PatientMeasurements } from './features/measurements/pages/patient-measurements/patient-measurements';
-import { DoctorQrPage } from './features/doctors/pages/doctor-qr-page/doctor-qr-page';
-import { PatientDoctorAccess } from './features/patients/pages/patient-doctor-access/patient-doctor-access';
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
@@ -156,7 +154,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/access',
-    component: PatientDoctorAccess,
+    loadComponent: () =>
+      import('./features/patients/pages/patient-doctor-access/patient-doctor-access').then(
+        (module) => module.PatientDoctorAccess,
+      ),
     canActivate: [roleGuard],
     data: {
       allowedRoles: ['Patient'],
@@ -188,7 +189,9 @@ const rolePages: Route[] = [
     loadComponent: () => import('./features/dispensing/dispensing').then((m) => m.Dispensing),
     canActivate: [roleGuard],
     title: 'Dispensing | MediLink',
-    data: { allowedRoles: ['Pharmacist'] },
+    data: {
+      allowedRoles: ['Pharmacist'],
+    },
   },
   {
     path: 'lab-staff/reports',
@@ -213,8 +216,15 @@ export const routes: Routes = [
     path: '',
     component: PublicShell,
     children: [
-      { path: '', pathMatch: 'full', component: PublicHome },
-      { path: 'header-preview', component: PublicHome },
+      {
+        path: '',
+        pathMatch: 'full',
+        component: PublicHome,
+      },
+      {
+        path: 'header-preview',
+        component: PublicHome,
+      },
       ...[
         'login',
         'roles',
@@ -225,7 +235,11 @@ export const routes: Routes = [
         'reset',
         'help',
         'session-expired',
-      ].map((page) => ({ path: page, component: PublicAuth, data: { page } })),
+      ].map((page) => ({
+        path: page,
+        component: PublicAuth,
+        data: { page },
+      })),
       ...['about', 'contact', 'privacy', 'terms'].map((page) => ({
         path: page,
         component: PublicInformational,
@@ -233,9 +247,23 @@ export const routes: Routes = [
       })),
     ],
   },
-  { path: 'account-suspended', component: StatusPage, data: { code: 'suspended' } },
-  { path: 'access-denied', component: StatusPage, data: { code: '403' } },
-  { path: 'not-found', component: StatusPage, data: { code: '404' } },
+
+  {
+    path: 'account-suspended',
+    component: StatusPage,
+    data: { code: 'suspended' },
+  },
+  {
+    path: 'access-denied',
+    component: StatusPage,
+    data: { code: '403' },
+  },
+  {
+    path: 'not-found',
+    component: StatusPage,
+    data: { code: '404' },
+  },
+
   {
     path: 'workspace',
     component: AppShell,
@@ -275,14 +303,32 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
+
       doctorPreview(
         'doctor/patients/:id',
         'Patient details',
         'Patient-specific records will be available after integration.',
       ),
+
+      {
+        path: 'doctor/prescription-review',
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-evidence-review/doctor-evidence-review').then(
+            (module) => module.DoctorEvidenceReview,
+          ),
+        canActivate: [roleGuard],
+        title: 'Patient evidence review | MediLink',
+        data: {
+          allowedRoles: ['Doctor'],
+        },
+      },
+
       {
         path: 'doctor/qr',
-        component: DoctorQrPage,
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-qr-page/doctor-qr-page').then(
+            (module) => module.DoctorQrPage,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
@@ -293,16 +339,13 @@ export const routes: Routes = [
         pathMatch: 'full',
         redirectTo: '/workspace/professional-verification',
       },
+
       doctorPreview(
         'doctor/notifications',
         'Notifications',
         'Your notifications will appear here.',
       ),
-      doctorPreview(
-        'doctor/prescription-review',
-        'Patient-added prescription review',
-        'Prescription review will be available after integration.',
-      ),
+
       doctorPreview(
         'doctor/reports',
         'Laboratory reports',
@@ -354,7 +397,9 @@ export const routes: Routes = [
           ),
         canActivate: [roleGuard],
         title: 'Professional applications | MediLink',
-        data: { allowedRoles: ['Admin'] },
+        data: {
+          allowedRoles: ['Admin'],
+        },
       },
       {
         path: 'admin/applications/:id',
@@ -364,7 +409,9 @@ export const routes: Routes = [
           ),
         canActivate: [roleGuard],
         title: 'Application review | MediLink',
-        data: { allowedRoles: ['Admin'] },
+        data: {
+          allowedRoles: ['Admin'],
+        },
       },
       {
         path: 'admin/account-support',
@@ -441,7 +488,9 @@ export const routes: Routes = [
     path: 'super-admin',
     component: SuperAdminShell,
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['Super Admin'] },
+    data: {
+      allowedRoles: ['Super Admin'],
+    },
     children: [
       {
         path: '',
@@ -462,7 +511,9 @@ export const routes: Routes = [
           import('./features/administration/super-admin-preview/super-admin-preview').then(
             (m) => m.SuperAdminPreview,
           ),
-        data: { previewPage: 'organization' },
+        data: {
+          previewPage: 'organization',
+        },
       },
       {
         path: 'integrations/preview/:id',
@@ -470,7 +521,9 @@ export const routes: Routes = [
           import('./features/administration/super-admin-preview/super-admin-preview').then(
             (m) => m.SuperAdminPreview,
           ),
-        data: { previewPage: 'integration-detail' },
+        data: {
+          previewPage: 'integration-detail',
+        },
       },
       {
         path: 'security',
@@ -478,7 +531,9 @@ export const routes: Routes = [
           import('./features/administration/super-admin-preview/super-admin-preview').then(
             (m) => m.SuperAdminPreview,
           ),
-        data: { previewPage: 'security' },
+        data: {
+          previewPage: 'security',
+        },
       },
       {
         path: 'audit',
@@ -486,7 +541,9 @@ export const routes: Routes = [
           import('./features/administration/super-admin-preview/super-admin-preview').then(
             (m) => m.SuperAdminPreview,
           ),
-        data: { previewPage: 'audit' },
+        data: {
+          previewPage: 'audit',
+        },
       },
       {
         path: 'notifications',
@@ -494,7 +551,9 @@ export const routes: Routes = [
           import('./features/administration/super-admin-preview/super-admin-preview').then(
             (m) => m.SuperAdminPreview,
           ),
-        data: { previewPage: 'notifications' },
+        data: {
+          previewPage: 'notifications',
+        },
       },
       {
         path: 'organizations',
@@ -543,7 +602,9 @@ export const routes: Routes = [
             (module) => module.IntegrationClients,
           ),
         title: 'Submission outcomes | MediLink',
-        data: { view: 'outcomes' },
+        data: {
+          view: 'outcomes',
+        },
       },
       {
         path: 'medicine-catalogue',
@@ -552,5 +613,9 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'not-found' },
+
+  {
+    path: '**',
+    redirectTo: 'not-found',
+  },
 ];

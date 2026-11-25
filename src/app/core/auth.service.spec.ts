@@ -10,6 +10,7 @@ const firebaseMocks = vi.hoisted(() => {
     getApps: vi.fn(),
     initializeApp: vi.fn(),
     getAuth: vi.fn(),
+    connectAuthEmulator: vi.fn(),
     setPersistence: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signInWithEmailAndPassword: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/auth', () => ({
   browserLocalPersistence: {},
   getAuth: firebaseMocks.getAuth,
+  connectAuthEmulator: firebaseMocks.connectAuthEmulator,
   setPersistence: firebaseMocks.setPersistence,
   createUserWithEmailAndPassword: firebaseMocks.createUserWithEmailAndPassword,
   signInWithEmailAndPassword: firebaseMocks.signInWithEmailAndPassword,
@@ -171,6 +173,30 @@ describe('AuthService onboarding recovery', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    request.flush({ items: [] });
+    await expect(result).resolves.toEqual({ items: [] });
+  });
+
+  it('connects to the configured local Auth emulator before making authenticated requests', async () => {
+    const auth = {
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    };
+    firebaseMocks.getAuth.mockReturnValue(auth);
+    vi.stubGlobal('window', {
+      medilinkConfig: {
+        firebase: { apiKey: 'demo-key', projectId: 'demo-medilink' },
+        authEmulatorUrl: 'http://127.0.0.1:9099',
+        apiBaseUrl: 'http://localhost:8000/api/v1',
+      },
+    });
+
+    const result = service.getAuthorized<{ items: unknown[] }>('/admin/organizations');
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/admin/organizations');
+    expect(firebaseMocks.connectAuthEmulator).toHaveBeenCalledWith(auth, 'http://127.0.0.1:9099', {
+      disableWarnings: true,
+    });
     request.flush({ items: [] });
     await expect(result).resolves.toEqual({ items: [] });
   });

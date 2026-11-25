@@ -126,7 +126,7 @@
           placeholder="Enter doctor reference"
           autocomplete="off"
           aria-describedby="code-help code-error"
-          (input)="clearGrantReview()"
+          (input)="onReferenceInput()"
         />
 
         <p id="code-help" class="field-help">Enter the reference provided by the doctor.</p>
@@ -137,7 +137,9 @@
           </p>
         }
 
-        <button type="submit" class="primary-button">Review reference</button>
+        <button type="submit" class="primary-button" [disabled]="reviewStatus() === 'loading'">
+          {{ reviewStatus() === 'loading' ? 'Reviewing…' : 'Review reference' }}
+        </button>
       </form>
     </article>
   </section>
@@ -159,7 +161,7 @@
     @if (reviewStatus() === 'loading') {
       <div class="review-state loading-state" role="status" aria-live="polite">
         <span class="material-symbols-outlined">progress_activity</span>
-        <h3>Loading sample review</h3>
+        <h3>Verifying doctor identity</h3>
         <p>{{ reviewMessage() }}</p>
 
         @if (enteredCode()) {
@@ -176,25 +178,30 @@
     @if (reviewStatus() === 'ready') {
       <div class="review-state ready-state" role="status">
         <span class="material-symbols-outlined">info</span>
-        <h3>Sample review ready</h3>
+        <h3>Doctor reference resolved</h3>
         <p>{{ reviewMessage() }}</p>
 
+        @if (resolvedDoctor(); as doctor) {
         <div class="review-details">
           <div>
-            <span>Entered reference</span>
-            <strong>{{ enteredCode() }}</strong>
+            <span>Doctor</span>
+            <strong>{{ doctor.display_name }}</strong>
           </div>
 
           <div>
-            <span>Doctor identity</span>
-            <strong>Awaiting server verification</strong>
+            <span>Professional role</span>
+            <strong>{{ doctor.role }}</strong>
           </div>
 
           <div>
             <span>Verification status</span>
-            <strong>Not verified</strong>
+            <strong>{{ doctor.verification_status }}</strong>
           </div>
+          @if (doctor.organization_name) {
+            <div><span>Clinic / Organization</span><strong>{{ doctor.organization_name }}</strong></div>
+          }
         </div>
+        }
       </div>
     }
 
@@ -213,8 +220,8 @@
     }
 
     <p class="verification-notice">
-      This is a frontend sample preview. Doctor identity verification and access granting require
-      the backend API and are not available here.
+      Identity is resolved by the server using the current doctor record. Reviewing a QR does not
+      grant access; access grants are handled separately.
     </p>
   </section>
 
