@@ -9,6 +9,7 @@ import { PrescriptionDetail } from './pages/prescription-detail/prescription-det
 import { PrescriptionEditor } from './pages/prescription-editor/prescription-editor';
 import { PrescriptionList } from './pages/prescription-list/prescription-list';
 import { PRESCRIPTION_ROUTES } from './prescription.routes';
+import { PrescriptionDraftPreviewStore } from './services/prescription-draft-preview.store';
 
 @Component({
   standalone: true,
@@ -55,7 +56,9 @@ describe('Prescription preview routing', () => {
     expect(text()).toContain('Sample patient A');
     expect(text()).toContain('Sample patient B');
     expect(text()).toContain('Sample patient C');
-    expect(text()).toContain('3 prescription(s) shown');
+    expect(text()).toContain('5 prescription(s) shown');
+    expect(text()).toContain('sample-superseded-01');
+    expect(text()).toContain('sample-replacement-01');
   });
 
   it('searches the list by patient reference', async () => {
@@ -150,4 +153,77 @@ describe('Prescription preview routing', () => {
       expect(text()).not.toContain('Sample patient A');
     },
   );
+  it('clears lifecycle form state when navigating to another prescription', async () => {
+    const detail = await harness.navigateByUrl(`${base}/sample-replacement-01`, PrescriptionDetail);
+
+    detail.reason.set('Synthetic completion reason.');
+    detail.finishPrescription();
+    harness.detectChanges();
+
+    expect(text()).toContain('Sample prescription marked as completed.');
+
+    detail.action.set('cancel');
+    detail.reason.set('Reason belonging to the previous prescription.');
+    detail.selectLinkedAction('reissue');
+    detail.linkedReason.set('Linked reason belonging to the previous prescription.');
+
+    const previous = await harness.navigateByUrl(
+      `${base}/sample-superseded-01`,
+      PrescriptionDetail,
+    );
+    harness.detectChanges();
+
+    // Angular reuses the component when only the route ID changes.
+    expect(previous).toBe(detail);
+    expect(previous.action()).toBe('complete');
+    expect(previous.reason()).toBe('');
+    expect(previous.actionError()).toBe('');
+    expect(previous.actionMessage()).toBe('');
+    expect(previous.linkedAction()).toBe('correct');
+    expect(previous.linkedReason()).toBe('');
+    expect(previous.linkedError()).toBe('');
+    expect(text()).not.toContain('Sample prescription marked as completed.');
+  });
+
+  it('defaults to Renewal when opening a completed prescription', async () => {
+    await harness.navigateByUrl(base, PrescriptionList);
+
+    const store = harness.routeDebugElement!.injector.get(PrescriptionDraftPreviewStore);
+
+    store.finish('sample-active-01', 'complete', 'Synthetic completion before opening the page.');
+
+    const detail = await harness.navigateByUrl(`${base}/sample-active-01`, PrescriptionDetail);
+    harness.detectChanges();
+
+    const select = harness.routeNativeElement!.querySelector<HTMLSelectElement>('#linked-action')!;
+
+    expect(detail.linkedAction()).toBe('renew');
+    expect(select.value).toBe('renew');
+    expect(select.selectedOptions[0].disabled).toBe(false);
+    expect(select.querySelector<HTMLOptionElement>('option[value="correct"]')!.disabled).toBe(true);
+
+    detail.linkedReason.set('Synthetic renewal reason.');
+    await detail.createLinkedDraft();
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toMatch(/\/edit$/);
+    expect(detail.linkedError()).toBe('');
+  });
+
+  it('switches Correction to Renewal after completing the current prescription', async () => {
+    const detail = await harness.navigateByUrl(`${base}/sample-active-01`, PrescriptionDetail);
+
+    expect(detail.linkedAction()).toBe('correct');
+
+    detail.reason.set('Synthetic completion reason.');
+    detail.finishPrescription();
+    harness.detectChanges();
+
+    const select = harness.routeNativeElement!.querySelector<HTMLSelectElement>('#linked-action')!;
+
+    expect(detail.prescription()?.status).toBe('completed');
+    expect(detail.linkedAction()).toBe('renew');
+    expect(select.value).toBe('renew');
+    expect(select.selectedOptions[0].disabled).toBe(false);
+  });
 });

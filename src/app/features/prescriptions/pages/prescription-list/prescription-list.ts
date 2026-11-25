@@ -9,6 +9,7 @@ import {
   canEditPrescriptionDraft,
   PrescriptionDraft,
   PrescriptionPageState,
+  PrescriptionStatus,
 } from '../../models/prescription-draft.model';
 import { PrescriptionDraftPreviewStore } from '../../services/prescription-draft-preview.store';
 
@@ -27,6 +28,14 @@ export class PrescriptionList {
   readonly pageState = signal<PrescriptionPageState>('ready');
   readonly searchTerm = signal('');
   readonly statusFilter = signal('all');
+  readonly statusLabels: Record<PrescriptionStatus, string> = {
+    draft: 'Draft',
+    active: 'Active',
+    superseded: 'Superseded',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    discontinued: 'Discontinued',
+  };
 
   readonly permitted = computed(() => this.roles.activeRole() === 'Doctor');
 

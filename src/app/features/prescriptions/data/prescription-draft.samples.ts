@@ -99,5 +99,57 @@ export function createSamplePrescriptions(): PrescriptionDraft[] {
     },
   ];
 
+  const active = prescriptions.find((prescription) => prescription.id === 'sample-active-01');
+
+  if (active) {
+    const previousId = 'sample-superseded-01';
+    const replacementId = 'sample-replacement-01';
+    const recordedAt = '2026-11-21T10:00:00Z';
+
+    prescriptions.push(
+      {
+        ...structuredClone(active),
+        id: previousId,
+        status: 'superseded',
+        version: 1,
+        updatedAt: recordedAt,
+        history: [
+          {
+            id: 'sample-superseded-history-01',
+            action: 'correct',
+            reason: 'Synthetic correction replaced this sample version.',
+            performedAt: recordedAt,
+            performedBy: SAMPLE_DOCTOR_ID,
+            relatedPrescriptionId: replacementId,
+          },
+        ],
+      },
+      {
+        ...structuredClone(active),
+        id: replacementId,
+        status: 'active',
+        version: 2,
+        previousPrescriptionId: previousId,
+        createdAt: recordedAt,
+        updatedAt: recordedAt,
+        items: active.items.map((item) => ({
+          ...item,
+          id: `${item.id}-replacement`,
+          instructions: 'Synthetic corrected instructions for version preview.',
+        })),
+        history: [
+          {
+            id: 'sample-replacement-history-01',
+            action: 'correct',
+            reason: 'Synthetic correction linked to the previous sample version.',
+            performedAt: recordedAt,
+            performedBy: SAMPLE_DOCTOR_ID,
+            relatedPrescriptionId: previousId,
+          },
+        ],
+      },
+    );
+  }
+
   return prescriptions;
 }
