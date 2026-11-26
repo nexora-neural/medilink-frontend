@@ -123,6 +123,7 @@
           id="doctorCode"
           type="text"
           formControlName="doctorCode"
+          maxlength="256"
           placeholder="Enter doctor reference"
           autocomplete="off"
           aria-describedby="code-help code-error"
@@ -133,7 +134,11 @@
 
         @if (codeForm.controls.doctorCode.invalid && codeForm.controls.doctorCode.touched) {
           <p id="code-error" class="error-message" role="alert">
-            Please enter a doctor QR reference.
+            @if (codeForm.controls.doctorCode.hasError('required')) {
+              Please enter a doctor QR reference.
+            } @else if (codeForm.controls.doctorCode.hasError('maxlength')) {
+              Doctor QR references must not exceed 256 characters.
+            }
           </p>
         }
 

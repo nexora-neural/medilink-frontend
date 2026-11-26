@@ -137,6 +137,34 @@ describe('PatientDoctorAccess', () => {
     expect(getScreenText()).toContain('Please enter a doctor QR reference.');
   });
 
+  it('accepts the 256-character reference boundary', async () => {
+    component.codeForm.controls.doctorCode.setValue('A'.repeat(256));
+    component.reviewCode();
+    await vi.waitFor(() => expect(identityApi.resolveDoctor).toHaveBeenCalledWith('A'.repeat(256)));
+  });
+
+  it.each([257, 260])('rejects a %i-character reference before calling the API', async (length) => {
+    component.codeForm.controls.doctorCode.setValue('A'.repeat(length));
+    component.reviewCode();
+    await fixture!.whenStable();
+    expect(component.reviewStatus()).toBe('error');
+    expect(component.reviewMessage()).toContain('must not exceed 256');
+    expect(identityApi.resolveDoctor).not.toHaveBeenCalled();
+    expect(component.resolvedDoctor()).toBeNull();
+  });
+
+  it('shows a validation message for a backend 422 response and can resolve a valid reference afterward', async () => {
+    identityApi.resolveDoctor.mockRejectedValueOnce(new HttpErrorResponse({ status: 422 }));
+    component.codeForm.controls.doctorCode.setValue('A'.repeat(256));
+    component.reviewCode();
+    await vi.waitFor(() => expect(component.reviewStatus()).toBe('error'));
+    expect(component.reviewMessage()).toContain('must not exceed 256');
+    component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
+    component.reviewCode();
+    await vi.waitFor(() => expect(component.reviewStatus()).toBe('ready'));
+    expect(component.resolvedDoctor()?.display_name).toBe('Dr Test');
+  });
+
   it('resolves the current doctor identity with the API and renders server details', async () => {
     component.codeForm.controls.doctorCode.setValue('DEMO-DOCTOR-01');
 
@@ -273,6 +301,19 @@ describe('PatientDoctorAccess', () => {
     expect(getScreenText()).toContain('QR reference captured');
     expect(identityApi.resolveDoctor).toHaveBeenCalledWith('DEMO-QR-DOCTOR-01');
     expect(getScreenText()).toContain('Doctor reference resolved');
+  });
+
+  it('rejects an overlong reference captured from a QR code before calling the API', async () => {
+    const { stream } = createStream();
+    getUserMedia.mockResolvedValue(stream);
+    detectQr.mockResolvedValue([{ rawValue: 'Q'.repeat(260) }]);
+
+    await component.startCamera();
+    await vi.waitFor(() => expect(component.reviewStatus()).toBe('error'));
+
+    expect(identityApi.resolveDoctor).not.toHaveBeenCalled();
+    expect(component.reviewMessage()).toContain('must not exceed 256');
+    expect(component.resolvedDoctor()).toBeNull();
   });
 
   it.each([

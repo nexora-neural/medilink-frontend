@@ -32,6 +32,7 @@ type BarcodeDetectorConstructor = new (options?: { formats: string[] }) => Barco
 type CameraStatus = 'idle' | 'requesting' | 'scanning' | 'found' | 'unsupported' | 'error';
 
 type ReviewStatus = 'empty' | 'loading' | 'ready' | 'error';
+const DOCTOR_REFERENCE_MAX_LENGTH = 256;
 type GrantCategoryCode = GrantCategory;
 
 type GrantDuration = '24h' | '7d' | '30d';
@@ -53,7 +54,7 @@ export class PatientDoctorAccess implements OnDestroy {
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
 
   readonly codeForm = this.formBuilder.nonNullable.group({
-    doctorCode: ['', Validators.required],
+    doctorCode: ['', [Validators.required, Validators.maxLength(DOCTOR_REFERENCE_MAX_LENGTH)]],
   });
 
   readonly grantCategories: ReadonlyArray<{
@@ -483,6 +484,7 @@ export class PatientDoctorAccess implements OnDestroy {
       if (reference) {
         captured = true;
         this.codeForm.controls.doctorCode.setValue(reference);
+        this.onReferenceInput();
 
         this.stopCamera();
         this.cameraStatus.set('found');
@@ -544,6 +546,15 @@ export class PatientDoctorAccess implements OnDestroy {
       return;
     }
 
+    if (code.length > DOCTOR_REFERENCE_MAX_LENGTH) {
+      this.codeForm.controls.doctorCode.markAsTouched();
+      this.enteredCode.set('');
+      this.resolvedDoctor.set(null);
+      this.reviewStatus.set('error');
+      this.reviewMessage.set('Doctor QR references must not exceed 256 characters.');
+      return;
+    }
+
     this.enteredCode.set(code);
     this.reviewStatus.set('loading');
     this.reviewMessage.set('Verifying the current doctor identity with the server...');
@@ -583,7 +594,9 @@ export class PatientDoctorAccess implements OnDestroy {
             ? 'Your account is not allowed to verify doctor references.'
             : status === 401
               ? 'Please sign in again to verify this doctor.'
-              : 'The doctor identity service is unavailable. Check your connection and try again.',
+              : status === 422
+                ? 'Doctor QR references must not exceed 256 characters.'
+                : 'The doctor identity service is unavailable. Check your connection and try again.',
       );
     }
   }
