@@ -98,6 +98,7 @@ export class AuthService {
     method: 'GET' | 'POST' | 'PUT',
     path: string,
     body?: unknown,
+    headers: Record<string, string> = {},
   ): Promise<T> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
@@ -108,7 +109,7 @@ export class AuthService {
 
     const token = await auth.currentUser.getIdToken();
     const url = `${config.apiBaseUrl}/${path.replace(/^\//, '')}`;
-    const options = { headers: { Authorization: `Bearer ${token}` } };
+    const options = { headers: { ...headers, Authorization: `Bearer ${token}` } };
     const request =
       method === 'GET'
         ? this.http.get<T>(url, options)
@@ -162,6 +163,10 @@ export class AuthService {
 
   postAuthorized<T>(path: string, body: unknown): Promise<T> {
     return this.authorizedRequest<T>('POST', path, body);
+  }
+
+  postAuthorizedWithKey<T>(path: string, body: unknown, key: string): Promise<T> {
+    return this.authorizedRequest<T>('POST', path, body, { 'Idempotency-Key': key });
   }
 
   putAuthorized<T>(path: string, body: unknown): Promise<T> {

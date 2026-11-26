@@ -121,12 +121,11 @@ const rolePages: Route[] = [
   {
     path: 'patient/reports',
     loadComponent: () =>
-      import('./features/reports/pages/patient-reports/patient-reports').then(
-        (module) => module.PatientReports,
-      ),
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
     canActivate: [roleGuard],
     title: 'Patient reports | MediLink',
     data: {
+      reportAudience: 'patient',
       allowedRoles: ['Patient'],
     },
   },
@@ -198,12 +197,11 @@ const rolePages: Route[] = [
   {
     path: 'lab-staff/reports',
     loadComponent: () =>
-      import('./features/reports/pages/lab-staff-reports/lab-staff-reports').then(
-        (module) => module.LabStaffReports,
-      ),
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
     canActivate: [roleGuard],
     title: 'Laboratory reports | MediLink',
     data: {
+      reportAudience: 'lab',
       allowedRoles: ['Lab Staff'],
     },
   },
