@@ -182,6 +182,9 @@ describe('Public authentication control flow', () => {
 
   it('validates professional details and matching passwords before review', async () => {
     const fixture = TestBed.createComponent(RegistrationComponent);
+    const registerProfessional = vi
+      .spyOn(TestBed.inject(AuthService), 'registerProfessional')
+      .mockResolvedValue(undefined);
     const component = fixture.componentInstance;
     component.page = 'register';
     component.role = 'Doctor';
@@ -204,7 +207,14 @@ describe('Public authentication control flow', () => {
     await component.registrationNext();
     expect(component.registerStep).toBe(4);
     await component.registrationNext();
-    expect(component.message).toContain('No account has been created');
+    expect(registerProfessional).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedRole: 'doctor',
+        email: 'person@example.com',
+        professionalRegistrationNumber: '123',
+        workplace: 'Clinic',
+      }),
+    );
   });
 
   it('does not submit a reset form when passwords do not match', async () => {

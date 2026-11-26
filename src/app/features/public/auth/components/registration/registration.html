@@ -223,8 +223,8 @@
         <button class="subtle-button" type="button" (click)="registrationBack()">
           <span class="material-symbols-outlined">arrow_back</span> Back
         </button>
-        <button class="btn" type="submit">
-          {{ registerStep === registerSteps ? 'Create account' : 'Continue' }}
+        <button class="btn" type="submit" [disabled]="busy">
+          {{ registerStep === registerSteps ? (recoverExisting ? 'Finish account setup' : 'Create account') : 'Continue' }}
           <span class="material-symbols-outlined">arrow_forward</span>
         </button>
       </div>
