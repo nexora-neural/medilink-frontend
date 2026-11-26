@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Subject } from 'rxjs';
 
 export type ActiveRole =
   'Patient' | 'Doctor' | 'Pharmacist' | 'Lab Staff' | 'Admin' | 'Super Admin';
@@ -19,10 +20,14 @@ export class ActiveRoleService {
   private readonly availableRoles = signal<ActiveRole[]>([]);
   private readonly selectedRole = signal<ActiveRole>('Patient');
   private readonly accountId = signal<string | null>(null);
+  private readonly accountChanges = new Subject<void>();
 
   readonly activeAccountId = this.accountId.asReadonly();
   readonly roles = this.availableRoles.asReadonly();
   readonly activeRole = this.selectedRole.asReadonly();
+
+  // Subscribers clear account-specific state synchronously.
+  readonly accountChanges$ = this.accountChanges.asObservable();
 
   setAccountRoles(accountId: string, codes: string[]): void {
     const roles = [
@@ -44,6 +49,10 @@ export class ActiveRoleService {
     }
 
     this.saveRole();
+
+    if (accountChanged) {
+      this.accountChanges.next();
+    }
   }
 
   setActiveRole(role: ActiveRole): void {
@@ -67,6 +76,8 @@ export class ActiveRoleService {
     this.accountId.set(null);
     this.availableRoles.set([]);
     this.selectedRole.set('Patient');
+
+    this.accountChanges.next();
   }
 
   private storageKey(accountId: string): string {

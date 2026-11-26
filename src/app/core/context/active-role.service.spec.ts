@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-
 import { ActiveRoleService } from './active-role.service';
 
 describe('ActiveRoleService', () => {
@@ -66,6 +65,7 @@ describe('ActiveRoleService', () => {
     expect(service.roles()).toEqual([]);
     expect(service.activeRole()).toBe('Patient');
   });
+
   it('restores the selected role after the service is recreated', () => {
     service.setAccountRoles('account-a', ['lab_staff', 'patient']);
     service.setActiveRole('Patient');
@@ -86,5 +86,73 @@ describe('ActiveRoleService', () => {
 
     expect(service.activeRole()).toBe('Patient');
     expect(service.roles()).toEqual(['Patient']);
+  });
+
+  it('notifies subscribers synchronously when accounts change', () => {
+    const accounts: (string | null)[] = [];
+    const subscription = service.accountChanges$.subscribe(() => {
+      accounts.push(service.activeAccountId());
+    });
+
+    try {
+      service.setAccountRoles('patient-a', ['patient']);
+      expect(accounts).toEqual(['patient-a']);
+
+      service.setAccountRoles('patient-b', ['patient']);
+      expect(accounts).toEqual(['patient-a', 'patient-b']);
+    } finally {
+      subscription.unsubscribe();
+    }
+  });
+
+  it('does not emit an account change when refreshing roles or selecting a role', () => {
+    service.setAccountRoles('account-a', ['patient', 'doctor']);
+
+    let changes = 0;
+    const subscription = service.accountChanges$.subscribe(() => {
+      changes++;
+    });
+
+    try {
+      service.setAccountRoles('account-a', ['patient', 'doctor']);
+      service.setActiveRole('Doctor');
+
+      expect(changes).toBe(0);
+      expect(service.activeRole()).toBe('Doctor');
+    } finally {
+      subscription.unsubscribe();
+    }
+  });
+
+  it('notifies subscribers synchronously after clearing the account on logout', () => {
+    service.setAccountRoles('doctor-a', ['doctor']);
+
+    const snapshots: {
+      accountId: string | null;
+      roles: string[];
+      activeRole: string;
+    }[] = [];
+
+    const subscription = service.accountChanges$.subscribe(() => {
+      snapshots.push({
+        accountId: service.activeAccountId(),
+        roles: [...service.roles()],
+        activeRole: service.activeRole(),
+      });
+    });
+
+    try {
+      service.clear();
+
+      expect(snapshots).toEqual([
+        {
+          accountId: null,
+          roles: [],
+          activeRole: 'Patient',
+        },
+      ]);
+    } finally {
+      subscription.unsubscribe();
+    }
   });
 });
