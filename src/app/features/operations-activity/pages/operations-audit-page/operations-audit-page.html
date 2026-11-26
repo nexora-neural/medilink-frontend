@@ -39,3 +39,22 @@
     </div>
   }
 </section>
+
+@if (privileged && state() === 'ready') {
+  <p class="preview">Sample preview only.</p>
+
+  @if (retryNotice()) {
+    <p class="notice" role="status">{{ retryNotice() }}</p>
+  }
+
+  <section class="panel" aria-label="Backup evidence">
+    <app-backup-evidence-panel [evidence]="backupEvidence" />
+  </section>
+
+  <section class="panel" aria-label="Background jobs">
+    <app-job-status-panel
+      [jobs]="jobs()"
+      (retryJob)="retryPreviewJob($event)"
+    />
+  </section>
+}
