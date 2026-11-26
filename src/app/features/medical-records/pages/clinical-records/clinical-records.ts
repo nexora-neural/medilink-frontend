@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { DoctorPatientQueueApi } from '../../../doctors/pages/doctor-patient-queue/doctor-patient-queue-api.service';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { UiState } from '../../../../shared/components/ui-state/ui-state';
@@ -30,6 +31,11 @@ import {
 export class ClinicalRecords {
   private readonly route = inject(ActivatedRoute);
   private readonly roles = inject(ActiveRoleService);
+  private readonly queueApi = inject(DoctorPatientQueueApi);
+  readonly livePatientRecords = this.route.snapshot.data['livePatientRecords'] === true;
+  readonly loadingLive = signal(false);
+  readonly liveError = signal('');
+  readonly accessDenied = signal(false);
   private nextId = 1;
 
   readonly audience: 'patient' | 'doctor' =
@@ -55,7 +61,8 @@ export class ClinicalRecords {
   );
 
   readonly canAdd = computed(
-    () => this.permitted() && ['ready', 'empty'].includes(this.pageState()),
+    () =>
+      this.permitted() && !this.livePatientRecords && ['ready', 'empty'].includes(this.pageState()),
   );
 
   readonly visibleEntries = computed(() => {
@@ -86,6 +93,11 @@ export class ClinicalRecords {
   });
 
   constructor() {
+    if (this.livePatientRecords) {
+      this.pageState.set('loading');
+      this.loadingLive.set(true);
+      void this.loadLiveRecords();
+    }
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const preview = params.get('preview');
 
@@ -103,8 +115,60 @@ export class ClinicalRecords {
     });
   }
 
+  async loadLiveRecords(): Promise<void> {
+    const patientId = this.route.snapshot.paramMap.get('id');
+    if (!patientId) {
+      this.liveError.set('Patient reference is missing.');
+      this.pageState.set('error');
+      this.loadingLive.set(false);
+      return;
+    }
+    this.loadingLive.set(true);
+    this.liveError.set('');
+    try {
+      const page = await this.queueApi.listRecords(patientId);
+      this.entries.set(
+        page.items.map((item) => ({
+          id: item.id,
+          kind: item.type as ClinicalEntryKind,
+          title: item.title,
+          details: item.description ?? '',
+          recordedAt: item.recorded_at,
+          source: item.source === 'professional' ? 'doctor' : 'patient',
+          authorId: '',
+          authorName: item.source === 'professional' ? 'Verified care professional' : 'Patient',
+          organization: null,
+          status:
+            item.status === 'entered_in_error'
+              ? 'entered-in-error'
+              : item.status === 'resolved'
+                ? 'resolved'
+                : 'active',
+        })),
+      );
+      this.pageState.set(page.items.length ? 'ready' : 'empty');
+      this.allergyStatus.set(
+        page.items.some((item) => item.type === 'allergy') ? 'allergies-recorded' : 'unknown',
+      );
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      const denied = status === 403 || status === 404;
+      this.liveError.set(
+        denied
+          ? 'The patient has not granted access to these records.'
+          : status === 401
+            ? 'Sign in again to view patient records.'
+            : 'Patient records are unavailable. Check the connection and retry.',
+      );
+      this.accessDenied.set(denied);
+      this.pageState.set(denied ? 'denied' : 'error');
+    } finally {
+      this.loadingLive.set(false);
+    }
+  }
+
   openForm(): void {
-    if (!this.canAdd()) return;
+    if (!this.canAdd() || this.livePatientRecords) return;
 
     this.form.reset({
       kind: this.allowedKinds[0],
@@ -125,7 +189,7 @@ export class ClinicalRecords {
   }
 
   save(): void {
-    if (!this.canAdd() || !this.formOpen()) return;
+    if (!this.canAdd() || !this.formOpen() || this.livePatientRecords) return;
 
     this.submitted.set(true);
     this.form.markAllAsTouched();
@@ -202,6 +266,10 @@ export class ClinicalRecords {
   }
 
   retry(): void {
+    if (this.livePatientRecords) {
+      void this.loadLiveRecords();
+      return;
+    }
     if (!this.permitted() || this.pageState() !== 'error') return;
 
     this.pageState.set('ready');

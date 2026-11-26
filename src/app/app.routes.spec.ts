@@ -556,7 +556,11 @@ describe('workspace routing', () => {
 
     expect(auth.restoreSession).toHaveBeenCalled();
     expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
-    expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
+    expect(harness.routeNativeElement?.textContent).toContain('Patient Queue');
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'Patients appear only while your verified doctor account has a current access grant.',
+    );
+    expect(harness.routeNativeElement?.textContent).not.toContain('Nadeesha Perera');
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
 });

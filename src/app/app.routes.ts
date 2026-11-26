@@ -309,11 +309,13 @@ export const routes: Routes = [
         },
       },
 
-      doctorPreview(
-        'doctor/patients/:id',
-        'Patient details',
-        'Patient-specific records will be available after integration.',
-      ),
+      {
+        path: 'doctor/patients/:id',
+        component: ClinicalRecords,
+        canActivate: [roleGuard],
+        title: 'Patient clinical records | MediLink',
+        data: { allowedRoles: ['Doctor'], audience: 'doctor', livePatientRecords: true },
+      },
 
       {
         path: 'doctor/prescription-review',

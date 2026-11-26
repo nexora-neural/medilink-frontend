@@ -1,4 +1,3 @@
-
 <div class="queue-page">
   <header class="page-heading">
     <div>
@@ -19,11 +18,8 @@
         </div>
 
         <div class="preview-notice" role="note">
-          <span class="material-symbols-outlined">info</span>
-          <p>
-            Preview mode: Patient records and permission statuses shown here
-            are sample data. Verified access will be connected through ML-70.
-          </p>
+          <span class="material-symbols-outlined">verified_user</span>
+          <p>Patients appear only while your verified doctor account has a current access grant.</p>
         </div>
 
         @if (validationMessage()) {
@@ -49,10 +45,7 @@
 
           <label class="field filter-field">
             <span>Filter by status</span>
-            <select
-              [value]="selectedFilter()"
-              (change)="updateFilter($any($event.target).value)"
-            >
+            <select [value]="selectedFilter()" (change)="updateFilter($any($event.target).value)">
               <option value="all">All patients</option>
               <option value="waiting">Waiting</option>
               <option value="in-consultation">In consultation</option>
@@ -72,6 +65,7 @@
             <span class="material-symbols-outlined">error</span>
             <h3>Unable to load patients</h3>
             <p>{{ errorMessage() }}</p>
+            <button type="button" class="secondary-button" (click)="retry()">Retry</button>
           </div>
         } @else if (filteredPatients().length === 0) {
           <div class="state-card">
@@ -82,7 +76,7 @@
         } @else {
           <div class="patient-list">
             @for (patient of filteredPatients(); track patient.id) {
-              <article class="patient-item">
+              <article class="patient-item" [attr.data-patient-id]="patient.id">
                 <div class="patient-top">
                   <div class="patient-avatar" aria-hidden="true">
                     {{ patient.name.charAt(0) }}
@@ -90,8 +84,7 @@
 
                   <div class="patient-details">
                     <h3>{{ patient.name }}</h3>
-                    <p>{{ patient.age }} years · {{ patient.gender }}</p>
-                    <span>{{ patient.referenceNumber }}</span>
+                    <p>Patient ID: {{ patient.referenceNumber }}</p>
                   </div>
 
                   <span
@@ -113,7 +106,7 @@
                 <div class="patient-information">
                   <div class="information-item">
                     <span class="information-label">Last visit</span>
-                    <strong>{{ patient.lastVisit }}</strong>
+                    <strong>Not available</strong>
                   </div>
 
                   <div class="information-item">
@@ -123,8 +116,7 @@
                       [class.permission-active]="patient.readAccess === 'active'"
                       [class.permission-inactive]="patient.readAccess !== 'active'"
                     >
-                      {{ patient.readAccess === 'active' ? 'Active' :
-                      patient.readAccess === 'expired' ? 'Expired' : 'Revoked' }}
+                      {{ patient.readAccess === 'active' ? 'Active' : 'Expired or revoked' }}
                     </span>
                   </div>
 
@@ -135,27 +127,44 @@
                       [class.permission-active]="patient.consultationPermission === 'granted'"
                       [class.permission-inactive]="patient.consultationPermission !== 'granted'"
                     >
-                      {{ patient.consultationPermission === 'granted' ? 'Granted' :
-                      patient.consultationPermission === 'expired' ? 'Expired' : 'Not granted' }}
+                      {{ patient.consultationPermission === 'granted' ? 'Granted' : 'Not granted' }}
                     </span>
                   </div>
                 </div>
 
                 <div class="consultation-context">
                   <span class="material-symbols-outlined">description</span>
-                  <span>{{ patient.consultationContext }}</span>
+                  <span>Shared records: {{ patient.consultationContext }}</span>
                 </div>
+                @if (consultationHistory()[patient.id]?.length) {
+                  <details class="consultation-history">
+                    <summary>Consultation history</summary>
+                    @for (item of consultationHistory()[patient.id]; track item.id) {
+                      <p>
+                        {{ item.started_at | date: 'medium' }} —
+                        {{ item.ended_at ? 'Ended' : 'Active' }}
+                      </p>
+                    }
+                  </details>
+                }
 
                 <div class="patient-actions">
+                  <a class="secondary-button" [routerLink]="['/workspace/doctor/patients', patient.id]">
+                    View patient records
+                  </a>
                   @if (patient.status === 'waiting') {
                     <button
                       type="button"
                       class="primary-button"
                       (click)="startConsultation(patient.id)"
-                      [disabled]="patient.readAccess !== 'active' || patient.consultationPermission !== 'granted'"
+                      [disabled]="
+                        patient.readAccess !== 'active' ||
+                        patient.consultationPermission !== 'granted' ||
+                        actionInProgress() === patient.id
+                      "
                       [attr.aria-label]="'Start consultation with ' + patient.name"
                     >
-                      Start consultation
+                      {{ actionInProgress() === patient.id ? 'Starting…' : 'Start consultation' }}
                       <span class="material-symbols-outlined">arrow_forward</span>
                     </button>
                   } @else if (patient.status === 'in-consultation') {
@@ -163,9 +172,10 @@
                       type="button"
                       class="secondary-button"
                       (click)="endConsultation(patient.id)"
+                      [disabled]="actionInProgress() === patient.id"
                       [attr.aria-label]="'End consultation with ' + patient.name"
                     >
-                      End consultation
+                      {{ actionInProgress() === patient.id ? 'Ending…' : 'End consultation' }}
                     </button>
                   } @else {
                     <span class="completed-label">
@@ -223,8 +233,8 @@
         </div>
         <h2>Access Information</h2>
         <p>
-          Patient record access and consultation permission are separate.
-          Both must be valid before a consultation can begin.
+          Patient record access and consultation permission are separate. Both must be valid before
+          a consultation can begin.
         </p>
       </section>
     </aside>
