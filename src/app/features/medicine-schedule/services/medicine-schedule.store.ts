@@ -6,6 +6,21 @@ import {
   MedicineScheduleItem,
 } from '../models/medicine-schedule.model';
 
+function getDemoDate(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Colombo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values['year']}-${values['month']}-${values['day']}`;
+}
+
+const DEMO_DATE = getDemoDate();
+
 const DEMO_SCHEDULES: MedicineScheduleItem[] = [
   {
     id: 'medicine-001',
@@ -39,7 +54,7 @@ const DEMO_OCCURRENCES: MedicineDoseOccurrence[] = [
   {
     id: 'occurrence-001',
     scheduleId: 'medicine-001',
-    scheduledDate: '2026-11-23',
+    scheduledDate: DEMO_DATE,
     scheduledTime: '08:00',
     timezone: 'Asia/Colombo',
     status: 'unreported',
@@ -50,7 +65,7 @@ const DEMO_OCCURRENCES: MedicineDoseOccurrence[] = [
   {
     id: 'occurrence-002',
     scheduleId: 'medicine-002',
-    scheduledDate: '2026-11-23',
+    scheduledDate: DEMO_DATE,
     scheduledTime: '20:00',
     timezone: 'Asia/Colombo',
     status: 'upcoming',
@@ -125,10 +140,14 @@ export class MedicineScheduleStore {
       return false;
     }
 
-    const doseExists = medicine.doseTimes.some((dose) => dose.id === doseId);
+    const existingDose = medicine.doseTimes.find((dose) => dose.id === doseId);
 
-    if (!doseExists) {
+    if (!existingDose) {
       return false;
+    }
+
+    if (existingDose.time === newTime) {
+      return true;
     }
 
     const duplicate = medicine.doseTimes.some(
@@ -151,6 +170,8 @@ export class MedicineScheduleStore {
           : item,
       ),
     );
+
+    this.confirmedSchedulesState.update((items) => items.filter((id) => id !== medicineId));
 
     return true;
   }
