@@ -65,6 +65,15 @@ describe('ReportApi', () => {
     });
   });
 
+  it.each([null, '', '   '])('serializes an unavailable date as null: %s', async (reportDate) => {
+    const draft = attempt();
+    draft.input.reportDate = reportDate;
+    auth.postAuthorizedForm.mockResolvedValue({ id: 'doc-1' });
+    auth.postAuthorizedWithKey.mockResolvedValue({ id: 'saved-1' });
+    await api.upload(draft, () => true);
+    expect(auth.postAuthorizedWithKey.mock.calls[0][1]).toMatchObject({ report_date: null });
+  });
+
   it('stops before publication when the account changes during upload', async () => {
     let current = true;
     auth.postAuthorizedForm.mockImplementation(async () => {

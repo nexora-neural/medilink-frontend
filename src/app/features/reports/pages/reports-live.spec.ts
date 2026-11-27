@@ -349,6 +349,80 @@ describe('ReportsLive', () => {
     }
   });
 
+  it.each(['patient', 'lab'])(
+    'allows an unavailable report date for %s uploads',
+    async (audience) => {
+      if (audience === 'lab') {
+        role.set('Lab Staff');
+        TestBed.overrideProvider(ActivatedRoute, {
+          useValue: { snapshot: { data: { reportAudience: 'lab' } } },
+        });
+        TestBed.overrideProvider(ActiveOrganizationService, {
+          useValue: { activeOrganizationId: signal('lab-1') },
+        });
+      }
+      const fixture = TestBed.createComponent(ReportsLive);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const page = fixture.componentInstance;
+      page.file = new File(['pdf'], 'test.pdf');
+      page.reportType = 'FBC';
+      page.reportDate = '';
+      if (audience === 'lab') {
+        page.labReference = 'LAB-1';
+        page.confirmed = true;
+        page.resolved.set({
+          request_id: 'request-1',
+          laboratory_id: 'lab-1',
+          patient: {
+            patient_user_id: 'patient-1',
+            display_name: 'Test patient',
+            date_of_birth: null,
+          },
+          expires_at: new Date(Date.now() + 60_000).toISOString(),
+        });
+      }
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[name="date"]')
+          ?.required,
+      ).toBe(false);
+      api.upload.mockResolvedValueOnce({ id: 'saved-report' });
+      await page.save();
+      expect(api.upload).toHaveBeenCalledTimes(1);
+      expect((api.upload.mock.calls[0][0] as ReportAttempt).input.reportDate).toBeNull();
+      expect(page.message()).toBe('Report saved.');
+    },
+  );
+
+  it.each(['not-a-date', '2026-02-30', '2999-01-01'])(
+    'rejects an invalid supplied date: %s',
+    async (reportDate) => {
+      const fixture = TestBed.createComponent(ReportsLive);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const page = fixture.componentInstance;
+      page.file = new File(['pdf'], 'test.pdf');
+      page.reportType = 'FBC';
+      page.reportDate = reportDate;
+      await page.save();
+      expect(api.upload).not.toHaveBeenCalled();
+      expect(page.error()).toContain('valid date');
+    },
+  );
+
+  it('retains a valid supplied report date', async () => {
+    const fixture = TestBed.createComponent(ReportsLive);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const page = fixture.componentInstance;
+    page.file = new File(['pdf'], 'test.pdf');
+    page.reportType = 'FBC';
+    page.reportDate = '2026-01-01';
+    api.upload.mockResolvedValueOnce({ id: 'saved-report' });
+    await page.save();
+    expect((api.upload.mock.calls[0][0] as ReportAttempt).input.reportDate).toBe('2026-01-01');
+  });
+
   it('does not apply a previous account response', async () => {
     let finish!: (value: unknown) => void;
 

@@ -20,7 +20,7 @@ export interface ReportUpload {
   patientId: string;
   file: File;
   reportType: string;
-  reportDate: string;
+  reportDate: string | null;
   notes: string;
   requestId?: string;
   labReference?: string;
@@ -66,7 +66,7 @@ export class ReportApi {
       {
         document_id: attempt.documentId,
         report_type: input.reportType,
-        report_date: input.reportDate,
+        report_date: input.reportDate?.trim() || null,
         notes: input.notes || null,
         ...(input.requestId
           ? { upload_request_id: input.requestId, lab_reference: input.labReference }

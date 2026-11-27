@@ -212,18 +212,25 @@ export class ReportsLive {
     if (!this.attempt || !this.locked()) {
       const previousAttempt = this.attempt;
       const request = this.resolved();
-      const date = new Date(`${this.reportDate}T00:00:00`);
+      const reportDate = this.reportDate.trim();
+      const date = reportDate ? new Date(`${reportDate}T00:00:00Z`) : null;
+      const validDate =
+        !reportDate ||
+        (/^\d{4}-\d{2}-\d{2}$/.test(reportDate) &&
+          date !== null &&
+          Number.isFinite(date.getTime()) &&
+          date.toISOString().slice(0, 10) === reportDate &&
+          reportDate <= this.today);
 
       if (
         !this.file ||
         !this.reportType.trim() ||
         this.reportType.trim().length > 200 ||
-        !Number.isFinite(date.getTime()) ||
-        this.reportDate > this.today ||
+        !validDate ||
         this.notes.trim().length > 2000
       ) {
         this.error.set(
-          'Enter a report type, valid date, notes up to 2000 characters and one report file.',
+          'Enter a report type, notes up to 2000 characters and one report file. If a date is supplied, choose a valid date that is not in the future.',
         );
         return;
       }
@@ -256,7 +263,7 @@ export class ReportsLive {
           patientId: this.lab ? request!.patient.patient_user_id : this.roles.activeAccountId()!,
           file: this.file,
           reportType: this.reportType.trim(),
-          reportDate: this.reportDate,
+          reportDate: reportDate || null,
           notes: this.notes.trim(),
           ...(this.lab
             ? {
