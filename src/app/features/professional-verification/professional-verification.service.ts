@@ -7,6 +7,7 @@ export interface VerificationApplication {
   organization_id: string | null;
   role: 'doctor' | 'pharmacist' | 'lab_staff';
   registration_number: string | null;
+  workplace: string | null;
   status: string;
   submitted_at: string;
   reviewed_by: string | null;
@@ -34,6 +35,7 @@ export class ProfessionalVerificationService {
   updateProfile(input: {
     role: VerificationApplication['role'];
     registration_number: string;
+    workplace: string | null;
     qualifications: string | null;
     specialty: string | null;
   }): Promise<unknown> {
@@ -50,6 +52,7 @@ export class ProfessionalVerificationService {
   submit(input: {
     role: VerificationApplication['role'];
     registration_number: string;
+    workplace: string | null;
     evidence_document_ids: string[];
   }): Promise<VerificationApplication> {
     return this.auth.postAuthorized<VerificationApplication>('verification-applications', input);

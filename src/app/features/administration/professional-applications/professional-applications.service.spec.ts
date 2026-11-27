@@ -13,6 +13,7 @@ describe('ProfessionalApplicationsService', () => {
     organization_id: 'b2f189a7-b5d7-4f6b-a0cf-ab88fb9c788e',
     role: 'doctor',
     registration_number: 'SLMC-2045',
+    workplace: 'Central Clinic',
     status: 'pending',
     submitted_at: '2026-11-21T08:00:00Z',
     reviewed_by: null,

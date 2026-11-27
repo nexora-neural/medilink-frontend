@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../../../core/auth.service';
+import { AuthService, OnboardingRequestError } from '../../../../../core/auth.service';
 
 @Component({
   selector: 'app-registration',
@@ -135,6 +135,7 @@ export class RegistrationComponent implements OnChanges {
   }
 
   async registrationNext(): Promise<void> {
+    if (this.busy) return;
     this.registerSubmitted = true;
     const controls = this.registrationForm.controls;
     const fields =
@@ -168,24 +169,52 @@ export class RegistrationComponent implements OnChanges {
       this.registerStep++;
       this.registerSubmitted = false;
     } else {
-      if (this.role !== 'Patient') {
-        this.message =
-          'Professional registration is currently unavailable. No account has been created.';
-        return;
-      }
       this.busy = true;
       try {
-        await this.auth.registerPatient({
-          email: controls.email.value,
-          password: controls.password.value,
-          displayName: controls.fullName.value,
-          phone: `${this.countryDialCode}${controls.phone.value}`,
-          dateOfBirth: controls.dateOfBirth.value,
-          sex: controls.sex.value as 'female' | 'male',
-          recoverExisting: this.recoverExisting,
-        });
-        await this.router.navigate(['/workspace']);
+        if (this.role === 'Patient') {
+          await this.auth.registerPatient({
+            email: controls.email.value,
+            password: controls.password.value,
+            displayName: controls.fullName.value,
+            phone: `${this.countryDialCode}${controls.phone.value}`,
+            dateOfBirth: controls.dateOfBirth.value,
+            sex: controls.sex.value as 'female' | 'male',
+            recoverExisting: this.recoverExisting,
+          });
+          await this.router.navigate(['/workspace']);
+        } else {
+          const requestedRole = this.professionalRole();
+          if (!requestedRole) {
+            this.message = 'Choose a valid professional account type and try again.';
+            return;
+          }
+          await this.auth.registerProfessional({
+            email: controls.email.value,
+            password: controls.password.value,
+            displayName: controls.fullName.value,
+            phone: `${this.countryDialCode}${controls.phone.value}`,
+            requestedRole,
+            professionalRegistrationNumber: controls.professionalId.value,
+            workplace: controls.organization.value,
+            recoverExisting: this.recoverExisting,
+          });
+          await this.router.navigate(['/workspace/professional-verification'], {
+            state: {
+              professionalRegistration: {
+                role: requestedRole,
+                registrationNumber: controls.professionalId.value.trim(),
+                workplace: controls.organization.value.trim(),
+              },
+            },
+          });
+        }
       } catch (error) {
+        if (error instanceof OnboardingRequestError) {
+          this.recoverExisting = true;
+          this.message =
+            'Your account was created, but setup did not finish. Retry here with the same password.';
+          return;
+        }
         const code =
           typeof error === 'object' && error !== null && 'code' in error ? error.code : '';
         this.message =
@@ -198,6 +227,21 @@ export class RegistrationComponent implements OnChanges {
       }
     }
   }
+
+  private professionalRole(): 'doctor' | 'pharmacist' | 'lab_staff' | null {
+    switch (this.role.trim().toLowerCase()) {
+      case 'doctor':
+        return 'doctor';
+      case 'pharmacist':
+        return 'pharmacist';
+      case 'lab staff':
+      case 'lab_staff':
+        return 'lab_staff';
+      default:
+        return null;
+    }
+  }
+
   registrationBack() {
     if (this.registerStep > 1) {
       this.registerStep--;

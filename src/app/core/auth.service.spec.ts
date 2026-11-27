@@ -140,6 +140,58 @@ describe('AuthService onboarding recovery', () => {
     await result;
   });
 
+  it('creates a doctor applicant without patient-only fields', async () => {
+    firebaseMocks.createUserWithEmailAndPassword.mockResolvedValue({ user });
+    const result = service.registerProfessional({
+      email: 'doctor@example.com',
+      password: 'fictional-test-password',
+      displayName: 'Demo Doctor',
+      phone: '+94771234567',
+      requestedRole: 'doctor',
+      professionalRegistrationNumber: 'SLMC-123',
+      workplace: 'Demo Clinic',
+    });
+    const request = await expectOnboardingRequest();
+    expect(request.request.body).toEqual({
+      display_name: 'Demo Doctor',
+      phone: '+94771234567',
+      requested_role: 'doctor',
+      professional_registration_number: 'SLMC-123',
+      workplace: 'Demo Clinic',
+    });
+    request.flush({});
+    await result;
+  });
+
+  it('recovers an incomplete professional account with its existing password', async () => {
+    firebaseMocks.signInWithEmailAndPassword.mockResolvedValue({ user });
+    const result = service.registerProfessional({
+      email: 'doctor@example.com',
+      password: 'fictional-test-password',
+      displayName: 'Demo Doctor',
+      phone: '+94771234567',
+      requestedRole: 'lab_staff',
+      professionalRegistrationNumber: 'LAB-123',
+      workplace: 'City Lab',
+      recoverExisting: true,
+    });
+    const request = await expectOnboardingRequest();
+    expect(firebaseMocks.signInWithEmailAndPassword).toHaveBeenCalledWith(
+      expect.anything(),
+      'doctor@example.com',
+      'fictional-test-password',
+    );
+    expect(request.request.body).toMatchObject({
+      requested_role: 'lab_staff',
+      professional_registration_number: 'LAB-123',
+      workplace: 'City Lab',
+    });
+    expect(request.request.body).not.toHaveProperty('date_of_birth');
+    expect(request.request.body).not.toHaveProperty('sex');
+    request.flush({});
+    await result;
+  });
+
   it('keeps the Firebase session when backend onboarding fails', async () => {
     firebaseMocks.createUserWithEmailAndPassword.mockResolvedValue({ user });
 
@@ -147,7 +199,7 @@ describe('AuthService onboarding recovery', () => {
 
     // Attach the rejection check before returning the API failure.
     const rejection = expect(result).rejects.toMatchObject({
-      status: 503,
+      originalError: { status: 503 },
     });
 
     const request = await expectOnboardingRequest();

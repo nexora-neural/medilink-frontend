@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ProfessionalVerification } from './professional-verification';
 import { ProfessionalVerificationService } from './professional-verification.service';
+import { AuthService } from '../../core/auth.service';
 
 describe('ProfessionalVerification', () => {
   let component: ProfessionalVerification;
@@ -15,6 +16,7 @@ describe('ProfessionalVerification', () => {
     getDocument: ReturnType<typeof vi.fn>;
     download: ReturnType<typeof vi.fn>;
   };
+  let auth: { getOwnProfile: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     api = {
@@ -32,15 +34,29 @@ describe('ProfessionalVerification', () => {
       getDocument: vi.fn().mockResolvedValue({ id: 'doc-1', original_filename: 'evidence.pdf' }),
       download: vi.fn().mockResolvedValue(new Blob(['file'])),
     };
+    auth = {
+      getOwnProfile: vi.fn().mockResolvedValue({
+        professional_profile: {
+          role: 'doctor',
+          registration_number: 'SLMC-123',
+          workplace: 'Demo Clinic',
+        },
+      }),
+    };
     await TestBed.configureTestingModule({
       imports: [ProfessionalVerification],
-      providers: [provideRouter([]), { provide: ProfessionalVerificationService, useValue: api }],
+      providers: [
+        provideRouter([]),
+        { provide: ProfessionalVerificationService, useValue: api },
+        { provide: AuthService, useValue: auth },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(ProfessionalVerification);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    auth.getOwnProfile.mockClear();
   });
 
   it('loads an empty application state from the API', () => {
@@ -49,7 +65,18 @@ describe('ProfessionalVerification', () => {
     expect(component.showStatus).toBe(true);
   });
 
+  it('prefills signup details from the persisted professional profile', async () => {
+    await component.loadApplication();
+    expect(auth.getOwnProfile).toHaveBeenCalledOnce();
+    expect(component.verificationForm.getRawValue()).toMatchObject({
+      role: 'doctor',
+      registrationNumber: 'SLMC-123',
+      workplace: 'Demo Clinic',
+    });
+  });
+
   it('requires professional details and an evidence document', async () => {
+    component.verificationForm.reset();
     await component.submitApplication();
     expect(component.application).toBeNull();
     expect(component.fileError).toContain('supporting document');
@@ -61,6 +88,7 @@ describe('ProfessionalVerification', () => {
     component.verificationForm.patchValue({
       role: 'doctor',
       registrationNumber: 'D123',
+      workplace: 'Demo Clinic',
       specialty: 'Medicine',
       qualification: 'MBBS',
     });
@@ -69,6 +97,7 @@ describe('ProfessionalVerification', () => {
     expect(api.updateProfile).toHaveBeenCalledWith({
       role: 'doctor',
       registration_number: 'D123',
+      workplace: 'Demo Clinic',
       qualifications: 'MBBS',
       specialty: 'Medicine',
     });
@@ -76,6 +105,7 @@ describe('ProfessionalVerification', () => {
     expect(api.submit).toHaveBeenCalledWith({
       role: 'doctor',
       registration_number: 'D123',
+      workplace: 'Demo Clinic',
       evidence_document_ids: ['doc-1'],
     });
     expect(component.application?.status).toBe('pending');

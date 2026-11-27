@@ -22,6 +22,13 @@ export interface MediLinkConfig {
   apiBaseUrl: string;
 }
 
+export class OnboardingRequestError extends Error {
+  constructor(readonly originalError: unknown) {
+    super('The account was created, but profile setup did not finish.');
+    this.name = 'OnboardingRequestError';
+  }
+}
+
 export interface MembershipResponse {
   id: string;
   organization_id: string;
@@ -55,6 +62,7 @@ export interface MeResponse {
     role: 'doctor' | 'pharmacist' | 'lab_staff';
     doctor_reference: string | null;
     registration_number: string | null;
+    workplace: string | null;
     qualifications: string | null;
     specialty: string | null;
     verification_status: string;
@@ -365,6 +373,39 @@ export class AuthService {
     sex: 'female' | 'male';
     recoverExisting?: boolean;
   }): Promise<void> {
+    return this.registerAccount({
+      ...input,
+      requestedRole: 'patient',
+      dateOfBirth: input.dateOfBirth,
+      sex: input.sex,
+    });
+  }
+
+  async registerProfessional(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone: string;
+    requestedRole: 'doctor' | 'pharmacist' | 'lab_staff';
+    professionalRegistrationNumber: string;
+    workplace: string;
+    recoverExisting?: boolean;
+  }): Promise<void> {
+    return this.registerAccount(input);
+  }
+
+  private async registerAccount(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone: string;
+    requestedRole: 'patient' | 'doctor' | 'pharmacist' | 'lab_staff';
+    dateOfBirth?: string;
+    sex?: 'female' | 'male';
+    professionalRegistrationNumber?: string;
+    workplace?: string;
+    recoverExisting?: boolean;
+  }): Promise<void> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
     const email = input.email.trim();
@@ -374,21 +415,30 @@ export class AuthService {
       : await createUserWithEmailAndPassword(auth, email, input.password);
     try {
       const token = await credential.user.getIdToken();
-      await firstValueFrom(
-        this.http
-          .post(
-            `${config.apiBaseUrl}/me/onboard`,
-            {
-              display_name: input.displayName,
-              phone: input.phone,
-              requested_role: 'patient',
-              date_of_birth: input.dateOfBirth,
-              sex: input.sex,
-            },
-            { headers: { Authorization: `Bearer ${token}` } },
-          )
-          .pipe(timeout(10000)),
-      );
+      const onboarding: Record<string, string> = {
+        display_name: input.displayName.trim(),
+        phone: input.phone.trim(),
+        requested_role: input.requestedRole,
+      };
+      if (input.requestedRole === 'patient') {
+        onboarding['date_of_birth'] = input.dateOfBirth ?? '';
+        onboarding['sex'] = input.sex ?? '';
+      } else {
+        onboarding['professional_registration_number'] =
+          input.professionalRegistrationNumber?.trim() ?? '';
+        onboarding['workplace'] = input.workplace?.trim() ?? '';
+      }
+      try {
+        await firstValueFrom(
+          this.http
+            .post(`${config.apiBaseUrl}/me/onboard`, onboarding, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            .pipe(timeout(10000)),
+        );
+      } catch (error) {
+        throw new OnboardingRequestError(error);
+      }
     } catch (error) {
       // Keep the Firebase session so a failed backend onboarding can be retried.
       throw error;
