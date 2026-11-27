@@ -97,6 +97,8 @@
                       Waiting
                     } @else if (patient.status === 'in-consultation') {
                       In consultation
+                    } @else if (patient.status === 'unknown') {
+                      Status unavailable
                     } @else {
                       Completed
                     }
@@ -148,8 +150,24 @@
                   </details>
                 }
 
+                @if (patient.status === 'unknown') {
+                  <div role="alert">
+                    Consultation status is unavailable. Retry before managing consultations.
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      (click)="refreshPatientHistory(patient.id)"
+                    >
+                      Retry consultation status
+                    </button>
+                  </div>
+                }
+
                 <div class="patient-actions">
-                  <a class="secondary-button" [routerLink]="['/workspace/doctor/patients', patient.id]">
+                  <a
+                    class="secondary-button"
+                    [routerLink]="['/workspace/doctor/patients', patient.id]"
+                  >
                     View patient records
                   </a>
                   @if (patient.status === 'waiting') {
@@ -177,7 +195,7 @@
                     >
                       {{ actionInProgress() === patient.id ? 'Ending…' : 'End consultation' }}
                     </button>
-                  } @else {
+                  } @else if (patient.status === 'completed') {
                     <span class="completed-label">
                       <span class="material-symbols-outlined">check_circle</span>
                       Consultation completed

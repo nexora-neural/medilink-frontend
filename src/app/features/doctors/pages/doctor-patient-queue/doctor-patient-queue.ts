@@ -7,7 +7,7 @@ import {
   Consultation,
 } from './doctor-patient-queue-api.service';
 
-type QueueStatus = 'waiting' | 'in-consultation' | 'completed';
+type QueueStatus = 'waiting' | 'in-consultation' | 'completed' | 'unknown';
 type AccessStatus = 'active' | 'expired' | 'revoked';
 type ConsultationPermission = 'granted' | 'not-granted';
 interface QueuePatient {
@@ -92,7 +92,7 @@ export class DoctorPatientQueue {
             readAccess: 'active',
             consultationPermission: 'not-granted',
             consultationContext: '',
-            status: 'waiting',
+            status: 'unknown',
             grantId: x.grant_id,
             grantIds: [],
             consultationId: null,
@@ -114,27 +114,32 @@ export class DoctorPatientQueue {
       this.patients.set(active);
       this.consultationHistory.set({});
       for (const p of active) {
-        try {
-          const history = await this.loadAllConsultations(p.id);
-          const current = history.filter((c) => p.grantIds.includes(c.grant_id));
-          this.consultationHistory.update((h) => ({ ...h, [p.id]: history }));
-          const running = current.find((c) => !c.ended_at);
-          if (running) {
-            this.patchPatient(p.id, {
-              status: 'in-consultation',
-              consultationId: running.id,
-              grantId: running.grant_id,
-            });
-          } else if (current.length) this.patchPatient(p.id, { status: 'completed' });
-        } catch {
-          /* history is supplementary */
-        }
+        await this.refreshPatientHistory(p.id);
       }
     } catch (e) {
       this.patients.set([]);
       this.errorMessage.set(this.message(e, 'The patient queue could not be loaded.'));
     } finally {
       this.loading.set(false);
+    }
+  }
+  async refreshPatientHistory(id: string): Promise<void> {
+    const p = this.patients().find((patient) => patient.id === id);
+    if (!p) return;
+    this.patchPatient(id, { status: 'unknown', consultationId: null });
+    try {
+      const history = await this.loadAllConsultations(id);
+      const current = history.filter((c) => p.grantIds.includes(c.grant_id));
+      this.consultationHistory.update((h) => ({ ...h, [id]: history }));
+      const running = current.find((c) => !c.ended_at);
+      this.patchPatient(
+        id,
+        running
+          ? { status: 'in-consultation', consultationId: running.id, grantId: running.grant_id }
+          : { status: current.length ? 'completed' : 'waiting', consultationId: null },
+      );
+    } catch {
+      this.patchPatient(id, { status: 'unknown', consultationId: null });
     }
   }
   retry(): void {
@@ -148,7 +153,7 @@ export class DoctorPatientQueue {
   }
   async startConsultation(id: string): Promise<void> {
     const p = this.patients().find((x) => x.id === id);
-    if (!p) return;
+    if (!p || p.status !== 'waiting') return;
     if (p.readAccess !== 'active' || p.consultationPermission !== 'granted') {
       this.validationMessage.set(
         'Active patient record access and separate consultation permission are both required.',
@@ -171,7 +176,7 @@ export class DoctorPatientQueue {
   }
   async endConsultation(id: string): Promise<void> {
     const p = this.patients().find((x) => x.id === id);
-    if (!p?.consultationId) return;
+    if (!p?.consultationId || p.status !== 'in-consultation') return;
     this.actionInProgress.set(id);
     this.validationMessage.set('');
     try {
@@ -191,7 +196,7 @@ export class DoctorPatientQueue {
       const history = await this.loadAllConsultations(p.id);
       this.consultationHistory.update((h) => ({ ...h, [p.id]: history }));
     } catch {
-      /* successful action remains confirmed by server */
+      this.patchPatient(p.id, { status: 'unknown', consultationId: null });
     }
   }
   private async loadAllConsultations(patientId: string): Promise<Consultation[]> {

@@ -151,6 +151,26 @@ describe('DoctorPatientQueue', () => {
     expect(f.componentInstance.errorMessage()).toBe('');
     expect(f.componentInstance.patients()).toEqual([]);
   });
+  it('blocks actions when history fails and recovers the actual active status on retry', async () => {
+    api.listConsultations.mockRejectedValueOnce({ status: 503 }).mockResolvedValueOnce({
+      items: [{ id: 'existing', grant_id: 'g1', ended_at: null }],
+      page: 1,
+      page_size: 100,
+      total: 1,
+    });
+    const f = TestBed.createComponent(DoctorPatientQueue);
+    f.detectChanges();
+    await vi.waitFor(() => expect(f.componentInstance.loading()).toBe(false));
+    f.detectChanges();
+    expect(f.componentInstance.patients()[0].status).toBe('unknown');
+    expect(f.nativeElement.textContent).toContain('Consultation status is unavailable');
+    expect(f.nativeElement.textContent).not.toContain('Start consultation');
+    await f.componentInstance.startConsultation('p1');
+    expect(api.start).not.toHaveBeenCalled();
+    await f.componentInstance.refreshPatientHistory('p1');
+    expect(f.componentInstance.patients()[0].status).toBe('in-consultation');
+    expect(f.componentInstance.patients()[0].consultationId).toBe('existing');
+  });
   it('does not permit consultation without patient approval', async () => {
     api.list.mockResolvedValue({
       items: [

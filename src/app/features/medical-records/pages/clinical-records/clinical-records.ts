@@ -37,6 +37,8 @@ export class ClinicalRecords {
   readonly liveError = signal('');
   readonly accessDenied = signal(false);
   private nextId = 1;
+  private liveRequest = 0;
+  private livePatientId: string | null = null;
 
   readonly audience: 'patient' | 'doctor' =
     this.route.snapshot.data['audience'] === 'doctor' ? 'doctor' : 'patient';
@@ -94,11 +96,13 @@ export class ClinicalRecords {
 
   constructor() {
     if (this.livePatientRecords) {
-      this.pageState.set('loading');
-      this.loadingLive.set(true);
-      void this.loadLiveRecords();
+      this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+        this.livePatientId = params.get('id');
+        void this.loadLiveRecords();
+      });
     }
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      if (this.livePatientRecords) return;
       const preview = params.get('preview');
 
       this.pageState.set(
@@ -116,7 +120,12 @@ export class ClinicalRecords {
   }
 
   async loadLiveRecords(): Promise<void> {
-    const patientId = this.route.snapshot.paramMap.get('id');
+    const patientId = this.livePatientId;
+    const request = ++this.liveRequest;
+    this.entries.set([]);
+    this.allergyStatus.set('unknown');
+    this.accessDenied.set(false);
+    this.pageState.set('loading');
     if (!patientId) {
       this.liveError.set('Patient reference is missing.');
       this.pageState.set('error');
@@ -127,6 +136,7 @@ export class ClinicalRecords {
     this.liveError.set('');
     try {
       const page = await this.queueApi.listRecords(patientId);
+      if (request !== this.liveRequest) return;
       this.entries.set(
         page.items.map((item) => ({
           id: item.id,
@@ -151,6 +161,7 @@ export class ClinicalRecords {
         page.items.some((item) => item.type === 'allergy') ? 'allergies-recorded' : 'unknown',
       );
     } catch (error) {
+      if (request !== this.liveRequest) return;
       const status = (error as { status?: number }).status;
       const denied = status === 403 || status === 404;
       this.liveError.set(
@@ -163,7 +174,7 @@ export class ClinicalRecords {
       this.accessDenied.set(denied);
       this.pageState.set(denied ? 'denied' : 'error');
     } finally {
-      this.loadingLive.set(false);
+      if (request === this.liveRequest) this.loadingLive.set(false);
     }
   }
 
