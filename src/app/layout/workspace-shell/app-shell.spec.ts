@@ -30,6 +30,13 @@ describe('AppShell', () => {
     const profileLink = element.querySelector('a[href="/workspace/patient/profile"]');
 
     expect(profileLink?.textContent).toContain('My profile');
+    expect(
+      element.querySelector('.sidebar a[href="/workspace/patient/notifications"]'),
+    ).not.toBeNull();
+    expect(element.querySelector('.sidebar a[href="/workspace/patient/settings"]')).not.toBeNull();
+    expect(
+      element.querySelector('.patient-notifications-link[href="/workspace/patient/notifications"]'),
+    ).not.toBeNull();
     expect(element.querySelector('a[href="/workspace/professional-verification"]')).not.toBeNull();
     expect(element.querySelector('nav[aria-label="Patient navigation"]')).not.toBeNull();
     expect(element.querySelector('nav a[href="/workspace/patient/medications"]')).not.toBeNull();
