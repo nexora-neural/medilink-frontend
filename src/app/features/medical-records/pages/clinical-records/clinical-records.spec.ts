@@ -1,439 +1,283 @@
-import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { describe, expect, it } from 'vitest';
 
-import { ActiveRole, ActiveRoleService } from '../../../../core/context/active-role.service';
+import { ActiveRoleService } from '../../../../core/context/active-role.service';
+import { ClinicalEntry } from '../../models/clinical-record.model';
+import { ClinicalRecordApiService, RecordPage } from '../../services/clinical-record-api.service';
 import { ClinicalRecords } from './clinical-records';
-import { DoctorPatientQueueApi } from '../../../doctors/pages/doctor-patient-queue/doctor-patient-queue-api.service';
 
-describe('ClinicalRecords preview', () => {
-  async function setup(audience: 'patient' | 'doctor' = 'patient', preview = '') {
-    const activeRole = signal<ActiveRole>(audience === 'patient' ? 'Patient' : 'Doctor');
-    const params = new BehaviorSubject(convertToParamMap(preview ? { preview } : {}));
+describe('ClinicalRecords integration', () => {
+  const original: ClinicalEntry = {
+    id: 'entry-original',
+    kind: 'diagnosis',
+    title: 'Existing diagnosis',
+    details: 'Recorded details',
+    clinicalCode: 'TEST',
+    recordedAt: '2026-11-22T12:00:00Z',
+    source: 'doctor',
+    authorId: 'other-doctor-id',
+    organizationId: 'organization-id',
+    status: 'superseded',
+  };
+  const api = {
+    patients: vi.fn<ClinicalRecordApiService['patients']>(),
+    list: vi.fn<ClinicalRecordApiService['list']>(),
+    allergyStatus: vi.fn<ClinicalRecordApiService['allergyStatus']>(),
+    consultation: vi.fn<ClinicalRecordApiService['consultation']>(),
+    add: vi.fn<ClinicalRecordApiService['add']>(),
+  };
+  let query: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let fixture: ComponentFixture<ClinicalRecords>;
+  let roles: ActiveRoleService;
 
-    await TestBed.configureTestingModule({
+  const page = (items: ClinicalEntry[], current = 1, total = items.length): RecordPage => ({
+    items,
+    page: current,
+    pageSize: 20,
+    total,
+  });
+  const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+  function configure(audience: 'doctor' | 'patient', selected = ''): void {
+    query = new BehaviorSubject(convertToParamMap({ patient: selected }));
+    TestBed.configureTestingModule({
       imports: [ClinicalRecords],
       providers: [
         provideRouter([]),
-        {
-          provide: DoctorPatientQueueApi,
-          useValue: {
-            listRecords: vi.fn().mockResolvedValue({
-              items: [
-                {
-                  id: 'r1',
-                  type: 'diagnosis',
-                  title: 'Synthetic diagnosis',
-                  description: 'Read only',
-                  recorded_at: '2026-11-26T00:00:00Z',
-                  source: 'professional',
-                  status: 'active',
-                },
-              ],
-              page: 1,
-              page_size: 100,
-              total: 1,
-            }),
-          },
-        },
+        { provide: ClinicalRecordApiService, useValue: api },
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { data: { audience } },
-            queryParamMap: params.asObservable(),
+            snapshot: { data: { audience }, queryParamMap: query.value },
+            queryParamMap: query.asObservable(),
           },
         },
-        {
-          provide: ActiveRoleService,
-          useValue: { activeRole: activeRole.asReadonly() },
-        },
       ],
-    }).compileComponents();
-
-    const fixture = TestBed.createComponent(ClinicalRecords);
-    fixture.detectChanges();
-
-    return {
-      fixture,
-      page: fixture.componentInstance,
-      activeRole,
-      params,
-    };
+    });
+    roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles(audience + '-id', [audience]);
+    fixture = TestBed.createComponent(ClinicalRecords);
   }
 
-  it('renders fictional records with source and author metadata', async () => {
-    const { fixture, page } = await setup();
-
-    expect(page.visibleEntries()).toHaveLength(4);
-    expect(fixture.nativeElement.querySelectorAll('.entry-card')).toHaveLength(4);
-    expect(fixture.nativeElement.textContent).toContain('Sample preview only');
-    expect(fixture.nativeElement.textContent).toContain('Doctor-entered');
-    expect(fixture.nativeElement.textContent).toContain('Patient-reported');
-    expect(fixture.nativeElement.textContent).toContain('Dr. Sample Silva');
-    expect(fixture.nativeElement.textContent).toContain('Example Care Clinic');
-  });
-
-  it.each(['patient', 'doctor'] as const)(
-    'links the %s records workflow to corrections',
-    async (audience) => {
-      const { fixture } = await setup(audience);
-      const path =
-        audience === 'patient' ? 'patient/correction-request' : 'doctor/correction-requests';
-      const link = fixture.nativeElement.querySelector('a[href="/workspace/' + path + '"]');
-      expect(link).not.toBeNull();
-      expect(
-        fixture.nativeElement.querySelector(
-          'a[href="/workspace/' + audience + '/correction-history"]',
-        ),
-      ).not.toBeNull();
-    },
-  );
-
-  it('rejects a whitespace-only title', async () => {
-    const { page } = await setup();
-
-    page.openForm();
-    page.form.controls.title.setValue('   ');
-    page.save();
-
-    expect(page.entries()).toHaveLength(4);
-    expect(page.formError()).not.toBe('');
-    expect(page.formOpen()).toBe(true);
-  });
-
-  it('rejects a future recorded time', async () => {
-    const { page } = await setup();
-
-    page.openForm();
-    page.form.patchValue({
-      title: 'Sample condition',
-      recordedAt: '2999-01-01T12:00',
-    });
-    page.save();
-
-    expect(page.entries()).toHaveLength(4);
-    expect(page.formError()).toContain('not in the future');
-  });
-
-  it('blocks doctor-only entry types in the patient workspace', async () => {
-    const { page } = await setup();
-
-    page.openForm();
-    page.form.patchValue({
-      kind: 'diagnosis',
-      title: 'Invalid patient entry',
-    });
-    page.save();
-
-    expect(page.entries()).toHaveLength(4);
-    expect(page.formError()).toContain('not available');
-  });
-
-  it('adds a doctor note without changing existing authors or records', async () => {
-    const { page } = await setup('doctor');
-    const original = page.entries().map((entry) => ({ ...entry }));
-
-    page.openForm();
-    page.form.patchValue({
-      kind: 'note',
-      title: '  Sample doctor note  ',
-    });
-    page.save();
-
-    expect(page.entries()).toHaveLength(5);
-    expect(page.entries()[0]).toMatchObject({
-      kind: 'note',
-      title: 'Sample doctor note',
-      source: 'doctor',
-      authorName: 'Dr. Sample Silva',
-      organization: 'Example Care Clinic',
-    });
-    expect(page.entries().slice(1)).toEqual(original);
-  });
-
-  it('adds only the new entry when starting from an empty preview', async () => {
-    const { page } = await setup('patient', 'empty');
-
-    expect(page.visibleEntries()).toHaveLength(0);
-
-    page.openForm();
-    page.form.controls.title.setValue('Sample condition');
-    page.save();
-
-    expect(page.visibleEntries()).toHaveLength(1);
-    expect(page.visibleEntries()[0].title).toBe('Sample condition');
-    expect(page.allergyStatus()).toBe('unknown');
-  });
-
-  it('keeps unknown distinct from no known allergies', async () => {
-    const { page, fixture } = await setup('patient', 'empty');
-
-    page.openForm();
-    page.form.controls.title.setValue('Sample condition');
-    page.save();
-
-    page.setAllergyStatus('no-known-allergies');
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('No known allergies reported.');
-
-    page.setAllergyStatus('unknown');
-    fixture.detectChanges();
-
-    expect(page.allergyStatus()).toBe('unknown');
-    expect(fixture.nativeElement.textContent).toContain(
-      'allergy information has not been established',
-    );
-  });
-
-  it('does not replace an active allergy with no known allergies', async () => {
-    const { page } = await setup();
-
-    page.setAllergyStatus('no-known-allergies');
-
-    expect(page.allergyStatus()).toBe('allergies-recorded');
-    expect(page.message()).toContain('active sample allergy');
-  });
-
-  for (const state of ['loading', 'error', 'denied']) {
-    it(`hides records and blocks additions in the ${state} preview`, async () => {
-      const { page, fixture } = await setup('patient', state);
-
-      page.openForm();
+  async function expectView(state: string): Promise<void> {
+    await vi.waitFor(() => {
       fixture.detectChanges();
-
-      expect(page.visibleEntries()).toHaveLength(0);
-      expect(page.formOpen()).toBe(false);
-      expect(fixture.nativeElement.querySelector('.entry-card')).toBeNull();
-      expect(fixture.nativeElement.querySelector('form')).toBeNull();
-      expect(fixture.nativeElement.querySelector('.page-heading button')).toBeNull();
+      expect(fixture.componentInstance.state().kind).toBe(state);
     });
   }
 
-  it('restores records after retrying an error preview', async () => {
-    const { page } = await setup('patient', 'error');
-
-    page.retry();
-
-    expect(page.pageState()).toBe('ready');
-    expect(page.visibleEntries()).toHaveLength(4);
+  beforeEach(() => {
+    vi.resetAllMocks();
+    api.list.mockResolvedValue(page([original]));
+    api.allergyStatus.mockResolvedValue('unknown');
+    api.add.mockResolvedValue(undefined);
+    api.consultation.mockResolvedValue(null);
+    api.patients.mockResolvedValue([{ id: 'patient-id', name: 'Authorized Patient', grants: [] }]);
   });
 
-  it('blocks saving and hides records after the role changes', async () => {
-    const { page, activeRole, fixture } = await setup('doctor');
-
-    page.openForm();
-    page.form.controls.title.setValue('Sample note');
-    activeRole.set('Patient');
-    page.save();
-    fixture.detectChanges();
-
-    expect(page.entries()).toHaveLength(4);
-    expect(page.visibleEntries()).toHaveLength(0);
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Access unavailable');
-  });
-
-  it('starts with fresh sample records when reopened', async () => {
-    const { page, fixture } = await setup();
-
-    page.openForm();
-    page.form.controls.title.setValue('Temporary condition');
-    page.save();
-
-    expect(page.entries()).toHaveLength(5);
-    fixture.destroy();
-
-    const reopened = TestBed.createComponent(ClinicalRecords);
-    reopened.detectChanges();
-
-    expect(reopened.componentInstance.entries()).toHaveLength(4);
-    expect(
-      reopened.componentInstance.entries().some((entry) => entry.title === 'Temporary condition'),
-    ).toBe(false);
-
-    reopened.destroy();
-  });
-  it('allows no known allergies with no clinical entries', async () => {
-    const { page, fixture } = await setup('patient', 'empty');
-
-    expect(page.visibleEntries()).toHaveLength(0);
-    expect(page.allergyStatus()).toBe('unknown');
-
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ) as HTMLButtonElement[];
-
-    const reportButton = buttons.find((button) =>
-      button.textContent?.includes('Report no known allergies'),
+  it('uses the signed-in patient and shows attributed, read-only records', async () => {
+    configure('patient', 'different-patient');
+    await expectView('ready');
+    expect(api.list).toHaveBeenCalledExactlyOnceWith('patient-id', 1);
+    expect(text()).toContain('Doctor-entered');
+    expect(text()).toContain('Superseded');
+    expect(text()).toContain('other-doctor-id');
+    expect(text()).toContain('organization-id');
+    expect(text()).not.toContain('Sample preview');
+    expect(fixture.nativeElement.querySelector('time').getAttribute('datetime')).toBe(
+      original.recordedAt,
     );
-
-    expect(reportButton).toBeDefined();
-    reportButton!.click();
-    fixture.detectChanges();
-
-    expect(page.allergyStatus()).toBe('no-known-allergies');
-    expect(page.visibleEntries()).toHaveLength(0);
-    expect(fixture.nativeElement.textContent).toContain('No known allergies reported.');
-
-    page.openForm();
-    page.form.controls.title.setValue('Sample condition');
-    page.save();
-
-    expect(page.visibleEntries()).toHaveLength(1);
-    expect(page.allergyStatus()).toBe('no-known-allergies');
+    expect(fixture.nativeElement.querySelector('article button')).toBeNull();
   });
-});
 
-describe('ClinicalRecords live doctor patient view', () => {
-  it('loads server records for the patient id and disables local writes', async () => {
-    const api = {
-      listRecords: vi.fn().mockResolvedValue({
-        items: [
-          {
-            id: 'live-1',
-            type: 'diagnosis',
-            title: 'Server diagnosis',
-            description: 'Authorized record',
-            recorded_at: '2026-11-26T00:00:00Z',
-            source: 'professional',
-            status: 'active',
-          },
-        ],
-        page: 1,
-        page_size: 100,
-        total: 1,
-      }),
-    };
-    await TestBed.configureTestingModule({
-      imports: [ClinicalRecords],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              data: { audience: 'doctor', livePatientRecords: true },
-              paramMap: convertToParamMap({ id: 'patient-42' }),
-            },
-            paramMap: new BehaviorSubject(convertToParamMap({ id: 'patient-42' })).asObservable(),
-            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
-          },
-        },
-        {
-          provide: ActiveRoleService,
-          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
-        },
-        { provide: DoctorPatientQueueApi, useValue: api },
-      ],
-    }).compileComponents();
-    const f = TestBed.createComponent(ClinicalRecords);
-    f.detectChanges();
-    await vi.waitFor(() => expect(f.componentInstance.loadingLive()).toBe(false));
-    f.detectChanges();
-    expect(api.listRecords).toHaveBeenCalledWith('patient-42');
-    expect(f.nativeElement.textContent).toContain('Server diagnosis');
-    expect(f.nativeElement.textContent).toContain('Read-only record');
-    expect(f.nativeElement.textContent).not.toContain('Sample preview only');
-    expect(f.componentInstance.canAdd()).toBe(false);
-
-    f.componentInstance.entries.set([]);
-    f.detectChanges();
-    expect(f.nativeElement.textContent).toContain(
-      'No clinical entries are available for this patient.',
+  it('creates an own entry once and reloads from the server', async () => {
+    configure('patient');
+    await expectView('ready');
+    const component = fixture.componentInstance;
+    component.openForm();
+    component.form.patchValue({ title: '  New condition  ', details: '  New details  ' });
+    api.list.mockResolvedValue(
+      page([{ ...original, id: 'new', title: 'New condition' }, original]),
     );
-    expect(f.nativeElement.textContent).not.toContain('Add sample entry');
-    expect(f.nativeElement.querySelector('button')).toBeNull();
-  });
-  it('clears records on patient switch and ignores an earlier response', async () => {
-    const params = new BehaviorSubject(convertToParamMap({ id: 'patient-a' }));
-    let resolveA!: (value: any) => void;
-    let resolveB!: (value: any) => void;
-    const api = {
-      listRecords: vi.fn(
-        (id: string) =>
-          new Promise((resolve) => {
-            if (id === 'patient-a') resolveA = resolve;
-            else resolveB = resolve;
-          }),
-      ),
-    };
-    await TestBed.configureTestingModule({
-      imports: [ClinicalRecords],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { data: { audience: 'doctor', livePatientRecords: true } },
-            paramMap: params.asObservable(),
-            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
-          },
-        },
-        {
-          provide: ActiveRoleService,
-          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
-        },
-        { provide: DoctorPatientQueueApi, useValue: api },
-      ],
-    }).compileComponents();
-    const f = TestBed.createComponent(ClinicalRecords);
-    f.detectChanges();
-    params.next(convertToParamMap({ id: 'patient-b' }));
-    expect(f.componentInstance.entries()).toEqual([]);
-    expect(f.componentInstance.pageState()).toBe('loading');
-    const item = (title: string) => ({
-      items: [
-        {
-          id: title,
-          type: 'diagnosis',
-          title,
-          recorded_at: '2026-01-01T00:00:00Z',
-          source: 'professional',
-          status: 'active',
-        },
-      ],
+    component.save();
+    component.save();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(text()).toContain('Entry saved.');
+      expect(text()).toContain('New condition');
     });
-    resolveB(item('Patient B'));
-    await vi.waitFor(() => expect(f.componentInstance.entries()[0]?.title).toBe('Patient B'));
-    resolveA(item('Patient A'));
-    await Promise.resolve();
-    expect(f.componentInstance.entries()[0].title).toBe('Patient B');
+    expect(api.add).toHaveBeenCalledExactlyOnceWith(
+      'patient-id',
+      expect.objectContaining({
+        kind: 'condition',
+        title: 'New condition',
+        details: 'New details',
+      }),
+      undefined,
+    );
+    expect(api.list).toHaveBeenCalledTimes(2);
   });
-  it('shows the denied state without leaking sample records', async () => {
-    await TestBed.configureTestingModule({
-      imports: [ClinicalRecords],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              data: { audience: 'doctor', livePatientRecords: true },
-              paramMap: convertToParamMap({ id: 'patient-42' }),
-            },
-            paramMap: new BehaviorSubject(convertToParamMap({ id: 'patient-42' })).asObservable(),
-            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
-          },
-        },
-        {
-          provide: ActiveRoleService,
-          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
-        },
-        {
-          provide: DoctorPatientQueueApi,
-          useValue: { listRecords: vi.fn().mockRejectedValue({ status: 404 }) },
-        },
-      ],
-    }).compileComponents();
-    const f = TestBed.createComponent(ClinicalRecords);
-    f.detectChanges();
-    await vi.waitFor(() => expect(f.componentInstance.loadingLive()).toBe(false));
-    f.detectChanges();
-    expect(f.componentInstance.pageState()).toBe('denied');
-    expect(f.nativeElement.textContent).toContain('not granted access');
-    expect(f.nativeElement.textContent).not.toContain('Asthma');
+
+  it('persists the explicit absence report when the status is unknown', async () => {
+    api.list.mockResolvedValue(page([]));
+    configure('patient');
+    await expectView('ready');
+    expect(text()).toContain('Unknown');
+    expect(text()).toContain('No clinical entries yet');
+    api.allergyStatus.mockResolvedValue('no-known-allergies');
+    fixture.componentInstance.reportNoKnownAllergies();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(text()).toContain('No known allergies reported.');
+    });
+    expect(api.add).toHaveBeenCalledExactlyOnceWith(
+      'patient-id',
+      expect.objectContaining({
+        kind: 'allergy',
+        title: 'No known allergies',
+      }),
+      undefined,
+    );
+    expect(text()).not.toContain('Report no known allergies');
+  });
+
+  it('retries a failed load and does not display raw errors', async () => {
+    api.list.mockRejectedValueOnce(new HttpErrorResponse({ status: 503, error: 'private' }));
+    configure('patient');
+    await expectView('error');
+    expect(text()).toContain('Clinical records unavailable');
+    expect(text()).not.toContain('private');
+    fixture.componentInstance.refresh();
+    await expectView('ready');
+    expect(text()).toContain(original.title);
+  });
+
+  it.each([
+    [401, 'expired'],
+    [403, 'denied'],
+    [404, 'denied'],
+  ])('does not show record data on status %i', async (status, state) => {
+    api.allergyStatus.mockRejectedValue(new HttpErrorResponse({ status }));
+    configure('patient');
+    await expectView(state);
+    expect(text()).not.toContain(original.title);
+  });
+
+  it('never queries a doctor-selected ID that is outside the authorized queue', async () => {
+    configure('doctor', 'unavailable-patient');
+    await expectView('denied');
+    expect(api.list).not.toHaveBeenCalled();
+  });
+
+  it('honors read-only access and has no edit control for another author', async () => {
+    configure('doctor', 'patient-id');
+    await expectView('ready');
+    expect(text()).toContain('Read-only access');
+    expect(text()).toContain(original.title);
+    expect(fixture.componentInstance.canAdd()).toBe(false);
+    fixture.componentInstance.openForm();
+    expect(fixture.componentInstance.formOpen()).toBe(false);
+    expect(api.add).not.toHaveBeenCalled();
+  });
+
+  it('appends doctor entries with the permitted consultation', async () => {
+    api.consultation.mockResolvedValue({
+      id: 'consultation-id',
+      expiresAt: '2099-01-01T00:00:00Z',
+    });
+    configure('doctor', 'patient-id');
+    await expectView('ready');
+    expect(api.consultation).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'patient-id' }),
+      'doctor-id',
+    );
+    const component = fixture.componentInstance;
+    component.openForm();
+    component.form.patchValue({ kind: 'note', title: 'Consultation follow-up' });
+    component.save();
+    await vi.waitFor(() =>
+      expect(api.add).toHaveBeenCalledExactlyOnceWith(
+        'patient-id',
+        expect.objectContaining({
+          kind: 'note',
+          title: 'Consultation follow-up',
+        }),
+        'consultation-id',
+      ),
+    );
+    await expectView('ready');
+    expect(text()).toContain(original.title);
+  });
+
+  it('rechecks permissions following a rejected write', async () => {
+    api.consultation.mockResolvedValue({
+      id: 'consultation-id',
+      expiresAt: '2099-01-01T00:00:00Z',
+    });
+    configure('doctor', 'patient-id');
+    await expectView('ready');
+    const component = fixture.componentInstance;
+    component.openForm();
+    component.form.patchValue({ title: 'Write after revocation' });
+    api.add.mockRejectedValue(new HttpErrorResponse({ status: 404 }));
+    api.patients.mockResolvedValue([]);
+    component.save();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(text()).toContain('could not be saved because access changed');
+      expect(text()).not.toContain(original.title);
+    });
+    await expectView('denied');
+    expect(api.add).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates blank titles and future dates before writing', async () => {
+    configure('patient');
+    await expectView('ready');
+    const component = fixture.componentInstance;
+    component.openForm();
+    component.form.patchValue({ title: '   ' });
+    component.save();
+    expect(component.formError()).toContain('Enter a title');
+    component.form.patchValue({ title: 'Valid title', recordedAt: '2099-01-01T00:00' });
+    component.save();
+    expect(component.formError()).toContain('not in the future');
+    expect(api.add).not.toHaveBeenCalled();
+  });
+
+  it('does not render a late response after changing the account', async () => {
+    let finish!: (value: RecordPage) => void;
+    api.list.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    configure('patient');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.state().kind).toBe('loading');
+    roles.setAccountRoles('patient-2', ['patient']);
+    api.list.mockResolvedValue(page([]));
+    await expectView('ready');
+    finish(page([original]));
+    await fixture.whenStable();
+    await expectView('ready');
+    expect(text()).not.toContain(original.title);
+    expect(api.list).toHaveBeenLastCalledWith('patient-2', 1);
+  });
+
+  it('switches pages without selecting a different patient or resetting the allergy summary', async () => {
+    api.list.mockResolvedValue(page([original], 1, 23));
+    api.allergyStatus.mockResolvedValue('allergies-recorded');
+    configure('patient');
+    await expectView('ready');
+    api.list.mockResolvedValue(page([{ ...original, title: 'Older entry' }], 2, 23));
+    fixture.componentInstance.changePage(2);
+    await expectView('ready');
+    expect(text()).toContain('Older entry');
+    expect(text()).toContain('Allergies recorded.');
+    expect(api.list).toHaveBeenLastCalledWith('patient-id', 2);
   });
 });
