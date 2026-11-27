@@ -5,6 +5,7 @@ import { FirebaseApp, FirebaseOptions, getApps, initializeApp } from 'firebase/a
 import {
   Auth,
   browserLocalPersistence,
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
   setPersistence,
@@ -17,7 +18,15 @@ import { ActiveOrganizationService } from './context/active-organization.service
 
 export interface MediLinkConfig {
   firebase: FirebaseOptions;
+  authEmulatorUrl?: string;
   apiBaseUrl: string;
+}
+
+export class OnboardingRequestError extends Error {
+  constructor(readonly originalError: unknown) {
+    super('The account was created, but profile setup did not finish.');
+    this.name = 'OnboardingRequestError';
+  }
 }
 
 export interface MembershipResponse {
@@ -53,6 +62,7 @@ export interface MeResponse {
     role: 'doctor' | 'pharmacist' | 'lab_staff';
     doctor_reference: string | null;
     registration_number: string | null;
+    workplace: string | null;
     qualifications: string | null;
     specialty: string | null;
     verification_status: string;
@@ -73,6 +83,7 @@ export class AuthService {
   private readonly platform = inject(PLATFORM_ID);
   private readonly roleContext = inject(ActiveRoleService);
   private readonly organizationContext = inject(ActiveOrganizationService);
+  private readonly connectedEmulators = new WeakSet<Auth>();
 
   private async firebase(): Promise<{ auth: Auth; config: MediLinkConfig }> {
     if (!isPlatformBrowser(this.platform) || !window.medilinkConfig?.firebase?.apiKey) {
@@ -83,6 +94,10 @@ export class AuthService {
       getApps().find((item) => item.name === 'medilink') ??
       initializeApp(config.firebase, 'medilink');
     const auth = getAuth(app);
+    if (config.authEmulatorUrl && !this.connectedEmulators.has(auth)) {
+      connectAuthEmulator(auth, config.authEmulatorUrl, { disableWarnings: true });
+      this.connectedEmulators.add(auth);
+    }
     await setPersistence(auth, browserLocalPersistence);
     return { auth, config };
   }
@@ -91,6 +106,7 @@ export class AuthService {
     method: 'GET' | 'POST' | 'PUT',
     path: string,
     body?: unknown,
+    headers: Record<string, string> = {},
   ): Promise<T> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
@@ -101,7 +117,7 @@ export class AuthService {
 
     const token = await auth.currentUser.getIdToken();
     const url = `${config.apiBaseUrl}/${path.replace(/^\//, '')}`;
-    const options = { headers: { Authorization: `Bearer ${token}` } };
+    const options = { headers: { ...headers, Authorization: `Bearer ${token}` } };
     const request =
       method === 'GET'
         ? this.http.get<T>(url, options)
@@ -155,6 +171,10 @@ export class AuthService {
 
   postAuthorized<T>(path: string, body: unknown): Promise<T> {
     return this.authorizedRequest<T>('POST', path, body);
+  }
+
+  postAuthorizedWithKey<T>(path: string, body: unknown, key: string): Promise<T> {
+    return this.authorizedRequest<T>('POST', path, body, { 'Idempotency-Key': key });
   }
 
   putAuthorized<T>(path: string, body: unknown): Promise<T> {
@@ -358,6 +378,39 @@ export class AuthService {
     sex: 'female' | 'male';
     recoverExisting?: boolean;
   }): Promise<void> {
+    return this.registerAccount({
+      ...input,
+      requestedRole: 'patient',
+      dateOfBirth: input.dateOfBirth,
+      sex: input.sex,
+    });
+  }
+
+  async registerProfessional(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone: string;
+    requestedRole: 'doctor' | 'pharmacist' | 'lab_staff';
+    professionalRegistrationNumber: string;
+    workplace: string;
+    recoverExisting?: boolean;
+  }): Promise<void> {
+    return this.registerAccount(input);
+  }
+
+  private async registerAccount(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone: string;
+    requestedRole: 'patient' | 'doctor' | 'pharmacist' | 'lab_staff';
+    dateOfBirth?: string;
+    sex?: 'female' | 'male';
+    professionalRegistrationNumber?: string;
+    workplace?: string;
+    recoverExisting?: boolean;
+  }): Promise<void> {
     const { auth, config } = await this.firebase();
     await auth.authStateReady();
     const email = input.email.trim();
@@ -367,21 +420,30 @@ export class AuthService {
       : await createUserWithEmailAndPassword(auth, email, input.password);
     try {
       const token = await credential.user.getIdToken();
-      await firstValueFrom(
-        this.http
-          .post(
-            `${config.apiBaseUrl}/me/onboard`,
-            {
-              display_name: input.displayName,
-              phone: input.phone,
-              requested_role: 'patient',
-              date_of_birth: input.dateOfBirth,
-              sex: input.sex,
-            },
-            { headers: { Authorization: `Bearer ${token}` } },
-          )
-          .pipe(timeout(10000)),
-      );
+      const onboarding: Record<string, string> = {
+        display_name: input.displayName.trim(),
+        phone: input.phone.trim(),
+        requested_role: input.requestedRole,
+      };
+      if (input.requestedRole === 'patient') {
+        onboarding['date_of_birth'] = input.dateOfBirth ?? '';
+        onboarding['sex'] = input.sex ?? '';
+      } else {
+        onboarding['professional_registration_number'] =
+          input.professionalRegistrationNumber?.trim() ?? '';
+        onboarding['workplace'] = input.workplace?.trim() ?? '';
+      }
+      try {
+        await firstValueFrom(
+          this.http
+            .post(`${config.apiBaseUrl}/me/onboard`, onboarding, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            .pipe(timeout(10000)),
+        );
+      } catch (error) {
+        throw new OnboardingRequestError(error);
+      }
     } catch (error) {
       // Keep the Firebase session so a failed backend onboarding can be retried.
       throw error;

@@ -71,6 +71,11 @@
         <div>
           <span>Registration number</span><strong>{{ application.registration_number }}</strong>
         </div>
+        @if (application.workplace) {
+          <div>
+            <span>Workplace</span><strong>{{ application.workplace }}</strong>
+          </div>
+        }
         <div>
           <span>Application status</span><strong>{{ statusLabel }}</strong>
         </div>
@@ -182,6 +187,15 @@
                   @if (submitted && verificationForm.controls.registrationNumber.invalid) {
                     <small class="error">Registration number is required.</small>
                   }
+                </label>
+                <label class="field">
+                  <span>Workplace (optional)</span>
+                  <input
+                    type="text"
+                    formControlName="workplace"
+                    maxlength="200"
+                    placeholder="Enter your clinic, hospital or workplace"
+                  />
                 </label>
                 <label class="field">
                   <span>Specialty / Department (optional)</span>

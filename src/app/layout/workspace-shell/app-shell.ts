@@ -68,6 +68,8 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
     { label: 'Notifications', icon: 'notifications', path: '/workspace/doctor/notifications' },
     { label: 'Patient records', icon: 'clinical_notes', path: '/workspace/doctor/records' },
+    { label: 'Evidence review', icon: 'fact_check', path: '/workspace/doctor/prescription-review' },
+
     {
       label: 'Correction requests',
       icon: 'edit_note',

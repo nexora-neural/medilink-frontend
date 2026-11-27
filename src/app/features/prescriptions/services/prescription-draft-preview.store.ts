@@ -3,6 +3,7 @@ import { createSamplePrescriptions, SAMPLE_DOCTOR_ID } from '../data/prescriptio
 import {
   canEditPrescriptionDraft,
   PrescriptionDraft,
+  PrescriptionHistoryEntry,
   PrescriptionItem,
 } from '../models/prescription-draft.model';
 
@@ -130,6 +131,130 @@ export class PrescriptionDraftPreviewStore {
     this.prescriptions.update((items) => items.map((item) => (item.id === id ? updated : item)));
 
     return structuredClone(updated);
+  }
+
+  finish(
+    id: string,
+    action: 'complete' | 'cancel' | 'discontinue',
+    reason: string,
+  ): PrescriptionDraft {
+    const existing = this.prescriptions().find((item) => item.id === id);
+
+    if (!existing || existing.source !== 'doctor' || existing.ownerDoctorId !== SAMPLE_DOCTOR_ID) {
+      throw new Error('Only the owner doctor can change this sample prescription.');
+    }
+
+    if (existing.status !== 'active') {
+      throw new Error('This action is available only for an active prescription.');
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason || trimmedReason.length > 1000) {
+      throw new Error('Enter a reason between 1 and 1000 characters.');
+    }
+
+    const statuses = {
+      complete: 'completed',
+      cancel: 'cancelled',
+      discontinue: 'discontinued',
+    } as const;
+
+    const timestamp = new Date().toISOString();
+
+    const entry: PrescriptionHistoryEntry = {
+      id: crypto.randomUUID(),
+      action,
+      reason: trimmedReason,
+      performedAt: timestamp,
+      performedBy: SAMPLE_DOCTOR_ID,
+    };
+
+    const updated: PrescriptionDraft = {
+      ...existing,
+      status: statuses[action],
+      version: existing.version ?? 1,
+      updatedAt: timestamp,
+      history: [...(existing.history ?? []), entry],
+    };
+
+    this.prescriptions.update((items) => items.map((item) => (item.id === id ? updated : item)));
+
+    return structuredClone(updated);
+  }
+
+  createLinkedDraft(
+    id: string,
+    action: 'correct' | 'renew' | 'reissue',
+    reason: string,
+  ): PrescriptionDraft {
+    const existing = this.prescriptions().find((item) => item.id === id);
+
+    if (!existing || existing.source !== 'doctor' || existing.ownerDoctorId !== SAMPLE_DOCTOR_ID) {
+      throw new Error('Only the owner doctor can create a linked sample draft.');
+    }
+
+    const allowed =
+      existing.status === 'active' || (existing.status === 'completed' && action !== 'correct');
+
+    if (!allowed) {
+      throw new Error('This action is unavailable for the current status.');
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason || trimmedReason.length > 1000) {
+      throw new Error('Enter a reason between 1 and 1000 characters.');
+    }
+
+    const pendingDraft = this.prescriptions().find(
+      (item) => item.previousPrescriptionId === id && item.status === 'draft',
+    );
+
+    if (pendingDraft) {
+      throw new Error('A linked draft already exists. Open it from History.');
+    }
+
+    const newId = `sample-linked-${crypto.randomUUID()}`;
+    const timestamp = new Date().toISOString();
+
+    const historyEntry: PrescriptionHistoryEntry = {
+      id: crypto.randomUUID(),
+      action,
+      reason: trimmedReason,
+      performedAt: timestamp,
+      performedBy: SAMPLE_DOCTOR_ID,
+      relatedPrescriptionId: newId,
+    };
+
+    const draft: PrescriptionDraft = {
+      ...structuredClone(existing),
+      id: newId,
+      status: 'draft',
+      version: (existing.version ?? 1) + 1,
+      previousPrescriptionId: existing.id,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      history: [
+        {
+          ...historyEntry,
+          id: crypto.randomUUID(),
+          relatedPrescriptionId: existing.id,
+        },
+      ],
+    };
+
+    const original: PrescriptionDraft = {
+      ...existing,
+      history: [...(existing.history ?? []), historyEntry],
+    };
+
+    this.prescriptions.update((items) => [
+      ...items.map((item) => (item.id === id ? original : item)),
+      draft,
+    ]);
+
+    return structuredClone(draft);
   }
 
   reset(): void {

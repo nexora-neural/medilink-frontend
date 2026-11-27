@@ -51,6 +51,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/doctor/qr',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'super-admin/medicine-catalogue',
     renderMode: RenderMode.Client,
   },
@@ -108,6 +112,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/patient/reports',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/reports',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'workspace/lab-staff/upload-requests',
     renderMode: RenderMode.Client,
   },
@@ -121,6 +133,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/doctor/prescriptions/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/prescription-review',
     renderMode: RenderMode.Client,
   },
   {

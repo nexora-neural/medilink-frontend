@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActiveRoleService } from './context/active-role.service';
 
 const firebaseMocks = vi.hoisted(() => {
   vi.resetModules();
@@ -10,6 +11,7 @@ const firebaseMocks = vi.hoisted(() => {
     getApps: vi.fn(),
     initializeApp: vi.fn(),
     getAuth: vi.fn(),
+    connectAuthEmulator: vi.fn(),
     setPersistence: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signInWithEmailAndPassword: vi.fn(),
@@ -25,6 +27,7 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/auth', () => ({
   browserLocalPersistence: {},
   getAuth: firebaseMocks.getAuth,
+  connectAuthEmulator: firebaseMocks.connectAuthEmulator,
   setPersistence: firebaseMocks.setPersistence,
   createUserWithEmailAndPassword: firebaseMocks.createUserWithEmailAndPassword,
   signInWithEmailAndPassword: firebaseMocks.signInWithEmailAndPassword,
@@ -137,6 +140,58 @@ describe('AuthService onboarding recovery', () => {
     await result;
   });
 
+  it('creates a doctor applicant without patient-only fields', async () => {
+    firebaseMocks.createUserWithEmailAndPassword.mockResolvedValue({ user });
+    const result = service.registerProfessional({
+      email: 'doctor@example.com',
+      password: 'fictional-test-password',
+      displayName: 'Demo Doctor',
+      phone: '+94771234567',
+      requestedRole: 'doctor',
+      professionalRegistrationNumber: 'SLMC-123',
+      workplace: 'Demo Clinic',
+    });
+    const request = await expectOnboardingRequest();
+    expect(request.request.body).toEqual({
+      display_name: 'Demo Doctor',
+      phone: '+94771234567',
+      requested_role: 'doctor',
+      professional_registration_number: 'SLMC-123',
+      workplace: 'Demo Clinic',
+    });
+    request.flush({});
+    await result;
+  });
+
+  it('recovers an incomplete professional account with its existing password', async () => {
+    firebaseMocks.signInWithEmailAndPassword.mockResolvedValue({ user });
+    const result = service.registerProfessional({
+      email: 'doctor@example.com',
+      password: 'fictional-test-password',
+      displayName: 'Demo Doctor',
+      phone: '+94771234567',
+      requestedRole: 'lab_staff',
+      professionalRegistrationNumber: 'LAB-123',
+      workplace: 'City Lab',
+      recoverExisting: true,
+    });
+    const request = await expectOnboardingRequest();
+    expect(firebaseMocks.signInWithEmailAndPassword).toHaveBeenCalledWith(
+      expect.anything(),
+      'doctor@example.com',
+      'fictional-test-password',
+    );
+    expect(request.request.body).toMatchObject({
+      requested_role: 'lab_staff',
+      professional_registration_number: 'LAB-123',
+      workplace: 'City Lab',
+    });
+    expect(request.request.body).not.toHaveProperty('date_of_birth');
+    expect(request.request.body).not.toHaveProperty('sex');
+    request.flush({});
+    await result;
+  });
+
   it('keeps the Firebase session when backend onboarding fails', async () => {
     firebaseMocks.createUserWithEmailAndPassword.mockResolvedValue({ user });
 
@@ -144,7 +199,7 @@ describe('AuthService onboarding recovery', () => {
 
     // Attach the rejection check before returning the API failure.
     const rejection = expect(result).rejects.toMatchObject({
-      status: 503,
+      originalError: { status: 503 },
     });
 
     const request = await expectOnboardingRequest();
@@ -159,6 +214,50 @@ describe('AuthService onboarding recovery', () => {
     expect(firebaseMocks.signOut).not.toHaveBeenCalled();
   });
 
+  it('restores an existing Firebase session and reloads the account roles from the API', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const result = service.restoreSession();
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/me');
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    request.flush({
+      user: {
+        id: 'doctor-1',
+        email: 'doctor@example.com',
+        display_name: 'Demo Doctor',
+        phone: null,
+        status: 'active',
+      },
+      roles: ['doctor'],
+      memberships: [],
+      patient_profile: null,
+      professional_profile: null,
+    });
+
+    await expect(result).resolves.toBe(true);
+    expect(TestBed.inject(ActiveRoleService).roles()).toEqual(['Doctor']);
+    expect(TestBed.inject(ActiveRoleService).activeRole()).toBe('Doctor');
+  });
+
+  it('returns false and clears role context when no Firebase session exists', async () => {
+    const roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('doctor-1', ['doctor']);
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: null,
+    });
+
+    await expect(service.restoreSession()).resolves.toBe(false);
+    expect(roles.roles()).toEqual([]);
+    http.expectNone('http://localhost:8000/api/v1/me');
+  });
+
   it('sends authenticated organization API GET requests', async () => {
     firebaseMocks.getAuth.mockReturnValue({
       authStateReady: vi.fn().mockResolvedValue(undefined),
@@ -171,6 +270,30 @@ describe('AuthService onboarding recovery', () => {
 
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    request.flush({ items: [] });
+    await expect(result).resolves.toEqual({ items: [] });
+  });
+
+  it('connects to the configured local Auth emulator before making authenticated requests', async () => {
+    const auth = {
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    };
+    firebaseMocks.getAuth.mockReturnValue(auth);
+    vi.stubGlobal('window', {
+      medilinkConfig: {
+        firebase: { apiKey: 'demo-key', projectId: 'demo-medilink' },
+        authEmulatorUrl: 'http://127.0.0.1:9099',
+        apiBaseUrl: 'http://localhost:8000/api/v1',
+      },
+    });
+
+    const result = service.getAuthorized<{ items: unknown[] }>('/admin/organizations');
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/admin/organizations');
+    expect(firebaseMocks.connectAuthEmulator).toHaveBeenCalledWith(auth, 'http://127.0.0.1:9099', {
+      disableWarnings: true,
+    });
     request.flush({ items: [] });
     await expect(result).resolves.toEqual({ items: [] });
   });

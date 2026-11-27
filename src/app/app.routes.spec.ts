@@ -22,6 +22,20 @@ describe('workspace routing', () => {
     ).toBe(RenderMode.Client);
   });
 
+  it('renders the doctor QR page on the client for direct navigation and refresh', () => {
+    expect(serverRoutes.find((route) => route.path === 'workspace/doctor/qr')?.renderMode).toBe(
+      RenderMode.Client,
+    );
+  });
+
+  it('renders patient and lab staff reports on the client for direct navigation and refresh', () => {
+    const reportPaths = ['workspace/patient/reports', 'workspace/lab-staff/reports'];
+
+    for (const path of reportPaths) {
+      expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
+    }
+  });
+
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     TestBed.configureTestingModule({
@@ -48,6 +62,28 @@ describe('workspace routing', () => {
     });
     TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
   });
+
+  it.each([
+    ['super_admin', 'admin', '/access-denied'],
+    ['admin', 'super_admin', '/super-admin/dashboard'],
+  ])(
+    'uses the restored role for dashboard access when %s changes to %s',
+    async (previous, current, expected) => {
+      const roles = TestBed.inject(ActiveRoleService);
+      roles.setAccountRoles('previous-account', [previous]);
+      const auth = TestBed.inject(AuthService);
+      vi.mocked(auth.restoreSession).mockImplementation(async () => {
+        await Promise.resolve();
+        roles.setAccountRoles('restored-account', [current]);
+        return true;
+      });
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/super-admin/dashboard');
+      expect(TestBed.inject(Router).url).toBe(expected);
+      if (current === 'admin') expect(auth.getAuthorized).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     [
@@ -173,6 +209,7 @@ describe('workspace routing', () => {
       organization_id: 'b2f189a7-b5d7-4f6b-a0cf-ab88fb9c788e',
       role: 'doctor',
       registration_number: 'SLMC-12345',
+      workplace: 'Lakeside Clinic',
       status: 'pending',
       submitted_at: '2026-11-21T08:00:00Z',
       reviewed_by: null as string | null,
@@ -301,6 +338,7 @@ describe('workspace routing', () => {
       '/super-admin/applications',
     );
   });
+
   it('restores a Patient session before opening the profile directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
@@ -344,11 +382,12 @@ describe('workspace routing', () => {
 
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
+
   it('restores an Admin session before opening the dashboard directly', async () => {
     const roleContext = TestBed.inject(ActiveRoleService);
     const auth = TestBed.inject(AuthService);
 
-    roleContext.clear();
+    roleContext.setAccountRoles('demo-admin', ['admin']);
 
     vi.mocked(auth.restoreSession).mockImplementation(async () => {
       await Promise.resolve();
@@ -360,6 +399,9 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/admin/dashboard');
 
     expect(auth.restoreSession).toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(harness.routeNativeElement?.textContent).toContain('Account support'),
+    );
     expect(TestBed.inject(Router).url).toBe('/workspace/admin/dashboard');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
       'Admin dashboard',
@@ -369,12 +411,10 @@ describe('workspace routing', () => {
       '.admin-dashboard a[href="/workspace/admin/account-support"]',
     ) as HTMLAnchorElement | null;
 
-    expect(supportLink).not.toBeNull();
-    supportLink!.click();
-    await harness.fixture.whenStable();
-
-    expect(TestBed.inject(Router).url).toBe('/workspace/admin/account-support');
-    expect(harness.routeNativeElement?.textContent).toContain('Account support');
+    expect(supportLink).toBeNull();
+    await vi.waitFor(() =>
+      expect(harness.routeNativeElement?.textContent).toContain('Dashboard unavailable'),
+    );
   });
 
   it.each(['patient', 'doctor', 'pharmacist', 'lab_staff', 'super_admin'])(
@@ -399,6 +439,7 @@ describe('workspace routing', () => {
 
     expect(TestBed.inject(Router).url).toBe('/login');
   });
+
   it('allows a pending professional applicant to request membership without granting a role', async () => {
     vi.mocked(TestBed.inject(AuthService).getOwnProfile).mockResolvedValue({
       user: {
@@ -416,6 +457,7 @@ describe('workspace routing', () => {
         role: 'doctor',
         doctor_reference: null,
         registration_number: null,
+        workplace: null,
         qualifications: null,
         specialty: null,
         verification_status: 'not_submitted',
@@ -455,6 +497,7 @@ describe('workspace routing', () => {
           role: 'doctor',
           doctor_reference: null,
           registration_number: null,
+          workplace: null,
           qualifications: null,
           specialty: null,
           verification_status: verificationStatus,
@@ -491,6 +534,7 @@ describe('workspace routing', () => {
         role: 'doctor',
         doctor_reference: null,
         registration_number: 'D123',
+        workplace: null,
         qualifications: null,
         specialty: null,
         verification_status: 'approved',
@@ -544,7 +588,49 @@ describe('workspace routing', () => {
 
     expect(auth.restoreSession).toHaveBeenCalled();
     expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
-    expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
+    expect(harness.routeNativeElement?.textContent).toContain('Patient Queue');
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'Patients appear only while your verified doctor account has a current access grant.',
+    );
+    expect(harness.routeNativeElement?.textContent).not.toContain('Nadeesha Perera');
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
+  });
+
+  it('restores a Doctor session before opening the QR page directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    roleContext.clear();
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      roleContext.setAccountRoles('demo-doctor', ['doctor']);
+      return true;
+    });
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(auth.restoreSession).toHaveBeenCalledOnce();
+    expect(TestBed.inject(Router).url).toBe('/workspace/doctor/qr');
+    expect(harness.routeNativeElement?.textContent).toContain('My QR code');
+  });
+
+  it('denies the Doctor QR page to a signed-in non-doctor', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+    expect(harness.routeNativeElement?.textContent).toContain('Access denied');
+  });
+
+  it('redirects a signed-out QR page visitor to login', async () => {
+    TestBed.inject(ActiveRoleService).clear();
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(TestBed.inject(Router).url).toBe('/login');
   });
 });

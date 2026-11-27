@@ -1,8 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { DocumentUpload } from '../../shared/components/document-upload/document-upload';
 import { DocumentDownload } from '../../shared/components/document-download/document-download';
 import {
@@ -28,6 +29,8 @@ export class ProfessionalVerification implements OnInit {
   private readonly formBuilder = new FormBuilder();
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly verification = inject(ProfessionalVerificationService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly roles = [
     { label: 'Doctor', value: 'doctor' },
@@ -38,6 +41,7 @@ export class ProfessionalVerification implements OnInit {
   readonly verificationForm = this.formBuilder.nonNullable.group({
     role: ['', Validators.required],
     registrationNumber: ['', [Validators.required, nonblank, Validators.maxLength(100)]],
+    workplace: ['', Validators.maxLength(200)],
     specialty: ['', Validators.maxLength(150)],
     qualification: ['', Validators.maxLength(2000)],
   });
@@ -68,7 +72,22 @@ export class ProfessionalVerification implements OnInit {
   private readonly uploadedFiles = new Map<File, VerificationDocument>();
 
   async ngOnInit(): Promise<void> {
+    const navigation = this.router.getCurrentNavigation();
+    const registration = navigation?.extras.state?.['professionalRegistration'] as
+      | {
+          role?: string;
+          registrationNumber?: string;
+          workplace?: string;
+        }
+      | undefined;
     await this.loadApplication();
+    if (registration && !this.application) {
+      this.verificationForm.patchValue({
+        role: registration.role ?? '',
+        registrationNumber: registration.registrationNumber ?? '',
+        workplace: registration.workplace ?? '',
+      });
+    }
   }
 
   get statusLabel(): string {
@@ -134,6 +153,7 @@ export class ProfessionalVerification implements OnInit {
       await this.verification.updateProfile({
         role,
         registration_number: form.registrationNumber.trim(),
+        workplace: form.workplace.trim() || null,
         qualifications: form.qualification.trim() || null,
         specialty: form.specialty.trim() || null,
       });
@@ -149,13 +169,14 @@ export class ProfessionalVerification implements OnInit {
       this.application = await this.verification.submit({
         role,
         registration_number: form.registrationNumber.trim(),
+        workplace: form.workplace.trim() || null,
         evidence_document_ids: uploaded.map((document) => document.id),
       });
       this.documents = uploaded;
       this.submittedSnapshot = {
         role: this.roleLabel,
         registrationNumber: form.registrationNumber.trim(),
-        institution: '',
+        institution: form.workplace.trim(),
         qualification: form.qualification.trim(),
         documents: uploaded.map((document) => document.original_filename),
       };
@@ -207,6 +228,16 @@ export class ProfessionalVerification implements OnInit {
       const result = await this.verification.listOwn();
       this.application = result.items[0] ?? null;
       this.applicationSubmitted = this.application !== null;
+      if (!this.application) {
+        const profile = (await this.auth.getOwnProfile()).professional_profile;
+        if (profile) {
+          this.verificationForm.patchValue({
+            role: profile.role,
+            registrationNumber: profile.registration_number ?? '',
+            workplace: profile.workplace ?? '',
+          });
+        }
+      }
       if (this.application) {
         this.documents = await Promise.all(
           this.application.evidence_document_ids.map((id) => this.verification.getDocument(id)),
@@ -214,7 +245,7 @@ export class ProfessionalVerification implements OnInit {
         this.submittedSnapshot = {
           role: this.roleLabel,
           registrationNumber: this.application.registration_number ?? '',
-          institution: '',
+          institution: this.application.workplace ?? '',
           qualification: '',
           documents: this.documents.map((item) => item.original_filename),
         };

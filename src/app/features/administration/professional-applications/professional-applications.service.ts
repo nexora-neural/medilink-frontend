@@ -51,6 +51,7 @@ interface ApiApplication {
   organization_id: string | null;
   role: 'doctor' | 'pharmacist' | 'lab_staff';
   registration_number: string | null;
+  workplace: string | null;
   status:
     'not_submitted' | 'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'suspended';
   submitted_at: string;
@@ -202,6 +203,7 @@ export class ProfessionalApplicationsService {
       organization:
         organization?.name ??
         application.organization_name ??
+        application.workplace ??
         application.organization_id ??
         'Not specified',
       evidence: documents.map((document) => ({
@@ -225,7 +227,8 @@ export class ProfessionalApplicationsService {
       userId: item.user_id,
       name: item.applicant_display_name ?? item.user_id,
       role: roleLabels[item.role],
-      organization: item.organization_name ?? item.organization_id ?? 'Not specified',
+      organization:
+        item.organization_name ?? item.workplace ?? item.organization_id ?? 'Not specified',
       registration: item.registration_number ?? 'Not provided',
       status: statusLabels[item.status],
       evidence: [],

@@ -23,6 +23,8 @@ import {
   RecordPatient,
 } from '../../services/clinical-record-api.service';
 
+import { DoctorPatientRecords } from './doctor-patient-records';
+
 type Failure = 'denied' | 'expired' | 'error';
 type DataState<T> = { kind: 'ready'; data: T } | { kind: Failure };
 interface RecordData {
@@ -34,7 +36,7 @@ interface RecordData {
 @Component({
   selector: 'app-clinical-records',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, UiState, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, UiState, RouterLink, DoctorPatientRecords],
   templateUrl: './clinical-records.html',
   styleUrl: './clinical-records.scss',
 })
@@ -46,6 +48,7 @@ export class ClinicalRecords {
   private readonly query = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,
   });
+  readonly livePatientRecords = this.route.snapshot.data['livePatientRecords'] === true;
   readonly audience: 'patient' | 'doctor' =
     this.route.snapshot.data['audience'] === 'doctor' ? 'doctor' : 'patient';
   readonly labels = CLINICAL_ENTRY_LABELS;
@@ -55,6 +58,7 @@ export class ClinicalRecords {
     this.audience === 'patient' ? ['condition', 'allergy'] : ['diagnosis', 'note'];
 
   readonly account = computed(() => {
+    if (this.livePatientRecords) return null;
     const role = this.audience === 'patient' ? 'Patient' : 'Doctor';
     return this.roles.activeRole() === role && this.roles.roles().includes(role)
       ? this.roles.activeAccountId()

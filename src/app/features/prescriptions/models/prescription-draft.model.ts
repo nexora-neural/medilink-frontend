@@ -1,6 +1,19 @@
 export type PrescriptionPageState = 'ready' | 'loading' | 'empty' | 'error' | 'denied';
 
-export type PrescriptionStatus = 'draft' | 'active';
+export type PrescriptionStatus =
+  'draft' | 'active' | 'superseded' | 'completed' | 'cancelled' | 'discontinued';
+
+export type PrescriptionLifecycleAction =
+  'correct' | 'renew' | 'reissue' | 'complete' | 'cancel' | 'discontinue';
+
+export interface PrescriptionHistoryEntry {
+  id: string;
+  action: PrescriptionLifecycleAction;
+  reason: string;
+  performedAt: string;
+  performedBy: string;
+  relatedPrescriptionId?: string;
+}
 
 export interface PrescriptionItem {
   id: string;
@@ -28,6 +41,10 @@ export interface PrescriptionDraft {
   createdAt: string;
   updatedAt: string;
   items: PrescriptionItem[];
+
+  version?: number;
+  previousPrescriptionId?: string;
+  history?: PrescriptionHistoryEntry[];
 }
 
 export function canEditPrescriptionDraft(

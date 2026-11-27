@@ -1,33 +1,111 @@
-<div class="heading"><div><div class="eyebrow">SUPER ADMIN WORKSPACE</div><h1>Platform overview</h1><p>Review your operational workload and activity.</p></div></div>
-<p class="preview">Sample preview. Data is fictional and live services are not connected.</p>
-<details class="preview-options"><summary>Preview display states</summary><div class="state-controls" role="group" aria-label="Preview display state">
-  <button type="button" [attr.aria-pressed]="state() === 'ready'" (click)="setState('ready')">Sample data</button>
-  <button type="button" [attr.aria-pressed]="state() === 'loading'" (click)="setState('loading')">Loading</button>
-  <button type="button" [attr.aria-pressed]="state() === 'empty'" (click)="setState('empty')">Empty</button>
-  <button type="button" [attr.aria-pressed]="state() === 'error'" (click)="setState('error')">Error</button>
-</div></details>
-@if (state() === 'loading') {
-  <p class="panel" role="status">Loading dashboard…</p>
-} @else if (state() === 'error') {
-  <section class="panel"><p role="alert">Dashboard information is unavailable.</p><button type="button" (click)="setState('ready')">Try again</button></section>
-} @else {
+@let view = state();
+<div class="heading">
+  <div>
+    <div class="eyebrow">SUPER ADMIN WORKSPACE</div>
+    <h1>Platform overview</h1>
+    <p>Review your operational workload and activity.</p>
+  </div>
+  @if (view.kind === 'ready' || view.kind === 'loading') {
+    <button type="button" [disabled]="view.kind === 'loading'" (click)="refresh()">
+      Refresh dashboard
+    </button>
+  }
+</div>
+
+@if (view.kind === 'loading') {
+  <app-ui-state
+    kind="loading"
+    title="Loading dashboard"
+    description="Fetching platform information."
+  />
+} @else if (view.kind === 'denied') {
+  <app-ui-state
+    kind="error"
+    title="Access denied"
+    description="This dashboard requires active Super Admin access."
+  />
+} @else if (view.kind === 'expired') {
+  <app-ui-state
+    kind="error"
+    title="Session expired"
+    description="Sign in again to view the dashboard."
+  />
+  <a routerLink="/login">Sign in</a>
+} @else if (view.kind === 'error') {
+  <app-ui-state
+    kind="error"
+    title="Dashboard unavailable"
+    description="Platform information could not be loaded."
+    actionLabel="Try again"
+    (action)="refresh()"
+  />
+} @else if (view.kind === 'ready') {
   <div class="stats">
-    <app-dashboard-stat label="Pending organizations" [value]="state() === 'empty' ? 0 : pendingCount()" caption="Review queue · sample" [accent]="true" />
-    <app-dashboard-stat label="Integration clients" [value]="state() === 'empty' ? 0 : 1" caption="Operational records · sample" />
-    <app-dashboard-stat label="Admin accounts" [value]="state() === 'empty' ? 0 : 1" caption="Workspace records · sample" />
-    <app-dashboard-stat label="System status" value="Operational" caption="Sample status" [status]="true" />
+    <app-dashboard-stat
+      label="Pending organizations"
+      [value]="view.data.pendingOrganizations"
+      caption="Awaiting review"
+      [accent]="true"
+    />
+    <app-dashboard-stat
+      label="Integration clients"
+      [value]="view.data.integrationClients"
+      caption="All registered clients"
+    />
+    <app-dashboard-stat
+      label="Active organizations"
+      [value]="view.data.activeOrganizations"
+      caption="Across the platform"
+    />
+    <app-dashboard-stat
+      label="Failed jobs"
+      [value]="view.data.failedJobs"
+      caption="Excludes jobs with a retry in progress"
+    />
   </div>
   <div class="grid">
-    <section class="panel"><h2>Organizations</h2><p>Items available for review.</p>
-      @if (state() === 'empty') { <p class="empty">No organizations to display.</p> }
-      @else { @for (organization of data.organizations(); track organization.id) {
-        <a class="patient-row" [routerLink]="['/super-admin/organizations/preview', organization.id]"><span class="grow"><strong>{{ organization.name }}</strong><small>{{ organization.type }}</small></span><span class="badge">{{ organization.status }}</span> ↗</a>
-      } }
+    <section class="panel">
+      <h2>Organizations awaiting review</h2>
+      @for (organization of view.data.organizations; track organization.id) {
+        <a class="organization-row" [routerLink]="['/super-admin/organizations', organization.id]">
+          <span class="grow"
+            ><strong>{{ organization.name }}</strong
+            ><small>{{ organization.type | titlecase }}</small></span
+          >
+          <span class="badge">{{ organization.status | titlecase }}</span>
+        </a>
+      } @empty {
+        <p class="empty">No organizations awaiting review.</p>
+      }
+      <a routerLink="/super-admin/organizations">View organizations</a>
     </section>
-    <section class="panel"><h2>Recent activity</h2>
-      @if (state() === 'empty') { <p class="empty">No recent activity to display.</p> }
-      @else { @for (item of data.activity().slice(0, 3); track $index) { <div class="record"><div><strong>{{ item.event }}</strong><small>{{ item.actor }} · {{ item.date }}</small></div></div> } }
-      <a class="audit-link" routerLink="/super-admin/audit">View audit activity →</a>
+    <section class="panel">
+      <h2>Recent administrative activity</h2>
+      @for (item of view.data.activity; track item.id) {
+        <div class="record">
+          <strong>{{ item.label }}</strong
+          ><small>{{ item.createdAt | date: 'medium' }}</small>
+        </div>
+      } @empty {
+        <p class="empty">No recent administrative activity to display.</p>
+      }
+    </section>
+    <section class="panel">
+      <h2>Operations</h2>
+      <p>
+        Pending professional verifications <strong>{{ view.data.pendingVerifications }}</strong>
+      </p>
+      <p>
+        Last successful complete backup
+        <strong>{{
+          (view.data.lastBackupAt | date: 'medium') ?? 'No successful backup recorded'
+        }}</strong>
+      </p>
+    </section>
+    <section class="panel">
+      <h2>Integration clients</h2>
+      <p>Review laboratory connections and submission outcomes.</p>
+      <a routerLink="/super-admin/integrations">View integration clients</a>
     </section>
   </div>
 }
