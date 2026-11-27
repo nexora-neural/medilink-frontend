@@ -1,0 +1,66 @@
+<div class="lab-dashboard">
+  @if (state() === 'denied') {
+  <section class="state-panel" role="alert">
+    <h1>Dashboard unavailable</h1>
+    <p>
+      A verified laboratory staff account is required to view this workspace.
+    </p>
+    <a
+      class="button secondary"
+      routerLink="/workspace/professional-verification"
+    >
+      View verification
+    </a>
+  </section>
+  } @else {
+  <header class="heading">
+    <div>
+      <div class="eyebrow">LAB WORKSPACE</div>
+      <h1>Good morning, {{ firstName }}</h1>
+      <p>Your laboratory report activity at a glance.</p>
+    </div>
+    @if (state() === 'ready' || state() === 'empty') {
+    <a class="button primary" routerLink="/workspace/lab-staff/upload-requests">
+      + Find upload request
+    </a>
+    }
+  </header>
+
+  @if (showPreview()) {
+  <nav class="preview-tools" aria-label="Dashboard preview states">
+    <span>UI preview:</span>
+    @for (preview of ['ready', 'loading', 'empty', 'error', 'denied',
+    'reports']; track preview) {
+    <a routerLink="." [queryParams]="{ preview: preview }">{{ preview }}</a>
+    }
+  </nav>
+  }
+
+  <div [attr.aria-busy]="state() === 'loading'">
+    @switch (state()) { @case ('loading') {
+    <section class="state-panel" role="status" aria-live="polite">
+      <h2>Loading laboratory dashboard</h2>
+      <p>Please wait while the dashboard is prepared.</p>
+    </section>
+    } @case ('error') {
+    <section class="state-panel error-panel" role="alert">
+      <h2>Unable to load dashboard</h2>
+      <p>Please try again.</p>
+      <a
+        class="button secondary"
+        routerLink="."
+        [queryParams]="{ preview: 'ready' }"
+      >
+        Try again
+      </a>
+    </section>
+    } @default {
+    <app-lab-summary-cards [summary]="summary()" />
+    <div class="dashboard-grid">
+      <app-lab-upload-requests-panel />
+      <app-lab-recent-reports-panel [reports]="reports()" />
+    </div>
+    } }
+  </div>
+  }
+</div>

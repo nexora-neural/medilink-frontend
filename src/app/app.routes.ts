@@ -39,6 +39,18 @@ const rolePage = (
 
 const rolePages: Route[] = [
   {
+    path: 'lab-staff/dashboard',
+    loadComponent: () =>
+      import('./features/lab-staff/pages/lab-dashboard/lab-dashboard').then(
+        (module) => module.LabDashboard,
+      ),
+    canActivate: [roleGuard],
+    title: 'Laboratory dashboard | MediLink',
+    data: {
+      allowedRoles: ['Lab Staff'],
+    },
+  },
+  {
     path: 'patient/prescription-shares',
     loadChildren: () =>
       import('./features/prescription-sharing/prescription-sharing.routes').then(
