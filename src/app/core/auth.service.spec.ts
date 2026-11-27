@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActiveRoleService } from './context/active-role.service';
 
 const firebaseMocks = vi.hoisted(() => {
   vi.resetModules();
@@ -159,6 +160,50 @@ describe('AuthService onboarding recovery', () => {
     await rejection;
 
     expect(firebaseMocks.signOut).not.toHaveBeenCalled();
+  });
+
+  it('restores an existing Firebase session and reloads the account roles from the API', async () => {
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: user,
+    });
+
+    const result = service.restoreSession();
+    await vi.waitFor(() => expect(user.getIdToken).toHaveBeenCalled());
+    const request = http.expectOne('http://localhost:8000/api/v1/me');
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer mock-id-token');
+    request.flush({
+      user: {
+        id: 'doctor-1',
+        email: 'doctor@example.com',
+        display_name: 'Demo Doctor',
+        phone: null,
+        status: 'active',
+      },
+      roles: ['doctor'],
+      memberships: [],
+      patient_profile: null,
+      professional_profile: null,
+    });
+
+    await expect(result).resolves.toBe(true);
+    expect(TestBed.inject(ActiveRoleService).roles()).toEqual(['Doctor']);
+    expect(TestBed.inject(ActiveRoleService).activeRole()).toBe('Doctor');
+  });
+
+  it('returns false and clears role context when no Firebase session exists', async () => {
+    const roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('doctor-1', ['doctor']);
+    firebaseMocks.getAuth.mockReturnValue({
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+      currentUser: null,
+    });
+
+    await expect(service.restoreSession()).resolves.toBe(false);
+    expect(roles.roles()).toEqual([]);
+    http.expectNone('http://localhost:8000/api/v1/me');
   });
 
   it('sends authenticated organization API GET requests', async () => {
