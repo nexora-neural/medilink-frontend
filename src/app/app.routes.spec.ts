@@ -22,6 +22,12 @@ describe('workspace routing', () => {
     ).toBe(RenderMode.Client);
   });
 
+  it('renders the doctor QR page on the client for direct navigation and refresh', () => {
+    expect(serverRoutes.find((route) => route.path === 'workspace/doctor/qr')?.renderMode).toBe(
+      RenderMode.Client,
+    );
+  });
+
   it('renders patient and lab staff reports on the client for direct navigation and refresh', () => {
     const reportPaths = ['workspace/patient/reports', 'workspace/lab-staff/reports'];
 
@@ -558,5 +564,43 @@ describe('workspace routing', () => {
     expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
     expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
+  });
+
+  it('restores a Doctor session before opening the QR page directly', async () => {
+    const roleContext = TestBed.inject(ActiveRoleService);
+    const auth = TestBed.inject(AuthService);
+
+    roleContext.clear();
+    vi.mocked(auth.restoreSession).mockImplementation(async () => {
+      roleContext.setAccountRoles('demo-doctor', ['doctor']);
+      return true;
+    });
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(auth.restoreSession).toHaveBeenCalledOnce();
+    expect(TestBed.inject(Router).url).toBe('/workspace/doctor/qr');
+    expect(harness.routeNativeElement?.textContent).toContain('My QR code');
+  });
+
+  it('denies the Doctor QR page to a signed-in non-doctor', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+    expect(harness.routeNativeElement?.textContent).toContain('Access denied');
+  });
+
+  it('redirects a signed-out QR page visitor to login', async () => {
+    TestBed.inject(ActiveRoleService).clear();
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/doctor/qr');
+
+    expect(TestBed.inject(Router).url).toBe('/login');
   });
 });

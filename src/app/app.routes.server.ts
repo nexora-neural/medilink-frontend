@@ -51,6 +51,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'workspace/doctor/qr',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'super-admin/medicine-catalogue',
     renderMode: RenderMode.Client,
   },
