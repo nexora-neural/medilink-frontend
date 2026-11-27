@@ -1,0 +1,265 @@
+<section class="reports-page" aria-labelledby="reports-title">
+  <header class="page-header">
+    <div>
+      <h1 id="reports-title">{{ lab ? 'Laboratory reports' : 'My reports' }}</h1>
+      <p>
+        {{
+          lab
+            ? 'Upload a report for a matching patient request.'
+            : 'Upload and view your own reports.'
+        }}
+      </p>
+    </div>
+    <button
+      class="secondary-button"
+      type="button"
+      (click)="load()"
+      [disabled]="loading() || busy()"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (!permitted()) {
+    <p class="form-error" role="alert">Access denied.</p>
+  } @else {
+    @if (denied()) {
+      <p class="form-error" role="alert">
+        Access denied. Check your account and laboratory membership.
+      </p>
+    }
+
+    @if (error()) {
+      <p class="form-error" role="alert">{{ error() }}</p>
+    }
+
+    @if (message()) {
+      <p class="feedback-message" role="status">{{ message() }}</p>
+    }
+
+    <article class="upload-panel">
+      <div class="section-heading">
+        <h2>Upload report</h2>
+      </div>
+
+      @if (lab) {
+        <fieldset [disabled]="busy() || locked()">
+          <label>
+            Patient request token
+            <input
+              maxlength="256"
+              [ngModel]="token"
+              (ngModelChange)="changeToken($event)"
+            />
+          </label>
+
+          <button
+            class="primary-button find-button"
+            type="button"
+            (click)="resolve()"
+          >
+            Find request
+          </button>
+
+          @if (resolved(); as request) {
+            <p>
+              Patient: {{ request.patient.display_name }} |
+              {{ request.patient.date_of_birth || 'Date of birth unavailable' }}
+            </p>
+            <p>
+              Laboratory: {{ request.laboratory_id }} |
+              Expires {{ request.expires_at | date: 'medium' }}
+            </p>
+            <label class="confirmation-checkbox">
+              <input type="checkbox" [(ngModel)]="confirmed" />
+              <span>I confirm this patient and laboratory.</span>
+            </label>
+          }
+        </fieldset>
+      }
+
+      <form (ngSubmit)="save()">
+        <fieldset [disabled]="busy() || locked()">
+          <label>
+            Report type
+            <input
+              name="type"
+              [(ngModel)]="reportType"
+              required
+              maxlength="200"
+            />
+          </label>
+
+          <label>
+            Report date (optional)
+            <input
+              name="date"
+              type="date"
+              [(ngModel)]="reportDate"
+              [max]="today"
+            />
+          </label>
+
+          @if (lab) {
+            <label>
+              Laboratory reference
+              <input
+                name="reference"
+                [(ngModel)]="labReference"
+                required
+                maxlength="150"
+              />
+            </label>
+          }
+
+          <label>
+            Notes
+            <textarea
+              name="notes"
+              [(ngModel)]="notes"
+              maxlength="2000"
+            ></textarea>
+          </label>
+
+          <label>
+            Report file (PDF, JPEG or PNG)
+            <input
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              (change)="selectFile($event)"
+            />
+          </label>
+
+          @if (file) {
+            <p>Selected: {{ file.name }}</p>
+          }
+        </fieldset>
+
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+            [disabled]="busy() || denied()"
+          >
+            {{
+              busy()
+                ? 'Please wait...'
+                : locked()
+                  ? 'Retry same upload'
+                  : 'Upload report'
+            }}
+          </button>
+        </div>
+
+        @if (locked()) {
+          <p class="detail-notice">
+            The same report and request key are retained for retry.
+            Refresh the list to check saved results.
+          </p>
+        }
+      </form>
+    </article>
+
+    <section class="reports-section" aria-labelledby="saved-reports-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="saved-reports-title">Saved reports</h2>
+          <p>{{ total() }} report(s) available</p>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <p class="state-panel" role="status">Loading reports...</p>
+      } @else if (listError()) {
+        <p class="form-error" role="alert">{{ listError() }}</p>
+      } @else if (!reports().length) {
+        <p class="state-panel">No reports found.</p>
+      } @else {
+        <div class="reports-list">
+          @for (report of reports(); track report.id) {
+            <article class="report-card">
+              <div class="report-icon" aria-hidden="true">FILE</div>
+
+              <div class="report-details">
+                <h3>{{ report.report_type }}</h3>
+
+                <p>
+                  Report date:
+                  {{
+                    report.report_date
+                      ? (report.report_date | date: 'mediumDate')
+                      : 'Date unavailable'
+                  }}
+                </p>
+
+                @if (report.lab_reference) {
+                  <p>Laboratory reference: {{ report.lab_reference }}</p>
+                }
+
+                <p>Source: {{ report.source }}</p>
+
+                @if (lab) {
+                  <p>Patient: {{ report.patient_user_id }}</p>
+                  <p>Laboratory: {{ report.laboratory_id }}</p>
+                }
+
+                @if (report.notes) {
+                  <p class="report-notes">{{ report.notes }}</p>
+                }
+
+                <button
+                  class="secondary-button"
+                  type="button"
+                  (click)="download(report)"
+                  [disabled]="busy() || report.status === 'withdrawn'"
+                >
+                  Download
+                </button>
+              </div>
+
+              <div class="report-status">
+                <span
+                  class="status-badge"
+                  [class.status-active]="report.status === 'active'"
+                  [class.status-superseded]="report.status === 'superseded'"
+                  [class.status-withdrawn]="report.status === 'withdrawn'"
+                >
+                  {{
+                    report.status === 'active'
+                      ? 'Active'
+                      : report.status === 'superseded'
+                        ? 'Superseded'
+                        : 'Withdrawn'
+                  }}
+                </span>
+                <p>Saved {{ report.created_at | date: 'mediumDate' }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      }
+
+      <nav class="pagination" aria-label="Report pages">
+        <button
+          class="secondary-button"
+          type="button"
+          (click)="load(page() - 1)"
+          [disabled]="page() <= 1 || loading() || busy()"
+        >
+          Previous
+        </button>
+
+        <span>Page {{ page() }} | {{ total() }} reports</span>
+
+        <button
+          class="secondary-button"
+          type="button"
+          (click)="load(page() + 1)"
+          [disabled]="page() * 20 >= total() || loading() || busy()"
+        >
+          Next
+        </button>
+      </nav>
+    </section>
+  }
+</section>
