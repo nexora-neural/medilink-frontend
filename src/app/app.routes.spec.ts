@@ -64,6 +64,28 @@ describe('workspace routing', () => {
   });
 
   it.each([
+    ['super_admin', 'admin', '/access-denied'],
+    ['admin', 'super_admin', '/super-admin/dashboard'],
+  ])(
+    'uses the restored role for dashboard access when %s changes to %s',
+    async (previous, current, expected) => {
+      const roles = TestBed.inject(ActiveRoleService);
+      roles.setAccountRoles('previous-account', [previous]);
+      const auth = TestBed.inject(AuthService);
+      vi.mocked(auth.restoreSession).mockImplementation(async () => {
+        await Promise.resolve();
+        roles.setAccountRoles('restored-account', [current]);
+        return true;
+      });
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/super-admin/dashboard');
+      expect(TestBed.inject(Router).url).toBe(expected);
+      if (current === 'admin') expect(auth.getAuthorized).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
     [
       'patient',
       'Medical history',
