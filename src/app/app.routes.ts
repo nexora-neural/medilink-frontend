@@ -92,12 +92,18 @@ const rolePages: Route[] = [
       allowedRoles: ['Lab Staff'],
     },
   },
-  rolePage(
-    'patient/medications',
-    ['Patient'],
-    'Medications',
-    'A protected patient route for the medication workspace.',
-  ),
+  {
+    path: 'patient/medications',
+    loadComponent: () =>
+      import('./features/dose-occurrences/pages/dose-occurrences/dose-occurrences').then(
+        (module) => module.DoseOccurrences,
+      ),
+    canActivate: [roleGuard],
+    title: 'Dose reminders | MediLink',
+    data: {
+      allowedRoles: ['Patient'],
+    },
+  },
   {
     path: 'patient/prescriptions',
     loadComponent: () =>
