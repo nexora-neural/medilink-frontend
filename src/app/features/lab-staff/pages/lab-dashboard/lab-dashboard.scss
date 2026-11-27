@@ -38,7 +38,7 @@ h2 {
 }
 p {
   margin: 8px 0 0;
-  color: #8195a6;
+  color: #526b7d;
   font-size: 13px;
   line-height: 1.6;
 }
@@ -120,4 +120,15 @@ a:focus-visible {
   .state-panel {
     padding: 19px;
   }
+}
+
+.demo-notice {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border: 1px solid #c9deeb;
+  border-radius: 10px;
+  background: #eff8fc;
+  color: #39596f;
+  font-size: 13px;
+  line-height: 1.6;
 }

@@ -34,6 +34,10 @@ describe('LabDashboard', () => {
     const element = fixture.nativeElement as HTMLElement;
 
     expect(element.textContent).toContain('Good morning, Amara');
+    const notice = element.querySelector('.demo-notice');
+    expect(notice?.textContent).toContain('Demo data only.');
+    expect(notice?.textContent).toContain('signed-in identity');
+    expect(notice?.textContent).toContain('verification or real laboratory activity');
     expect(element.querySelectorAll('.stat')).toHaveLength(4);
     expect(element.textContent).toContain('No reports uploaded yet.');
     expect(element.querySelector('.preview-tools')).toBeNull();
@@ -99,5 +103,12 @@ describe('LabDashboard', () => {
     fixture.detectChanges();
     expect(element.querySelector('.report-row')).toBeNull();
     expect(element.textContent).toContain('Dashboard unavailable');
+    const readyLink = Array.from(
+      element.querySelectorAll<HTMLAnchorElement>('.preview-tools a'),
+    ).find((link) => link.textContent?.trim() === 'ready');
+    expect(readyLink?.getAttribute('href')).toContain('preview=ready');
+    params.next(convertToParamMap({ preview: 'ready' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-lab-summary-cards')).not.toBeNull();
   });
 });
