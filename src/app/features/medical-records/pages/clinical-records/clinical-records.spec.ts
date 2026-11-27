@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ActiveRole, ActiveRoleService } from '../../../../core/context/active-role.service';
 import { ClinicalRecords } from './clinical-records';
+import { DoctorPatientQueueApi } from '../../../doctors/pages/doctor-patient-queue/doctor-patient-queue-api.service';
 
 describe('ClinicalRecords preview', () => {
   async function setup(audience: 'patient' | 'doctor' = 'patient', preview = '') {
@@ -16,6 +17,27 @@ describe('ClinicalRecords preview', () => {
       imports: [ClinicalRecords],
       providers: [
         provideRouter([]),
+        {
+          provide: DoctorPatientQueueApi,
+          useValue: {
+            listRecords: vi.fn().mockResolvedValue({
+              items: [
+                {
+                  id: 'r1',
+                  type: 'diagnosis',
+                  title: 'Synthetic diagnosis',
+                  description: 'Read only',
+                  recorded_at: '2026-11-26T00:00:00Z',
+                  source: 'professional',
+                  status: 'active',
+                },
+              ],
+              page: 1,
+              page_size: 100,
+              total: 1,
+            }),
+          },
+        },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -262,5 +284,156 @@ describe('ClinicalRecords preview', () => {
 
     expect(page.visibleEntries()).toHaveLength(1);
     expect(page.allergyStatus()).toBe('no-known-allergies');
+  });
+});
+
+describe('ClinicalRecords live doctor patient view', () => {
+  it('loads server records for the patient id and disables local writes', async () => {
+    const api = {
+      listRecords: vi.fn().mockResolvedValue({
+        items: [
+          {
+            id: 'live-1',
+            type: 'diagnosis',
+            title: 'Server diagnosis',
+            description: 'Authorized record',
+            recorded_at: '2026-11-26T00:00:00Z',
+            source: 'professional',
+            status: 'active',
+          },
+        ],
+        page: 1,
+        page_size: 100,
+        total: 1,
+      }),
+    };
+    await TestBed.configureTestingModule({
+      imports: [ClinicalRecords],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              data: { audience: 'doctor', livePatientRecords: true },
+              paramMap: convertToParamMap({ id: 'patient-42' }),
+            },
+            paramMap: new BehaviorSubject(convertToParamMap({ id: 'patient-42' })).asObservable(),
+            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
+          },
+        },
+        {
+          provide: ActiveRoleService,
+          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
+        },
+        { provide: DoctorPatientQueueApi, useValue: api },
+      ],
+    }).compileComponents();
+    const f = TestBed.createComponent(ClinicalRecords);
+    f.detectChanges();
+    await vi.waitFor(() => expect(f.componentInstance.loadingLive()).toBe(false));
+    f.detectChanges();
+    expect(api.listRecords).toHaveBeenCalledWith('patient-42');
+    expect(f.nativeElement.textContent).toContain('Server diagnosis');
+    expect(f.nativeElement.textContent).toContain('Read-only record');
+    expect(f.nativeElement.textContent).not.toContain('Sample preview only');
+    expect(f.componentInstance.canAdd()).toBe(false);
+
+    f.componentInstance.entries.set([]);
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain(
+      'No clinical entries are available for this patient.',
+    );
+    expect(f.nativeElement.textContent).not.toContain('Add sample entry');
+    expect(f.nativeElement.querySelector('button')).toBeNull();
+  });
+  it('clears records on patient switch and ignores an earlier response', async () => {
+    const params = new BehaviorSubject(convertToParamMap({ id: 'patient-a' }));
+    let resolveA!: (value: any) => void;
+    let resolveB!: (value: any) => void;
+    const api = {
+      listRecords: vi.fn(
+        (id: string) =>
+          new Promise((resolve) => {
+            if (id === 'patient-a') resolveA = resolve;
+            else resolveB = resolve;
+          }),
+      ),
+    };
+    await TestBed.configureTestingModule({
+      imports: [ClinicalRecords],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { data: { audience: 'doctor', livePatientRecords: true } },
+            paramMap: params.asObservable(),
+            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
+          },
+        },
+        {
+          provide: ActiveRoleService,
+          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
+        },
+        { provide: DoctorPatientQueueApi, useValue: api },
+      ],
+    }).compileComponents();
+    const f = TestBed.createComponent(ClinicalRecords);
+    f.detectChanges();
+    params.next(convertToParamMap({ id: 'patient-b' }));
+    expect(f.componentInstance.entries()).toEqual([]);
+    expect(f.componentInstance.pageState()).toBe('loading');
+    const item = (title: string) => ({
+      items: [
+        {
+          id: title,
+          type: 'diagnosis',
+          title,
+          recorded_at: '2026-01-01T00:00:00Z',
+          source: 'professional',
+          status: 'active',
+        },
+      ],
+    });
+    resolveB(item('Patient B'));
+    await vi.waitFor(() => expect(f.componentInstance.entries()[0]?.title).toBe('Patient B'));
+    resolveA(item('Patient A'));
+    await Promise.resolve();
+    expect(f.componentInstance.entries()[0].title).toBe('Patient B');
+  });
+  it('shows the denied state without leaking sample records', async () => {
+    await TestBed.configureTestingModule({
+      imports: [ClinicalRecords],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              data: { audience: 'doctor', livePatientRecords: true },
+              paramMap: convertToParamMap({ id: 'patient-42' }),
+            },
+            paramMap: new BehaviorSubject(convertToParamMap({ id: 'patient-42' })).asObservable(),
+            queryParamMap: new BehaviorSubject(convertToParamMap({})).asObservable(),
+          },
+        },
+        {
+          provide: ActiveRoleService,
+          useValue: { activeRole: signal<ActiveRole>('Doctor').asReadonly() },
+        },
+        {
+          provide: DoctorPatientQueueApi,
+          useValue: { listRecords: vi.fn().mockRejectedValue({ status: 404 }) },
+        },
+      ],
+    }).compileComponents();
+    const f = TestBed.createComponent(ClinicalRecords);
+    f.detectChanges();
+    await vi.waitFor(() => expect(f.componentInstance.loadingLive()).toBe(false));
+    f.detectChanges();
+    expect(f.componentInstance.pageState()).toBe('denied');
+    expect(f.nativeElement.textContent).toContain('not granted access');
+    expect(f.nativeElement.textContent).not.toContain('Asthma');
   });
 });
