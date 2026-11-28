@@ -80,6 +80,11 @@
           Read-only sample. Editing is available only for the owner doctor's doctor-source drafts.
         </p>
       }
+      @if (canExportPdf()) {
+        <a class="export-link" [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'export']">
+          Export current PDF
+        </a>
+      }
     </section>
 
     <section class="panel" aria-labelledby="lifecycle-heading">

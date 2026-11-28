@@ -101,6 +101,21 @@ describe('Prescription preview routing', () => {
     expect(text()).toContain('Sample frequency A');
   });
 
+  it('offers PDF export only for a current issued doctor prescription', async () => {
+    await harness.navigateByUrl(`${base}/sample-active-01`, PrescriptionDetail);
+    expect(
+      harness.routeNativeElement!.querySelector(
+        'a[href="/workspace/doctor/prescriptions/sample-active-01/export"]',
+      ),
+    ).not.toBeNull();
+
+    await harness.navigateByUrl(`${base}/sample-draft-01`, PrescriptionDetail);
+    expect(text()).not.toContain('Export current PDF');
+
+    await harness.navigateByUrl(`${base}/sample-superseded-01`, PrescriptionDetail);
+    expect(text()).not.toContain('Export current PDF');
+  });
+
   it('retains saved edits when navigating between editor, detail and list', async () => {
     const editor = await harness.navigateByUrl(`${base}/sample-draft-01/edit`, PrescriptionEditor);
 
