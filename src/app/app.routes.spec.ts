@@ -9,6 +9,21 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it('defines patient notification and settings routes with client-side direct navigation', async () => {
+    const workspaceRoutes = routes.find((route) => route.path === 'workspace')?.children ?? [];
+    const notifications = workspaceRoutes.find((route) => route.path === 'patient/notifications');
+    const settings = workspaceRoutes.find((route) => route.path === 'patient/settings');
+
+    expect(notifications?.data?.['allowedRoles']).toEqual(['Patient']);
+    expect(settings?.data?.['allowedRoles']).toEqual(['Patient']);
+    expect(await notifications?.loadComponent?.()).toBeTypeOf('function');
+    expect(await settings?.loadComponent?.()).toBeTypeOf('function');
+
+    for (const path of ['workspace/patient/notifications', 'workspace/patient/settings']) {
+      expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
+    }
+  });
+
   it('renders admin application review routes on the client', () => {
     for (const path of ['workspace/admin/applications', 'workspace/admin/applications/:id']) {
       expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
@@ -62,6 +77,28 @@ describe('workspace routing', () => {
     });
     TestBed.inject(ActiveRoleService).setAccountRoles('demo-patient', ['patient']);
   });
+
+  it.each([
+    ['super_admin', 'admin', '/access-denied'],
+    ['admin', 'super_admin', '/super-admin/dashboard'],
+  ])(
+    'uses the restored role for dashboard access when %s changes to %s',
+    async (previous, current, expected) => {
+      const roles = TestBed.inject(ActiveRoleService);
+      roles.setAccountRoles('previous-account', [previous]);
+      const auth = TestBed.inject(AuthService);
+      vi.mocked(auth.restoreSession).mockImplementation(async () => {
+        await Promise.resolve();
+        roles.setAccountRoles('restored-account', [current]);
+        return true;
+      });
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/super-admin/dashboard');
+      expect(TestBed.inject(Router).url).toBe(expected);
+      if (current === 'admin') expect(auth.getAuthorized).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     [
@@ -125,6 +162,8 @@ describe('workspace routing', () => {
       ['/workspace/patient/measurements', 'Measurements'],
       ['/workspace/patient/vaccinations', 'Vaccinations'],
       ['/workspace/patient/access', 'Doctor access'],
+      ['/workspace/patient/notifications', 'Notifications'],
+      ['/workspace/patient/settings', 'Settings'],
     ]) {
       await harness.navigateByUrl(path);
       expect(harness.routeNativeElement?.textContent).toContain(heading);
@@ -377,9 +416,10 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/admin/dashboard');
 
     expect(auth.restoreSession).toHaveBeenCalled();
-    await vi.waitFor(() =>
-      expect(harness.routeNativeElement?.textContent).toContain('Account support'),
-    );
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.textContent).toContain('Dashboard unavailable');
+    });
     expect(TestBed.inject(Router).url).toBe('/workspace/admin/dashboard');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
       'Admin dashboard',
@@ -566,7 +606,11 @@ describe('workspace routing', () => {
 
     expect(auth.restoreSession).toHaveBeenCalled();
     expect(TestBed.inject(Router).url).toBe('/workspace/doctor/patients');
-    expect(harness.routeNativeElement?.textContent).toContain('Nadeesha Perera');
+    expect(harness.routeNativeElement?.textContent).toContain('Patient Queue');
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'Patients appear only while your verified doctor account has a current access grant.',
+    );
+    expect(harness.routeNativeElement?.textContent).not.toContain('Nadeesha Perera');
     expect(harness.routeNativeElement?.textContent).not.toContain('Access denied');
   });
 

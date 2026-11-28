@@ -1,0 +1,36 @@
+<h2>Background jobs</h2>
+@if (!jobs().length) {
+  <div class="tip">Failed jobs: none in sample data.</div>
+}
+@for (job of jobs(); track job.id) {
+  <div class="record">
+    <div>
+      <strong>{{ job.name }}</strong>
+      <small>{{ job.id }} · {{ job.status }} · Attempts {{ job.attempts }}/{{ job.maxAttempts }}</small>
+    </div>
+    <button type="button"
+            [disabled]="job.status !== 'Failed' || job.attempts >= job.maxAttempts || selectedId() !== null"
+            [attr.aria-label]="'Retry ' + job.name" (click)="prepare(job)">Retry
+    </button>
+  </div>
+  @if (job.attempts >= job.maxAttempts) {
+    <p class="hint">Retry limit reached.</p>
+  }
+  @if (selectedId() === job.id) {
+    <form class="confirm" (ngSubmit)="confirm(job)" [attr.aria-label]="'Confirm retry for ' + job.name">
+      <label [for]="'retry-reason-' + job.id">Reason for retry *</label>
+      <textarea [id]="'retry-reason-' + job.id" name="reason" rows="3" maxlength="500"
+                [ngModel]="reason()" (ngModelChange)="reason.set($event)"
+                [attr.aria-invalid]="error() ? 'true' : null"
+                [attr.aria-describedby]="error() ? 'retry-error-' + job.id : null"></textarea>
+      @if (error()) {
+        <p class="error" [id]="'retry-error-' + job.id" role="alert">{{ error() }}</p>
+      }
+      <p class="hint">This queues a retry in the sample preview only.</p>
+      <div class="actions">
+        <button type="button" (click)="cancel()">Cancel</button>
+        <button type="submit">Confirm retry</button>
+      </div>
+    </form>
+  }
+}
