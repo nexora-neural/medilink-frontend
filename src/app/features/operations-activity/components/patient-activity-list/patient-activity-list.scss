@@ -1,0 +1,59 @@
+:host {
+  display: block;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px 0;
+  border-top: 1px solid #edf2f6;
+}
+
+.item-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eaf6fc;
+  color: #1987ba;
+  font-size: 21px;
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+strong, small {
+  display: block;
+}
+
+strong {
+  color: #26465e;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+small {
+  margin-top: 5px;
+  color: #91a2af;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .item {
+    gap: 9px;
+  }
+  .item-icon {
+    width: 37px;
+    height: 37px;
+  }
+  small {
+    font-size: 10px;
+  }
+}

@@ -1,0 +1,50 @@
+:host {
+  display: block;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 0;
+  border-top: 1px solid #edf2f6;
+  font-size: 13px;
+}
+
+.record-main {
+  min-width: 0;
+}
+
+strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+small {
+  display: block;
+  margin-top: 5px;
+  color: #8da0af;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border-radius: 30px;
+  background: #eef5fa;
+  color: #56778d;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+@media (max-width: 500px) {
+  .record {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

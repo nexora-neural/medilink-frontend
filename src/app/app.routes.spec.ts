@@ -399,9 +399,10 @@ describe('workspace routing', () => {
     await harness.navigateByUrl('/workspace/admin/dashboard');
 
     expect(auth.restoreSession).toHaveBeenCalled();
-    await vi.waitFor(() =>
-      expect(harness.routeNativeElement?.textContent).toContain('Account support'),
-    );
+    await vi.waitFor(() => {
+      harness.detectChanges();
+      expect(harness.routeNativeElement?.textContent).toContain('Dashboard unavailable');
+    });
     expect(TestBed.inject(Router).url).toBe('/workspace/admin/dashboard');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
       'Admin dashboard',

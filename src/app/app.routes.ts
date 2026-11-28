@@ -507,6 +507,31 @@ export const routes: Routes = [
           mode: 'history',
         },
       },
+      {
+        path: 'admin/audit',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Operations and audit | MediLink',
+        data: {
+          allowedRoles: ['Admin'],
+          auditAudience: 'admin',
+        },
+      },
+      {
+        path: 'patient/access-history',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/patient-activity-page/patient-activity-page').then(
+            (m) => m.PatientActivityPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Access history | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
 
       ...rolePages,
     ],
@@ -566,11 +591,12 @@ export const routes: Routes = [
       {
         path: 'audit',
         loadComponent: () =>
-          import('./features/administration/super-admin-preview/super-admin-preview').then(
-            (m) => m.SuperAdminPreview,
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
           ),
+        title: 'Privileged audit and recovery | MediLink',
         data: {
-          previewPage: 'audit',
+          auditAudience: 'super-admin',
         },
       },
       {
