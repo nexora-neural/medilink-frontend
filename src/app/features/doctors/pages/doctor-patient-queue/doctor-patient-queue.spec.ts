@@ -47,6 +47,7 @@ describe('DoctorPatientQueue', () => {
     expect(api.list).toHaveBeenCalledOnce();
     expect(f.nativeElement.textContent).toContain('Synthetic Patient');
     expect(f.nativeElement.textContent).toContain('Granted');
+    expect(f.nativeElement.textContent).not.toContain('View prescriptions');
     expect(f.nativeElement.textContent).not.toContain('Nadeesha Perera');
   });
   it('combines multiple grants for one patient and starts with a consultable grant', async () => {
@@ -59,7 +60,7 @@ describe('DoctorPatientQueue', () => {
             date_of_birth: null,
           },
           grant_id: 'read-only-grant',
-          categories: ['reports'],
+          categories: ['reports', 'prescriptions'],
           expires_at: '2099-01-01T00:00:00Z',
           allow_consultation: false,
         },
@@ -87,10 +88,20 @@ describe('DoctorPatientQueue', () => {
     expect(f.componentInstance.patients()).toHaveLength(1);
     expect(f.nativeElement.querySelectorAll('article.patient-item')).toHaveLength(1);
     expect(f.componentInstance.patients()[0].consultationContext).toBe(
-      'reports, history_allergies',
+      'reports, prescriptions, history_allergies',
     );
+    const link: HTMLAnchorElement = f.nativeElement.querySelector(
+      'a[href^="/workspace/doctor/prescriptions"]',
+    );
+    expect(link.textContent).toContain('View prescriptions');
+    expect(link.getAttribute('href')).toBe('/workspace/doctor/prescriptions?patientId=p1');
+
     await f.componentInstance.startConsultation('p1');
+    f.detectChanges();
     expect(api.start).toHaveBeenCalledWith('consult-grant');
+    expect(link.getAttribute('href')).toBe(
+      '/workspace/doctor/prescriptions?patientId=p1&consultationId=consultation-1',
+    );
   });
   it('starts and ends consultation only after server confirmation', async () => {
     api.start.mockResolvedValue({ id: 'c1', ended_at: null });

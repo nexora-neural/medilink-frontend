@@ -26,7 +26,7 @@ describe('PrescriptionEditor preview', () => {
 
   beforeEach(async () => {
     params = new BehaviorSubject(convertToParamMap({ id: 'sample-draft-01' }));
-    query = new BehaviorSubject(convertToParamMap({}));
+    query = new BehaviorSubject(convertToParamMap({ preview: 'ready' }));
 
     await TestBed.configureTestingModule({
       imports: [PrescriptionEditor],
@@ -152,7 +152,9 @@ describe('PrescriptionEditor preview', () => {
     expect(store.find('sample-draft-01')!.items[0].instructions).toBe(
       'Saved synthetic instructions.',
     );
-    expect(navigate).toHaveBeenCalledWith(['/workspace/doctor/prescriptions', 'sample-draft-01']);
+    expect(navigate).toHaveBeenCalledWith(['/workspace/doctor/prescriptions', 'sample-draft-01'], {
+      queryParams: { preview: 'ready' },
+    });
   });
 
   it.each(['sample-other-owner-01', 'sample-active-01'])('blocks editing and saving %s', (id) => {

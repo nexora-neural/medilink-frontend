@@ -177,8 +177,20 @@ export class AuthService {
     return this.authorizedRequest<T>('POST', path, body, { 'Idempotency-Key': key });
   }
 
-  putAuthorized<T>(path: string, body: unknown): Promise<T> {
-    return this.authorizedRequest<T>('PUT', path, body);
+  putAuthorized<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
+    return this.authorizedRequest<T>('PUT', path, body, headers);
+  }
+
+  deleteAuthorized<T>(path: string, headers: Record<string, string> = {}): Promise<T> {
+    return this.authorizationHeaders().then(({ url, headers: authHeaders }) =>
+      firstValueFrom(
+        this.http
+          .delete<T>(`${url}/${path.replace(/^\//, '')}`, {
+            headers: { ...headers, ...authHeaders },
+          })
+          .pipe(timeout(10000)),
+      ),
+    );
   }
 
   async getOwnProfile(): Promise<MeResponse> {

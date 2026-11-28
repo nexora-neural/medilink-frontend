@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PrescriptionLiveDetail } from './prescription-live-detail';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { SAMPLE_DOCTOR_ID } from '../../data/prescription-draft.samples';
@@ -14,7 +15,7 @@ import { PrescriptionDraftPreviewStore } from '../../services/prescription-draft
 @Component({
   selector: 'app-prescription-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, PrescriptionLiveDetail],
   templateUrl: './prescription-detail.html',
   styleUrl: '../prescription-list/prescription-list.scss',
 })
@@ -33,6 +34,7 @@ export class PrescriptionDetail {
 
     return this.store.find(this.prescriptionId());
   });
+  readonly previewMode = signal(false);
 
   readonly editable = computed(() => {
     const prescription = this.prescription();
@@ -103,6 +105,13 @@ export class PrescriptionDetail {
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const preview = params.get('preview');
+      this.previewMode.set(
+        preview === 'ready' ||
+          preview === 'loading' ||
+          preview === 'empty' ||
+          preview === 'error' ||
+          preview === 'denied',
+      );
 
       this.pageState.set(
         preview === 'loading' || preview === 'empty' || preview === 'error' || preview === 'denied'
@@ -166,11 +175,10 @@ export class PrescriptionDetail {
     }
 
     try {
-      const navigated = await this.router.navigate([
-        '/workspace/doctor/prescriptions',
-        draftId,
-        'edit',
-      ]);
+      const navigated = await this.router.navigate(
+        ['/workspace/doctor/prescriptions', draftId, 'edit'],
+        { queryParams: { preview: 'ready' } },
+      );
 
       if (!navigated) {
         this.linkedError.set('Draft created. Open the linked prescription from History.');
