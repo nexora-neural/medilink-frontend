@@ -11,13 +11,17 @@
     </p>
   </div>
 
-  <a
-    *ngIf="!isPatient"
-    class="button primary"
-    [routerLink]="requestRoute"
-  >
-    + Find request
-  </a>
+  <div *ngIf="!isPatient" class="actions" style="margin-top: 0">
+    <a
+      class="button secondary"
+      routerLink="/workspace/lab-staff/report-uploads"
+    >
+      Upload / download reports
+    </a>
+    <a class="button primary" [routerLink]="requestRoute">
+      + Find request
+    </a>
+  </div>
 </div>
 
 <section class="panel">

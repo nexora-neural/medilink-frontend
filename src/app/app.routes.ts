@@ -233,6 +233,17 @@ const rolePages: Route[] = [
     },
   },
   {
+    path: 'lab-staff/report-uploads',
+    loadComponent: () =>
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
+    canActivate: [roleGuard],
+    title: 'Upload and download laboratory reports | MediLink',
+    data: {
+      allowedRoles: ['Lab Staff'],
+      reportAudience: 'lab',
+    },
+  },
+  {
     path: 'lab-staff/reports',
     loadChildren: () =>
       import('./features/report-corrections/report-corrections.routes').then(

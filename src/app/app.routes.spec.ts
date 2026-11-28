@@ -10,6 +10,65 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it('opens live lab upload and download from the ML-128 report list', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/reports');
+
+    expect(harness.routeNativeElement?.querySelector('app-report-list-page')).not.toBeNull();
+
+    const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
+      'a[href="/workspace/lab-staff/report-uploads"]',
+    );
+    expect(link).toBeTruthy();
+
+    link!.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/report-uploads');
+    expect(harness.routeNativeElement?.querySelector('app-reports-live')).not.toBeNull();
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
+      'Laboratory reports',
+    );
+    expect(harness.routeNativeElement?.textContent).toContain('Patient request token');
+    expect(harness.routeNativeElement?.textContent).toContain('Upload report');
+    expect(harness.routeNativeElement?.textContent).toContain('Saved reports');
+  });
+
+  it('supports direct navigation to live lab report uploads', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/report-uploads');
+    expect(harness.routeNativeElement?.querySelector('app-reports-live')).not.toBeNull();
+    expect(
+      serverRoutes.find((route) => route.path === 'workspace/lab-staff/report-uploads')?.renderMode,
+    ).toBe(RenderMode.Client);
+  });
+
+  it('denies Patient access to live lab report uploads', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-patient', ['patient']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+  });
+
+  it('redirects signed-out lab upload visitors to login', async () => {
+    TestBed.inject(ActiveRoleService).clear();
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/login');
+  });
+
   it.each([
     ['', 'app-report-list-page'],
     ['/LR-1', 'app-report-detail-page'],
