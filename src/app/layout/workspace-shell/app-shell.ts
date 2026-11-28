@@ -9,19 +9,24 @@ import { NavigationItem } from './models/navigation-item';
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Admin: [
     {
-      label: 'Professional applications',
-      icon: 'fact_check',
-      path: '/workspace/admin/applications',
-    },
-    {
       label: 'Overview',
       icon: 'dashboard',
       path: '/workspace/admin/dashboard',
     },
     {
-      label: 'Account support',
+      label: 'Applications',
+      icon: 'fact_check',
+      path: '/workspace/admin/applications',
+    },
+    {
+      label: 'Support issues',
       icon: 'support_agent',
       path: '/workspace/admin/account-support',
+    },
+    {
+      label: 'Operations & audit',
+      icon: 'history',
+      path: '/workspace/admin/audit',
     },
   ],
   'Super Admin': [
@@ -53,6 +58,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Measurements', icon: 'monitor_heart', path: '/workspace/patient/measurements' },
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
+    {
+      label: 'Access history',
+      icon: 'history',
+      path: '/workspace/patient/access-history',
+    },
     {
       label: 'Professional verification',
       icon: 'verified_user',
@@ -95,7 +105,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
   'Lab Staff': [
-    { label: 'Overview', icon: 'dashboard', path: '/workspace' },
+    {
+      label: 'Overview',
+      icon: 'dashboard',
+      path: '/workspace/lab-staff/dashboard',
+    },
     { label: 'Laboratory reports', icon: 'science', path: '/workspace/lab-staff/reports' },
     {
       label: 'Resolve upload request',

@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 0;
+  border-top: 1px solid #edf2f6;
+}
+
+.record > div {
+  min-width: 0;
+}
+
+strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+small {
+  display: block;
+  margin-top: 5px;
+  color: #8da0af;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #dbe9f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #317a9d;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.confirm {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid #f0d5ae;
+  border-radius: 12px;
+  background: #fffbf4;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #466279;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 90px;
+  padding: 12px;
+  border: 1px solid #dce8ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #27495e;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.hint, .error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.hint {
+  color: #8195a6;
+}
+
+.error {
+  color: #b74f53;
+}
+
+.tip {
+  margin: 18px 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: #eff8fc;
+  color: #648598;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+button:focus-visible, textarea:focus-visible {
+  outline: 3px solid #167fac;
+  outline-offset: 3px;
+}
+
+@media (max-width: 500px) {
+  .record {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

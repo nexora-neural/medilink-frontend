@@ -32,7 +32,7 @@
       <div class="card-heading">
         <h2 id="patient-heading">{{ prescription.patientName }}</h2>
         <span class="badge">
-          {{ prescription.status === 'draft' ? 'Draft' : 'Active' }}
+          {{ prescription.status }}
         </span>
       </div>
 
@@ -80,6 +80,142 @@
           Read-only sample. Editing is available only for the owner doctor's doctor-source drafts.
         </p>
       }
+    </section>
+
+    <section class="panel" aria-labelledby="lifecycle-heading">
+      <h2 id="lifecycle-heading">Prescription actions</h2>
+
+      @if (actionMessage()) {
+        <p role="status">{{ actionMessage() }}</p>
+      }
+
+      @if (canFinish()) {
+        <form (submit)="$event.preventDefault(); finishPrescription()">
+          <div class="field">
+            <label for="lifecycle-action">Action</label>
+            <select
+              id="lifecycle-action"
+              [value]="action()"
+              (change)="selectAction($any($event.target).value)"
+            >
+              <option value="complete">Mark as completed</option>
+              <option value="cancel">Cancel prescription</option>
+              <option value="discontinue">Discontinue prescription</option>
+            </select>
+          </div>
+
+          <div class="field reason-field">
+            <label for="lifecycle-reason">Reason (required)</label>
+            <textarea
+              id="lifecycle-reason"
+              rows="4"
+              maxlength="1000"
+              [value]="reason()"
+              (input)="reason.set($any($event.target).value)"
+              [attr.aria-invalid]="actionError() ? 'true' : null"
+              aria-describedby="reason-help lifecycle-error"
+            ></textarea>
+            <p id="reason-help">Enter a reason, up to 1000 characters.</p>
+          </div>
+
+          <p id="lifecycle-error" role="alert" class="action-error">
+            {{ actionError() }}
+          </p>
+
+          <button type="submit">Confirm sample action</button>
+        </form>
+      } @else {
+        <p>
+          Completion, cancellation and discontinuation are available only for the owner doctor's
+          active doctor-source prescriptions.
+        </p>
+      }
+    </section>
+    <section class="panel" aria-labelledby="versions-heading">
+      <h2 id="versions-heading">Versions and linked prescriptions</h2>
+
+      <p>Version: {{ prescription.version ?? 1 }}</p>
+
+      @if (prescription.previousPrescriptionId) {
+        <a [routerLink]="['/workspace/doctor/prescriptions', prescription.previousPrescriptionId]">
+          View previous prescription
+        </a>
+      }
+
+      @if (canCreateLinkedDraft()) {
+        <p>
+          Create a draft for review. The original prescription remains unchanged until a replacement
+          is explicitly issued.
+        </p>
+
+        <form (submit)="$event.preventDefault(); createLinkedDraft()">
+          <div class="field">
+            <label for="linked-action">Draft purpose</label>
+            <select
+              id="linked-action"
+              [value]="linkedAction()"
+              (change)="selectLinkedAction($any($event.target).value)"
+            >
+              <option value="correct" [disabled]="prescription.status !== 'active'">
+                Correction
+              </option>
+              <option value="renew">Renewal</option>
+              <option value="reissue">Reissue</option>
+            </select>
+          </div>
+
+          <div class="field reason-field">
+            <label for="linked-reason">Reason (required)</label>
+            <textarea
+              id="linked-reason"
+              rows="3"
+              maxlength="1000"
+              [value]="linkedReason()"
+              (input)="linkedReason.set($any($event.target).value)"
+              [attr.aria-invalid]="linkedError() ? 'true' : null"
+              aria-describedby="linked-error"
+            ></textarea>
+          </div>
+
+          <p id="linked-error" role="alert" class="action-error">
+            {{ linkedError() }}
+          </p>
+
+          <button type="submit">Create sample draft and edit</button>
+        </form>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="history-heading">
+      <h2 id="history-heading">History</h2>
+
+      <div class="prescription-list">
+        @for (entry of prescription.history ?? []; track entry.id) {
+          <article class="prescription-card">
+            <h3>{{ entry.action }}</h3>
+            <p>{{ entry.reason }}</p>
+
+            <dl>
+              <div>
+                <dt>Recorded</dt>
+                <dd>{{ entry.performedAt | date: 'medium' }}</dd>
+              </div>
+              <div>
+                <dt>Recorded by</dt>
+                <dd>{{ entry.performedBy }}</dd>
+              </div>
+            </dl>
+
+            @if (entry.relatedPrescriptionId) {
+              <a [routerLink]="['/workspace/doctor/prescriptions', entry.relatedPrescriptionId]">
+                View linked prescription
+              </a>
+            }
+          </article>
+        } @empty {
+          <p>No lifecycle actions have been recorded for this sample.</p>
+        }
+      </div>
     </section>
 
     <section class="panel" aria-labelledby="medicines-heading">

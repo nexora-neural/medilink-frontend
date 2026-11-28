@@ -2,6 +2,14 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   {
+    path: 'workspace/admin/audit',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/patient/access-history',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'workspace/patient/prescription-shares',
     renderMode: RenderMode.Client,
   },
@@ -91,6 +99,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/doctor/medicines',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/doctor/qr',
     renderMode: RenderMode.Client,
   },
   {
@@ -191,6 +203,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'workspace/doctor/prescription-review',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'workspace/lab-staff/dashboard',
     renderMode: RenderMode.Client,
   },
   {

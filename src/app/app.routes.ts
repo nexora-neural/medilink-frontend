@@ -1,5 +1,5 @@
 import { Route, Routes } from '@angular/router';
-import { roleGuard } from './core/guards/role.guard';
+import { authenticatedRoleGuard, roleGuard } from './core/guards/role.guard';
 import { authGuard } from './core/auth.guard';
 import { ActiveRole } from './core/context/active-role.service';
 import { AppShell } from './layout/workspace-shell/app-shell';
@@ -24,7 +24,6 @@ import { PatientMeasurements } from './features/measurements/pages/patient-measu
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
-import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 
 const rolePage = (
   path: string,
@@ -40,6 +39,18 @@ const rolePage = (
 
 const rolePages: Route[] = [
   {
+    path: 'lab-staff/dashboard',
+    loadComponent: () =>
+      import('./features/lab-staff/pages/lab-dashboard/lab-dashboard').then(
+        (module) => module.LabDashboard,
+      ),
+    canActivate: [roleGuard],
+    title: 'Laboratory dashboard | MediLink',
+    data: {
+      allowedRoles: ['Lab Staff'],
+    },
+  },
+  {
     path: 'patient/prescription-shares',
     loadChildren: () =>
       import('./features/prescription-sharing/prescription-sharing.routes').then(
@@ -47,7 +58,10 @@ const rolePages: Route[] = [
       ),
     canActivate: [roleGuard],
     title: 'Share a prescription | MediLink',
-    data: { allowedRoles: ['Patient'], audience: 'patient' },
+    data: {
+      allowedRoles: ['Patient'],
+      audience: 'patient',
+    },
   },
   {
     path: 'pharmacist/prescription-shares',
@@ -57,7 +71,10 @@ const rolePages: Route[] = [
       ),
     canActivate: [roleGuard],
     title: 'Claim a prescription | MediLink',
-    data: { allowedRoles: ['Pharmacist'], audience: 'pharmacist' },
+    data: {
+      allowedRoles: ['Pharmacist'],
+      audience: 'pharmacist',
+    },
   },
   {
     path: 'doctor/prescriptions/:id/issue',
@@ -67,7 +84,9 @@ const rolePages: Route[] = [
       ),
     canActivate: [roleGuard],
     title: 'Review & issue prescription | MediLink',
-    data: { allowedRoles: ['Doctor'] },
+    data: {
+      allowedRoles: ['Doctor'],
+    },
   },
   {
     path: 'patient/lab-upload-requests',
@@ -107,11 +126,16 @@ const rolePages: Route[] = [
       ),
     canActivate: [roleGuard],
     title: 'My prescriptions | MediLink',
-    data: { allowedRoles: ['Patient'] },
+    data: {
+      allowedRoles: ['Patient'],
+    },
   },
   {
     path: 'patient/history',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Medical history | MediLink',
     data: {
@@ -121,12 +145,27 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/reports',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
+    canActivate: [roleGuard],
+    title: 'Patient reports | MediLink',
+    data: {
+      reportAudience: 'patient',
+      allowedRoles: ['Patient'],
+    },
+  },
+  {
+    path: 'patient/reports',
     loadChildren: () =>
       import('./features/report-corrections/report-corrections.routes').then(
         (m) => m.REPORT_CORRECTION_ROUTES,
       ),
     canActivate: [roleGuard],
-    data: { allowedRoles: ['Patient'], audience: 'patient' },
+    data: {
+      allowedRoles: ['Patient'],
+      audience: 'patient',
+    },
   },
   {
     path: 'patient/vaccinations',
@@ -165,7 +204,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'doctor/records',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Patient clinical records | MediLink',
     data: {
@@ -195,12 +237,27 @@ const rolePages: Route[] = [
   },
   {
     path: 'lab-staff/reports',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
+    canActivate: [roleGuard],
+    title: 'Laboratory reports | MediLink',
+    data: {
+      reportAudience: 'lab',
+      allowedRoles: ['Lab Staff'],
+    },
+  },
+  {
+    path: 'lab-staff/reports',
     loadChildren: () =>
       import('./features/report-corrections/report-corrections.routes').then(
         (m) => m.REPORT_CORRECTION_ROUTES,
       ),
     canActivate: [roleGuard],
-    data: { allowedRoles: ['Lab Staff'], audience: 'lab' },
+    data: {
+      allowedRoles: ['Lab Staff'],
+      audience: 'lab',
+    },
   },
 ];
 
@@ -208,7 +265,12 @@ const doctorPreview = (path: string, title: string, description: string, qr = fa
   path,
   component: DoctorPlaceholder,
   canActivate: [roleGuard],
-  data: { allowedRoles: ['Doctor'], title, description, qr },
+  data: {
+    allowedRoles: ['Doctor'],
+    title,
+    description,
+    qr,
+  },
 });
 
 export const routes: Routes = [
@@ -247,23 +309,27 @@ export const routes: Routes = [
       })),
     ],
   },
-
   {
     path: 'account-suspended',
     component: StatusPage,
-    data: { code: 'suspended' },
+    data: {
+      code: 'suspended',
+    },
   },
   {
     path: 'access-denied',
     component: StatusPage,
-    data: { code: '403' },
+    data: {
+      code: '403',
+    },
   },
   {
     path: 'not-found',
     component: StatusPage,
-    data: { code: '404' },
+    data: {
+      code: '404',
+    },
   },
-
   {
     path: 'workspace',
     component: AppShell,
@@ -303,13 +369,20 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
-
-      doctorPreview(
-        'doctor/patients/:id',
-        'Patient details',
-        'Patient-specific records will be available after integration.',
-      ),
-
+      {
+        path: 'doctor/patients/:id',
+        loadComponent: () =>
+          import('./features/medical-records/pages/clinical-records/clinical-records').then(
+            (module) => module.ClinicalRecords,
+          ),
+        canActivate: [roleGuard],
+        title: 'Patient clinical records | MediLink',
+        data: {
+          allowedRoles: ['Doctor'],
+          audience: 'doctor',
+          livePatientRecords: true,
+        },
+      },
       {
         path: 'doctor/prescription-review',
         loadComponent: () =>
@@ -322,7 +395,6 @@ export const routes: Routes = [
           allowedRoles: ['Doctor'],
         },
       },
-
       {
         path: 'doctor/qr',
         loadComponent: () =>
@@ -339,13 +411,11 @@ export const routes: Routes = [
         pathMatch: 'full',
         redirectTo: '/workspace/professional-verification',
       },
-
       doctorPreview(
         'doctor/notifications',
         'Notifications',
         'Your notifications will appear here.',
       ),
-
       doctorPreview(
         'doctor/reports',
         'Laboratory reports',
@@ -481,13 +551,38 @@ export const routes: Routes = [
           mode: 'history',
         },
       },
+      {
+        path: 'admin/audit',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Operations and audit | MediLink',
+        data: {
+          allowedRoles: ['Admin'],
+          auditAudience: 'admin',
+        },
+      },
+      {
+        path: 'patient/access-history',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/patient-activity-page/patient-activity-page').then(
+            (m) => m.PatientActivityPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Access history | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
       ...rolePages,
     ],
   },
   {
     path: 'super-admin',
     component: SuperAdminShell,
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authenticatedRoleGuard],
     data: {
       allowedRoles: ['Super Admin'],
     },
@@ -538,11 +633,12 @@ export const routes: Routes = [
       {
         path: 'audit',
         loadComponent: () =>
-          import('./features/administration/super-admin-preview/super-admin-preview').then(
-            (m) => m.SuperAdminPreview,
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
           ),
+        title: 'Privileged audit and recovery | MediLink',
         data: {
-          previewPage: 'audit',
+          auditAudience: 'super-admin',
         },
       },
       {
@@ -613,7 +709,6 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: '**',
     redirectTo: 'not-found',

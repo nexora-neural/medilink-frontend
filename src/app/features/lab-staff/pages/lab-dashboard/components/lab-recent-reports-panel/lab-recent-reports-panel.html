@@ -1,0 +1,27 @@
+<section aria-labelledby="lab-reports-title">
+  <div class="section-title">
+    <h2 id="lab-reports-title">Recent reports</h2>
+    <a routerLink="/workspace/lab-staff/reports">
+      View all <span aria-hidden="true">→</span>
+    </a>
+  </div>
+  @for (report of reports().slice(0, 3); track report.id) {
+  <a
+    class="report-row"
+    routerLink="/workspace/lab-staff/reports"
+    [attr.aria-label]="'View reports: ' + report.type + ', ' + report.reference"
+  >
+    <span class="icon material-symbols-outlined" aria-hidden="true"
+      >description</span
+    >
+    <span class="grow">
+      <strong>{{ report.type }}</strong>
+      <small>{{ report.date }} · {{ report.reference }}</small>
+    </span>
+    <span class="badge">{{ report.status }}</span>
+    <span aria-hidden="true">›</span>
+  </a>
+  } @empty {
+  <p class="empty">No reports uploaded yet.</p>
+  }
+</section>

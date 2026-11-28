@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -12,9 +12,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AccessGrant,
+  AccessGrantsApiService,
   DoctorIdentity,
-  DoctorIdentityService,
-} from '../../../doctor-identity/doctor-identity.service';
+  GrantCategory,
+} from './access-grants-api.service';
+import { DoctorIdentityService } from '../../../doctor-identity/doctor-identity.service';
 
 interface DetectedBarcode {
   rawValue: string;
@@ -29,42 +32,29 @@ type BarcodeDetectorConstructor = new (options?: { formats: string[] }) => Barco
 type CameraStatus = 'idle' | 'requesting' | 'scanning' | 'found' | 'unsupported' | 'error';
 
 type ReviewStatus = 'empty' | 'loading' | 'ready' | 'error';
-type GrantCategoryCode =
-  | 'history_allergies'
-  | 'prescriptions'
-  | 'reports'
-  | 'measurements_vaccinations'
-  | 'medication_logs';
+const DOCTOR_REFERENCE_MAX_LENGTH = 256;
+type GrantCategoryCode = GrantCategory;
 
 type GrantDuration = '24h' | '7d' | '30d';
 type GrantStatus = 'active' | 'expired' | 'revoked';
 
-interface SampleGrant {
-  id: string;
-  doctor: string;
-  organization: string;
-  categories: GrantCategoryCode[];
-  allowConsultation: boolean;
-  expiresAt: string;
-  status: GrantStatus;
-}
-
 @Component({
   selector: 'app-patient-doctor-access',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './patient-doctor-access.html',
   styleUrl: './patient-doctor-access.scss',
 })
 export class PatientDoctorAccess implements OnDestroy {
   private readonly formBuilder = inject(FormBuilder);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly accessApi = inject(AccessGrantsApiService);
   private readonly doctorIdentity = inject(DoctorIdentityService);
 
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
 
   readonly codeForm = this.formBuilder.nonNullable.group({
-    doctorCode: ['', Validators.required],
+    doctorCode: ['', [Validators.required, Validators.maxLength(DOCTOR_REFERENCE_MAX_LENGTH)]],
   });
 
   readonly grantCategories: ReadonlyArray<{
@@ -112,80 +102,59 @@ export class PatientDoctorAccess implements OnDestroy {
       .map((category) => category.code);
   }
 
-  readonly isActiveSampleGrant = (grant: SampleGrant): boolean => grant.status === 'active';
-
   readonly pendingRevokeId = signal<string | null>(null);
   readonly revokeMessage = signal('');
+  readonly revokeReason = signal('');
+  readonly revokeError = signal('');
+  readonly revokeInProgress = signal(false);
 
-  requestSampleRevoke(id: string): void {
+  requestRevoke(id: string): void {
     if (this.grantsView() !== 'ready') return;
 
-    const grant = this.sampleGrants().find((item) => item.id === id);
+    const grant = this.grants().find((item) => item.grant.id === id);
 
-    if (!grant || grant.status !== 'active') return;
+    if (!grant || grant.grant.status !== 'active') return;
 
     this.revokeMessage.set('');
+    this.revokeError.set('');
+    this.revokeReason.set('');
     this.pendingRevokeId.set(id);
   }
 
-  cancelSampleRevoke(): void {
+  readonly isActiveGrant = (item: AccessGrant): boolean => this.grantStatus(item) === 'active';
+
+  cancelRevoke(): void {
     this.pendingRevokeId.set(null);
   }
 
-  confirmSampleRevoke(id: string): void {
-    if (this.grantsView() !== 'ready' || this.pendingRevokeId() !== id) {
+  async confirmRevoke(id: string): Promise<void> {
+    if (this.grantsView() !== 'ready' || this.pendingRevokeId() !== id || this.revokeInProgress())
+      return;
+    const reason = this.revokeReason().trim();
+    if (!reason) {
+      this.revokeError.set('Enter a reason to revoke this access grant.');
       return;
     }
-
-    const grant = this.sampleGrants().find((item) => item.id === id);
-
-    if (!grant || grant.status !== 'active') return;
-
-    this.sampleGrants.update((grants) =>
-      grants.map((item) => (item.id === id ? { ...item, status: 'revoked' } : item)),
-    );
-
-    this.pendingRevokeId.set(null);
-    this.revokeMessage.set(
-      'Sample grant marked as revoked locally. No server permissions were changed.',
-    );
+    this.revokeInProgress.set(true);
+    this.revokeError.set('');
+    try {
+      await this.accessApi.revoke(id, reason);
+      this.pendingRevokeId.set(null);
+      this.revokeMessage.set('Access was revoked successfully.');
+      await this.loadGrants();
+    } catch (error) {
+      this.revokeError.set(this.errorMessage(error, 'The grant could not be revoked. Try again.'));
+    } finally {
+      this.revokeInProgress.set(false);
+    }
   }
 
-  readonly grantsView = signal<'ready' | 'loading' | 'empty' | 'error'>('ready');
-
-  readonly sampleGrants = signal<SampleGrant[]>([
-    {
-      id: 'sample-grant-active',
-      doctor: 'Sample Doctor A',
-      organization: 'Fictional Clinic A',
-      categories: ['prescriptions', 'reports'],
-      allowConsultation: false,
-      expiresAt: '2026-12-01T12:00:00Z',
-      status: 'active',
-    },
-    {
-      id: 'sample-grant-expired',
-      doctor: 'Sample Doctor B',
-      organization: 'Fictional Clinic B',
-      categories: ['history_allergies'],
-      allowConsultation: true,
-      expiresAt: '2026-11-01T12:00:00Z',
-      status: 'expired',
-    },
-    {
-      id: 'sample-grant-revoked',
-      doctor: 'Sample Doctor C',
-      organization: 'Fictional Clinic C',
-      categories: ['measurements_vaccinations'],
-      allowConsultation: false,
-      expiresAt: '2026-12-01T12:00:00Z',
-      status: 'revoked',
-    },
-  ]);
-
-  categoryLabel(code: GrantCategoryCode): string {
-    return this.grantCategories.find((category) => category.code === code)?.label ?? code;
-  }
+  readonly grantsView = signal<'loading' | 'ready' | 'error'>('loading');
+  readonly grants = signal<AccessGrant[]>([]);
+  readonly grantsError = signal('');
+  readonly grantInProgress = signal(false);
+  readonly grantSuccess = signal('');
+  readonly grantCreateError = signal('');
 
   readonly grantError = signal('');
 
@@ -205,6 +174,8 @@ export class PatientDoctorAccess implements OnDestroy {
 
     if (
       this.reviewStatus() !== 'ready' ||
+      !this.resolvedDoctor() ||
+      this.resolvedDoctor()?.verification_status !== 'approved' ||
       !reference ||
       this.codeForm.controls.doctorCode.value.trim() !== reference
     ) {
@@ -245,6 +216,100 @@ export class PatientDoctorAccess implements OnDestroy {
       duration: durationLabels[values.duration],
       allowConsultation: values.allowConsultation,
     });
+    this.grantCreateError.set('');
+  }
+
+  async createGrant(): Promise<void> {
+    const doctor = this.resolvedDoctor();
+    if (
+      !doctor ||
+      !this.grantSummary() ||
+      !this.grantForm.controls.confirmed.value ||
+      this.grantInProgress()
+    )
+      return;
+    this.grantInProgress.set(true);
+    this.grantCreateError.set('');
+    this.grantSuccess.set('');
+    const durationHours: Record<GrantDuration, 24 | 168 | 720> = {
+      '24h': 24,
+      '7d': 168,
+      '30d': 720,
+    };
+    try {
+      await this.accessApi.create({
+        doctor_reference: this.enteredCode(),
+        organization_id: doctor.organization_id ?? null,
+        categories: this.selectedGrantCategories,
+        duration_hours: durationHours[this.grantForm.controls.duration.value],
+        allow_consultation: this.grantForm.controls.allowConsultation.value,
+      });
+      this.grantSuccess.set('Doctor access was granted successfully.');
+      this.grantSummary.set(null);
+      this.grantForm.reset({
+        history_allergies: false,
+        prescriptions: false,
+        reports: false,
+        measurements_vaccinations: false,
+        medication_logs: false,
+        duration: '24h',
+        allowConsultation: false,
+        confirmed: false,
+      });
+      await this.loadGrants();
+    } catch (error) {
+      this.grantCreateError.set(
+        this.errorMessage(error, 'The access grant could not be saved. Try again.'),
+      );
+    } finally {
+      this.grantInProgress.set(false);
+    }
+  }
+
+  async loadGrants(): Promise<void> {
+    this.grantsView.set('loading');
+    this.grantsError.set('');
+    try {
+      const all: AccessGrant[] = [];
+      let page = 1;
+      let total = 0;
+      do {
+        const response = await this.accessApi.list(page++);
+        all.push(...response.items);
+        total = response.total;
+        if (!response.items.length) break;
+      } while (all.length < total);
+      this.grants.set(all);
+      this.grantsView.set('ready');
+    } catch (error) {
+      this.grantsError.set(this.errorMessage(error, 'Access grants could not be loaded.'));
+      this.grantsView.set('error');
+    }
+  }
+
+  grantStatus(item: AccessGrant): GrantStatus {
+    return item.grant.status;
+  }
+  categoryLabel(code: GrantCategory): string {
+    return this.grantCategories.find((item) => item.code === code)?.label ?? code;
+  }
+  grantDoctor(item: AccessGrant): string {
+    if (item.doctor_display_name) return item.doctor_display_name;
+    const doctor = this.resolvedDoctor();
+    return doctor?.user_id === item.grant.professional_user_id
+      ? doctor.display_name
+      : `Doctor (${item.grant.professional_user_id})`;
+  }
+  private errorMessage(error: unknown, fallback: string): string {
+    if (!(error instanceof HttpErrorResponse)) return fallback;
+    if (error.status === 401) return 'Your session has expired. Sign in again and retry.';
+    if (error.status === 403) return 'Your account is not allowed to perform this action.';
+    if (error.status === 404) return 'The doctor or access grant could not be found.';
+    if (error.status === 409)
+      return 'This access grant is no longer active. Refresh the list and retry.';
+    if (!error.status || error.status >= 500)
+      return 'The service is unavailable. Check your connection and retry.';
+    return error.error?.message ?? fallback;
   }
 
   clearGrantReview(): void {
@@ -270,6 +335,10 @@ export class PatientDoctorAccess implements OnDestroy {
   private cameraSession = 0;
   private scanInProgress = false;
   private destroyed = false;
+
+  constructor() {
+    void this.loadGrants();
+  }
 
   async startCamera(): Promise<void> {
     if (
@@ -415,6 +484,7 @@ export class PatientDoctorAccess implements OnDestroy {
       if (reference) {
         captured = true;
         this.codeForm.controls.doctorCode.setValue(reference);
+        this.onReferenceInput();
 
         this.stopCamera();
         this.cameraStatus.set('found');
@@ -476,6 +546,15 @@ export class PatientDoctorAccess implements OnDestroy {
       return;
     }
 
+    if (code.length > DOCTOR_REFERENCE_MAX_LENGTH) {
+      this.codeForm.controls.doctorCode.markAsTouched();
+      this.enteredCode.set('');
+      this.resolvedDoctor.set(null);
+      this.reviewStatus.set('error');
+      this.reviewMessage.set('Doctor QR references must not exceed 256 characters.');
+      return;
+    }
+
     this.enteredCode.set(code);
     this.reviewStatus.set('loading');
     this.reviewMessage.set('Verifying the current doctor identity with the server...');
@@ -515,7 +594,9 @@ export class PatientDoctorAccess implements OnDestroy {
             ? 'Your account is not allowed to verify doctor references.'
             : status === 401
               ? 'Please sign in again to verify this doctor.'
-              : 'The doctor identity service is unavailable. Check your connection and try again.',
+              : status === 422
+                ? 'Doctor QR references must not exceed 256 characters.'
+                : 'The doctor identity service is unavailable. Check your connection and try again.',
       );
     }
   }

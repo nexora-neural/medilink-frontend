@@ -1,0 +1,60 @@
+<div class="heading">
+  <div>
+    <h1>
+      {{
+        privileged
+          ? 'Privileged audit and recovery'
+          : 'Operations and audit'
+      }}
+    </h1>
+
+    <p>
+      Review {{ privileged ? 'privileged' : 'permitted operational' }} activity.
+    </p>
+  </div>
+</div>
+
+<section
+  class="panel"
+  aria-label="Audit activity"
+  [attr.aria-busy]="state() === 'loading'"
+>
+  @if (state() === 'ready' && visibleEvents().length) {
+    <app-audit-event-list [events]="visibleEvents()" />
+  } @else {
+    <app-activity-state
+      [state]="state() === 'ready' ? 'empty' : state()"
+      emptyText="No audit activity."
+      (retry)="reloadPreview()"
+    />
+  }
+
+  @if (state() === 'ready') {
+    <div class="tip">
+      {{
+        privileged
+          ? 'Backup and recovery status: available in sample data.'
+          : 'Failed jobs: none in sample data.'
+      }}
+    </div>
+  }
+</section>
+
+@if (privileged && state() === 'ready') {
+  <p class="preview">Sample preview only.</p>
+
+  @if (retryNotice()) {
+    <p class="notice" role="status">{{ retryNotice() }}</p>
+  }
+
+  <section class="panel" aria-label="Backup evidence">
+    <app-backup-evidence-panel [evidence]="backupEvidence" />
+  </section>
+
+  <section class="panel" aria-label="Background jobs">
+    <app-job-status-panel
+      [jobs]="jobs()"
+      (retryJob)="retryPreviewJob($event)"
+    />
+  </section>
+}
