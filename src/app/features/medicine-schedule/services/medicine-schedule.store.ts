@@ -125,14 +125,20 @@ export class MedicineScheduleStore {
       return false;
     }
 
-    const doseExists = medicine.doseTimes.some((dose) => dose.id === doseId);
+    const dose = medicine.doseTimes.find((item) => item.id === doseId);
 
-    if (!doseExists) {
+    if (!dose) {
       return false;
     }
 
+    const oldTime = dose.time;
+
+    if (oldTime === newTime) {
+      return true;
+    }
+
     const duplicate = medicine.doseTimes.some(
-      (dose) => dose.id !== doseId && dose.time === newTime,
+      (item) => item.id !== doseId && item.time === newTime,
     );
 
     if (duplicate) {
@@ -144,15 +150,63 @@ export class MedicineScheduleStore {
         item.id === medicineId
           ? {
               ...item,
-              doseTimes: item.doseTimes.map((dose) =>
-                dose.id === doseId ? { ...dose, time: newTime } : dose,
+              doseTimes: item.doseTimes.map((itemDose) =>
+                itemDose.id === doseId ? { ...itemDose, time: newTime } : itemDose,
               ),
             }
           : item,
       ),
     );
 
+    this.occurrencesState.update((items) =>
+      items.map((occurrence) => {
+        const isPending =
+          occurrence.status === 'upcoming' ||
+          occurrence.status === 'due' ||
+          occurrence.status === 'unreported';
+
+        if (
+          occurrence.scheduleId !== medicineId ||
+          occurrence.scheduledTime !== oldTime ||
+          !isPending ||
+          !this.isOccurrenceInFuture(
+            occurrence.scheduledDate,
+            occurrence.scheduledTime,
+            occurrence.timezone,
+          )
+        ) {
+          return occurrence;
+        }
+
+        return {
+          ...occurrence,
+          scheduledTime: newTime,
+          reminderSnoozedUntil: null,
+        };
+      }),
+    );
+
     return true;
+  }
+
+  private isOccurrenceInFuture(date: string, time: string, timezone: string): boolean {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date());
+
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+    const currentDateTime =
+      `${values['year']}-${values['month']}-${values['day']}T` +
+      `${values['hour']}:${values['minute']}`;
+
+    return `${date}T${time}` > currentDateTime;
   }
 
   snoozeOccurrence(occurrenceId: string, snoozedUntil: string): boolean {

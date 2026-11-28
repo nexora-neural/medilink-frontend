@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { ActiveRoleService } from './core/context/active-role.service';
@@ -118,6 +119,11 @@ describe('workspace routing', () => {
     }
 
     TestBed.inject(ActiveRoleService).setAccountRoles('demo-doctor', ['doctor']);
+
+    await harness.navigateByUrl('/workspace/patient/medications');
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+    expect(harness.routeNativeElement?.textContent).toContain('Access denied');
+
     await harness.navigateByUrl('/workspace/patient/reports');
     expect(TestBed.inject(Router).url).toBe('/access-denied');
     expect(harness.routeNativeElement?.textContent).toContain('Access denied');

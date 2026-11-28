@@ -104,6 +104,7 @@ const rolePages: Route[] = [
       ),
     canActivate: [roleGuard],
     title: 'Medicine schedule | MediLink',
+    data: { allowedRoles: ['Patient'] },
   },
   {
     path: 'patient/prescriptions',
