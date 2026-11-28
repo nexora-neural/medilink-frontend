@@ -1,0 +1,231 @@
+
+<section class="dose-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">MEDICATION MANAGEMENT</span>
+      <h1>Dose reminders</h1>
+      <p>Review your medication schedule and manage upcoming reminders.</p>
+    </div>
+
+    <button class="refresh-button" type="button" (click)="load()">
+      <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+      Refresh
+    </button>
+  </header>
+
+  <div class="demo-notice" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <p>
+      <strong>Demo mode:</strong>
+      These are sample dose occurrences. Changes are stored locally and are not
+      sent to the MediLink server.
+    </p>
+  </div>
+
+  <section class="summary-grid" aria-label="Dose occurrence summary">
+    <article class="summary-card">
+      <span class="summary-icon upcoming-icon material-symbols-outlined" aria-hidden="true">
+        schedule
+      </span>
+      <div>
+        <span>Upcoming</span>
+        <strong>{{ store.upcomingCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-icon due-icon material-symbols-outlined" aria-hidden="true">
+        notifications_active
+      </span>
+      <div>
+        <span>Due now</span>
+        <strong>{{ store.dueCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-icon unreported-icon material-symbols-outlined" aria-hidden="true">
+        warning
+      </span>
+      <div>
+        <span>Unreported</span>
+        <strong>{{ store.unreportedCount() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="occurrences-section">
+    <div class="section-heading">
+      <div>
+        <h2>Dose occurrences</h2>
+        <p>View and manage your scheduled medication reminders.</p>
+      </div>
+      <span class="result-count">
+        {{ filteredOccurrences().length }} occurrences
+      </span>
+    </div>
+
+    <div class="filter-tabs" role="group" aria-label="Filter dose occurrences">
+      <button
+        type="button"
+        [class.active]="activeFilter() === 'all'"
+        [attr.aria-pressed]="activeFilter() === 'all'"
+        (click)="setFilter('all')"
+      >
+        All
+      </button>
+
+      <button
+        type="button"
+        [class.active]="activeFilter() === 'upcoming'"
+        [attr.aria-pressed]="activeFilter() === 'upcoming'"
+        (click)="setFilter('upcoming')"
+      >
+        Upcoming
+      </button>
+
+      <button
+        type="button"
+        [class.active]="activeFilter() === 'due'"
+        [attr.aria-pressed]="activeFilter() === 'due'"
+        (click)="setFilter('due')"
+      >
+        Due
+      </button>
+
+      <button
+        type="button"
+        [class.active]="activeFilter() === 'unreported'"
+        [attr.aria-pressed]="activeFilter() === 'unreported'"
+        (click)="setFilter('unreported')"
+      >
+        Unreported
+      </button>
+    </div>
+
+    @if (store.loading()) {
+      <app-ui-state
+        kind="loading"
+        title="Loading dose occurrences"
+        description="Please wait while your reminders are loaded."
+      />
+    } @else if (store.error()) {
+      <app-ui-state
+        kind="error"
+        title="Unable to load reminders"
+        [description]="store.error()"
+        actionLabel="Try again"
+        (action)="load()"
+      />
+    } @else if (filteredOccurrences().length === 0) {
+      <app-ui-state
+        kind="empty"
+        title="No dose occurrences found"
+        description="There are no occurrences in this category right now."
+      />
+    } @else {
+      <div class="occurrence-list">
+        @for (occurrence of filteredOccurrences(); track trackById($index, occurrence)) {
+          <article class="occurrence-card">
+            <div class="occurrence-main">
+              <div class="medicine-avatar" aria-hidden="true">
+                <span class="material-symbols-outlined">medication</span>
+              </div>
+
+              <div class="medicine-details">
+                <div class="medicine-title-row">
+                  <h3>{{ occurrence.medicineName }}</h3>
+                  <span class="status-badge" [class]="occurrence.status">
+                    {{ occurrence.status }}
+                  </span>
+                </div>
+
+                <p class="medicine-strength">
+                  {{ occurrence.strength }} · {{ occurrence.dosage }}
+                </p>
+
+                <p class="medicine-instructions">
+                  <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                  {{ occurrence.instructions }}
+                </p>
+
+                <div class="schedule-details">
+                  <span>
+                    <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                    {{ occurrence.scheduledFor | date: 'mediumDate' }}
+                  </span>
+
+                  <span>
+                    <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                    {{ occurrence.scheduledFor | date: 'shortTime' }}
+                  </span>
+                </div>
+
+                @if (occurrence.snoozedUntil) {
+                  <p class="snooze-information">
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                      notifications_paused
+                    </span>
+                    Reminder snoozed until
+                    {{ occurrence.snoozedUntil | date: 'shortTime' }}
+                  </p>
+                }
+              </div>
+            </div>
+
+            @if (isSnoozeEligible(occurrence.status)) {
+              <div class="occurrence-actions">
+                <button
+                  type="button"
+                  class="snooze-toggle"
+                  [attr.aria-expanded]="selectedOccurrenceId() === occurrence.id"
+                  [attr.aria-controls]="'snooze-options-' + occurrence.id"
+                  (click)="selectOccurrence(occurrence.id)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    notifications_paused
+                  </span>
+                  Snooze reminder
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    {{ selectedOccurrenceId() === occurrence.id ? 'expand_less' : 'expand_more' }}
+                  </span>
+                </button>
+
+                @if (selectedOccurrenceId() === occurrence.id) {
+                  <div class="snooze-options" [id]="'snooze-options-' + occurrence.id">
+                    <span class="snooze-label">Remind me again in:</span>
+
+                    <div class="duration-buttons">
+                      @for (minutes of selectedDurations; track minutes) {
+                        <button
+                          type="button"
+                          (click)="snooze(occurrence.id, minutes)"
+                        >
+                          {{ minutes }} min
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  @if (feedback()) {
+    <div
+      class="feedback-message"
+      [class.feedback-error]="feedbackError()"
+      [attr.role]="feedbackError() ? 'alert' : 'status'"
+      aria-live="polite"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">
+        {{ feedbackError() ? 'error_outline' : 'check_circle' }}
+      </span>
+      {{ feedback() }}
+    </div>
+  }
+</section>
