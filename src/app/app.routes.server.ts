@@ -2,6 +2,7 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   { path: 'workspace', renderMode: RenderMode.Client },
+  { path: 'workspace/patient/medications', renderMode: RenderMode.Client },
   {
     path: 'workspace/admin/audit',
     renderMode: RenderMode.Client,
