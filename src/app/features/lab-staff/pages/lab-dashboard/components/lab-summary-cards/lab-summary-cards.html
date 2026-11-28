@@ -1,0 +1,22 @@
+<div class="stats" aria-label="Laboratory activity summary">
+  <div class="stat accent">
+    <span>Open sample requests</span>
+    <strong>{{ summary().openRequests }}</strong>
+    <small>Patient-created requests</small>
+  </div>
+  <div class="stat">
+    <span>Reports published</span>
+    <strong>{{ summary().publishedReports }}</strong>
+    <small>Current session</small>
+  </div>
+  <div class="stat">
+    <span>Laboratory</span>
+    <strong class="metric">{{ summary().laboratory }}</strong>
+    <small>Associated laboratory</small>
+  </div>
+  <div class="stat">
+    <span>Verification</span>
+    <strong class="verified">{{ summary().verification }}</strong>
+    <small>Professional account</small>
+  </div>
+</div>

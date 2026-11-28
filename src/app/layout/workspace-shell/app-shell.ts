@@ -95,7 +95,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Verification', icon: 'verified_user', path: '/workspace/professional-verification' },
   ],
   'Lab Staff': [
-    { label: 'Overview', icon: 'dashboard', path: '/workspace' },
+    {
+      label: 'Overview',
+      icon: 'dashboard',
+      path: '/workspace/lab-staff/dashboard',
+    },
     { label: 'Laboratory reports', icon: 'science', path: '/workspace/lab-staff/reports' },
     {
       label: 'Resolve upload request',

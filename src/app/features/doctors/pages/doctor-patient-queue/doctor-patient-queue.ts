@@ -1,190 +1,227 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  DoctorPatientQueueApi,
+  QueueEntry,
+  Consultation,
+} from './doctor-patient-queue-api.service';
 
-type QueueStatus = 'waiting' | 'in-consultation' | 'completed';
+type QueueStatus = 'waiting' | 'in-consultation' | 'completed' | 'unknown';
 type AccessStatus = 'active' | 'expired' | 'revoked';
-type ConsultationPermission = 'granted' | 'not-granted' | 'expired';
-type PreviewState = 'ready' | 'loading' | 'error';
-
+type ConsultationPermission = 'granted' | 'not-granted';
 interface QueuePatient {
   id: string;
   name: string;
-  age: number;
-  gender: string;
   referenceNumber: string;
   lastVisit: string;
-  accessLabel: string;
   readAccess: AccessStatus;
   consultationPermission: ConsultationPermission;
   consultationContext: string;
   status: QueueStatus;
+  grantId: string;
+  grantIds: string[];
+  consultationId: string | null;
 }
-
 @Component({
   selector: 'app-doctor-patient-queue',
   standalone: true,
-  imports: [],
+  imports: [DatePipe, RouterLink],
   templateUrl: './doctor-patient-queue.html',
   styleUrl: './doctor-patient-queue.scss',
 })
 export class DoctorPatientQueue {
   private readonly route = inject(ActivatedRoute);
-
+  private readonly api = inject(DoctorPatientQueueApi);
   readonly searchTerm = signal('');
   readonly selectedFilter = signal<'all' | QueueStatus>('all');
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly errorMessage = signal('');
   readonly validationMessage = signal('');
-
-  // Temporary preview data only.
-  // ML-70 will replace this with verified API data.
-  readonly patients = signal<QueuePatient[]>([
-    {
-      id: 'P-1042',
-      name: 'Nadeesha Perera',
-      age: 42,
-      gender: 'Female',
-      referenceNumber: 'ML-P-1042',
-      lastVisit: '18 Nov 2026',
-      accessLabel: 'Read access active',
-      readAccess: 'active',
-      consultationPermission: 'granted',
-      consultationContext: 'Follow-up consultation',
-      status: 'waiting',
-    },
-    {
-      id: 'P-1085',
-      name: 'Kasun Fernando',
-      age: 35,
-      gender: 'Male',
-      referenceNumber: 'ML-P-1085',
-      lastVisit: '20 Nov 2026',
-      accessLabel: 'Read access active',
-      readAccess: 'active',
-      consultationPermission: 'granted',
-      consultationContext: 'General consultation',
-      status: 'in-consultation',
-    },
-    {
-      id: 'P-1120',
-      name: 'Amaya Silva',
-      age: 29,
-      gender: 'Female',
-      referenceNumber: 'ML-P-1120',
-      lastVisit: '15 Nov 2026',
-      accessLabel: 'Read access active',
-      readAccess: 'active',
-      consultationPermission: 'not-granted',
-      consultationContext: 'Routine follow-up',
-      status: 'completed',
-    },
-  ]);
-
+  readonly actionInProgress = signal<string | null>(null);
+  readonly patients = signal<QueuePatient[]>([]);
+  readonly consultationHistory = signal<Record<string, Consultation[]>>({});
   readonly filteredPatients = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const filter = this.selectedFilter();
-
-    return this.patients().filter((patient) => {
-      const matchesSearch =
-        patient.name.toLowerCase().includes(term) ||
-        patient.referenceNumber.toLowerCase().includes(term);
-
-      const matchesFilter = filter === 'all' || patient.status === filter;
-
-      return matchesSearch && matchesFilter;
-    });
+    const term = this.searchTerm().trim().toLowerCase(),
+      filter = this.selectedFilter();
+    return this.patients().filter(
+      (p) =>
+        (p.name.toLowerCase().includes(term) || p.referenceNumber.toLowerCase().includes(term)) &&
+        (filter === 'all' || p.status === filter),
+    );
   });
-
   readonly waitingCount = computed(
-    () => this.patients().filter((patient) => patient.status === 'waiting').length,
+    () => this.patients().filter((p) => p.status === 'waiting').length,
   );
-
   readonly consultationCount = computed(
-    () => this.patients().filter((patient) => patient.status === 'in-consultation').length,
+    () => this.patients().filter((p) => p.status === 'in-consultation').length,
   );
-
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
-      const preview = params.get('preview');
-
-      if (preview === 'loading' || preview === 'error') {
-        this.setPreviewState(preview);
-      } else {
-        this.setPreviewState('ready');
-      }
+      if (params.has('preview')) {
+        this.errorMessage.set('Preview links are disabled for the live patient queue.');
+        this.loading.set(false);
+      } else void this.loadQueue();
     });
   }
-
-  setPreviewState(state: PreviewState): void {
-    this.loading.set(state === 'loading');
-    this.errorMessage.set(
-      state === 'error' ? 'The patient queue could not be loaded. Please try again.' : '',
-    );
+  async loadQueue(): Promise<void> {
+    this.loading.set(true);
+    this.errorMessage.set('');
+    try {
+      const all: QueueEntry[] = [];
+      let page = 1,
+        total = 0;
+      do {
+        const result = await this.api.list(page++);
+        all.push(...result.items);
+        total = result.total;
+        if (!result.items.length) break;
+      } while (all.length < total);
+      const grouped = new Map<string, QueuePatient & { categories: Set<string> }>();
+      for (const x of all) {
+        const id = x.patient.patient_user_id;
+        let patient = grouped.get(id);
+        if (!patient) {
+          patient = {
+            id,
+            name: x.patient.display_name,
+            referenceNumber: id,
+            lastVisit: '—',
+            // The queue endpoint only returns grants that are currently active.
+            // The server remains authoritative for expiry and revocation decisions.
+            readAccess: 'active',
+            consultationPermission: 'not-granted',
+            consultationContext: '',
+            status: 'unknown',
+            grantId: x.grant_id,
+            grantIds: [],
+            consultationId: null,
+            categories: new Set<string>(),
+          };
+          grouped.set(id, patient);
+        }
+        patient.grantIds.push(x.grant_id);
+        x.categories.forEach((category) => patient.categories.add(category));
+        if (x.allow_consultation) {
+          patient.consultationPermission = 'granted';
+          patient.grantId = x.grant_id;
+        }
+      }
+      const active = [...grouped.values()].map(({ categories, ...patient }) => ({
+        ...patient,
+        consultationContext: [...categories].join(', '),
+      }));
+      this.patients.set(active);
+      this.consultationHistory.set({});
+      for (const p of active) {
+        await this.refreshPatientHistory(p.id);
+      }
+    } catch (e) {
+      this.patients.set([]);
+      this.errorMessage.set(this.message(e, 'The patient queue could not be loaded.'));
+    } finally {
+      this.loading.set(false);
+    }
   }
-
+  async refreshPatientHistory(id: string): Promise<void> {
+    const p = this.patients().find((patient) => patient.id === id);
+    if (!p) return;
+    this.patchPatient(id, { status: 'unknown', consultationId: null });
+    try {
+      const history = await this.loadAllConsultations(id);
+      const current = history.filter((c) => p.grantIds.includes(c.grant_id));
+      this.consultationHistory.update((h) => ({ ...h, [id]: history }));
+      const running = current.find((c) => !c.ended_at);
+      this.patchPatient(
+        id,
+        running
+          ? { status: 'in-consultation', consultationId: running.id, grantId: running.grant_id }
+          : { status: current.length ? 'completed' : 'waiting', consultationId: null },
+      );
+    } catch {
+      this.patchPatient(id, { status: 'unknown', consultationId: null });
+    }
+  }
   retry(): void {
-    this.setPreviewState('ready');
+    void this.loadQueue();
   }
-
-  updateSearch(value: string): void {
-    this.searchTerm.set(value);
+  updateSearch(v: string): void {
+    this.searchTerm.set(v);
   }
-
-  updateFilter(value: 'all' | QueueStatus): void {
-    this.selectedFilter.set(value);
+  updateFilter(v: 'all' | QueueStatus): void {
+    this.selectedFilter.set(v);
   }
-
-  startConsultation(patientId: string): void {
-    const patient = this.patients().find((item) => item.id === patientId);
-
-    if (!patient) {
-      this.validationMessage.set('Patient could not be found.');
-      return;
-    }
-
-    if (patient.status !== 'waiting') {
-      this.validationMessage.set('Consultation can only be started for a waiting patient.');
-      return;
-    }
-
-    if (patient.readAccess !== 'active') {
+  async startConsultation(id: string): Promise<void> {
+    const p = this.patients().find((x) => x.id === id);
+    if (!p || p.status !== 'waiting') return;
+    if (p.readAccess !== 'active' || p.consultationPermission !== 'granted') {
       this.validationMessage.set(
-        'Active patient read access is required before starting a consultation.',
+        'Active patient record access and separate consultation permission are both required.',
       );
       return;
     }
-
-    if (patient.consultationPermission !== 'granted') {
-      this.validationMessage.set('The patient has not granted consultation permission.');
-      return;
-    }
-
-    this.patients.update((patients) =>
-      patients.map((item) =>
-        item.id === patientId ? { ...item, status: 'in-consultation' } : item,
-      ),
-    );
-
+    this.actionInProgress.set(id);
     this.validationMessage.set('');
+    try {
+      const c = await this.api.start(p.grantId);
+      this.patchPatient(id, { status: 'in-consultation', consultationId: c.id });
+      await this.loadHistory(p);
+    } catch (e) {
+      this.validationMessage.set(
+        this.message(e, 'Consultation could not be started. Refresh and check access.'),
+      );
+    } finally {
+      this.actionInProgress.set(null);
+    }
   }
-
-  endConsultation(patientId: string): void {
-    const patient = this.patients().find((item) => item.id === patientId);
-
-    if (!patient) {
-      this.validationMessage.set('Patient could not be found.');
-      return;
-    }
-
-    if (patient.status !== 'in-consultation') {
-      this.validationMessage.set('Only an active consultation can be ended.');
-      return;
-    }
-
-    this.patients.update((patients) =>
-      patients.map((item) => (item.id === patientId ? { ...item, status: 'completed' } : item)),
-    );
-
+  async endConsultation(id: string): Promise<void> {
+    const p = this.patients().find((x) => x.id === id);
+    if (!p?.consultationId || p.status !== 'in-consultation') return;
+    this.actionInProgress.set(id);
     this.validationMessage.set('');
+    try {
+      await this.api.end(p.consultationId);
+      this.patchPatient(id, { status: 'completed', consultationId: null });
+      await this.loadHistory(p);
+    } catch (e) {
+      this.validationMessage.set(
+        this.message(e, 'Consultation could not be ended. Refresh and retry.'),
+      );
+    } finally {
+      this.actionInProgress.set(null);
+    }
+  }
+  private async loadHistory(p: QueuePatient): Promise<void> {
+    try {
+      const history = await this.loadAllConsultations(p.id);
+      this.consultationHistory.update((h) => ({ ...h, [p.id]: history }));
+    } catch {
+      this.patchPatient(p.id, { status: 'unknown', consultationId: null });
+    }
+  }
+  private async loadAllConsultations(patientId: string): Promise<Consultation[]> {
+    const all: Consultation[] = [];
+    let page = 1,
+      total = 0;
+    do {
+      const result = await this.api.listConsultations(patientId, page++);
+      all.push(...result.items);
+      total = result.total;
+      if (!result.items.length) break;
+    } while (all.length < total);
+    return all;
+  }
+  private patchPatient(id: string, patch: Partial<QueuePatient>): void {
+    this.patients.update((items) => items.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+  private message(e: unknown, fallback: string): string {
+    const err = e as { status?: number; error?: { message?: string } };
+    if (err.status === 401) return 'Sign in again to view the patient queue.';
+    if (err.status === 403) return 'Your account does not have access to this patient or action.';
+    if (err.status === 404 || err.status === 409)
+      return 'The patient permission is no longer available. Refresh the queue and try again.';
+    if (!err.status || err.status >= 500)
+      return 'The service is unavailable. Check the connection and retry.';
+    return err.error?.message ?? fallback;
   }
 }
