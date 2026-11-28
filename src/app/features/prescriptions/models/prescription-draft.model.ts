@@ -47,6 +47,22 @@ export interface PrescriptionDraft {
   history?: PrescriptionHistoryEntry[];
 }
 
+export interface DoctorFavorite {
+  id: string;
+  ownerDoctorId: string;
+  item: PrescriptionItem;
+  createdAt: string;
+}
+
+export interface PrescriptionTemplate {
+  id: string;
+  ownerDoctorId: string;
+  name: string;
+  items: PrescriptionItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function canEditPrescriptionDraft(
   prescription: PrescriptionDraft,
   doctorId: string,

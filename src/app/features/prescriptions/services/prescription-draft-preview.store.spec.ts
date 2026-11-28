@@ -79,6 +79,68 @@ describe('PrescriptionDraftPreviewStore', () => {
     expect(store.find('unknown-id')).toBeNull();
   });
 
+  it('keeps favourites scoped to the doctor and returns defensive copies', () => {
+    const item = validInput().items[0];
+    const saved = store.addFavorite('doctor-a', item);
+    const result = store.listFavorites('doctor-a');
+    result[0].item.medicineName = 'Changed outside the store';
+
+    expect(saved.ownerDoctorId).toBe('doctor-a');
+    expect(store.listFavorites('doctor-a')[0].item.medicineName).toBe(item.medicineName);
+    expect(store.listFavorites('doctor-b')).toEqual([]);
+    expect(() => store.addFavorite('doctor-a', item)).toThrow(
+      'This medicine is already in your favourites.',
+    );
+  });
+
+  it('creates and edits owner-scoped reusable templates after validation', () => {
+    const items = validInput().items;
+    const template = store.saveTemplate('doctor-a', '  Morning set  ', items);
+
+    expect(template.name).toBe('Morning set');
+    expect(store.listTemplates('doctor-a')).toEqual([template]);
+    expect(store.listTemplates('doctor-b')).toEqual([]);
+
+    const changed = structuredClone(items);
+    changed[0].dose = 'Updated sample dose';
+    const updated = store.saveTemplate('doctor-a', 'Morning set v2', changed, template.id);
+    expect(updated.id).toBe(template.id);
+    expect(updated.name).toBe('Morning set v2');
+    expect(updated.items[0].dose).toBe('Updated sample dose');
+    expect(() => store.saveTemplate('doctor-b', 'Tamper', changed, template.id)).toThrow(
+      'Only the owner doctor can edit this template.',
+    );
+  });
+
+  it('issues only a validated owner draft in the local preview after explicit confirmation', () => {
+    const source = store.find('sample-active-01')!;
+    const draft = store.createLinkedDraft(source.id, 'renew', 'Synthetic preview renewal reason.');
+
+    const issued = store.issuePreviewDraft(draft.id);
+    expect(issued.status).toBe('active');
+    expect(store.find(draft.id)?.status).toBe('active');
+    expect(store.find(source.id)?.status).toBe('active');
+    expect(() => store.issuePreviewDraft(source.id)).toThrow(
+      'Only the owner doctor can issue an editable sample draft.',
+    );
+    expect(() => store.issuePreviewDraft('sample-other-owner-01')).toThrow(
+      'Only the owner doctor can issue an editable sample draft.',
+    );
+  });
+
+  it('rejects incomplete or unnamed templates and leaves the library unchanged', () => {
+    const invalid = validInput().items;
+    invalid[0].dose = '';
+
+    expect(() => store.saveTemplate('doctor-a', 'Template', invalid)).toThrow(
+      'Medicine 1: complete medicine, dose, route and frequency.',
+    );
+    expect(() => store.saveTemplate('doctor-a', '  ', validInput().items)).toThrow(
+      'Enter a template name between 1 and 80 characters.',
+    );
+    expect(store.listTemplates('doctor-a')).toEqual([]);
+  });
+
   it('rejects a draft with no medicines and preserves saved data', () => {
     const before = store.list();
     const input = validInput();
@@ -163,8 +225,12 @@ describe('PrescriptionDraftPreviewStore', () => {
     input.items[0].instructions = 'Changed synthetic instructions.';
 
     store.save('sample-draft-01', input);
+    store.addFavorite('sample-doctor-01', input.items[0]);
+    store.saveTemplate('sample-doctor-01', 'Sample set', input.items);
     store.reset();
 
     expect(store.list()).toEqual(original);
+    expect(store.listFavorites('sample-doctor-01')).toEqual([]);
+    expect(store.listTemplates('sample-doctor-01')).toEqual([]);
   });
 });

@@ -5,6 +5,8 @@ import {
   PrescriptionDraft,
   PrescriptionHistoryEntry,
   PrescriptionItem,
+  DoctorFavorite,
+  PrescriptionTemplate,
 } from '../models/prescription-draft.model';
 
 export interface PrescriptionDraftInput {
@@ -95,9 +97,11 @@ function cleanInput(input: PrescriptionDraftInput): PrescriptionDraftInput {
   };
 }
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class PrescriptionDraftPreviewStore {
   private readonly prescriptions = signal<PrescriptionDraft[]>(createSamplePrescriptions());
+  private readonly favorites = signal<DoctorFavorite[]>([]);
+  private readonly templates = signal<PrescriptionTemplate[]>([]);
 
   list(): PrescriptionDraft[] {
     return structuredClone(this.prescriptions());
@@ -107,6 +111,105 @@ export class PrescriptionDraftPreviewStore {
     const prescription = this.prescriptions().find((item) => item.id === id);
 
     return prescription ? structuredClone(prescription) : null;
+  }
+
+  listFavorites(doctorId: string): DoctorFavorite[] {
+    return structuredClone(
+      this.favorites().filter((favorite) => favorite.ownerDoctorId === doctorId),
+    );
+  }
+
+  addFavorite(doctorId: string, item: PrescriptionItem): DoctorFavorite {
+    if (!doctorId.trim()) throw new Error('A doctor account is required to save a favourite.');
+
+    const normalized = cleanInput({ startsOn: '2026-01-01', endsOn: '2026-01-01', items: [item] })
+      .items[0];
+    const problems = draftProblems({
+      startsOn: '2026-01-01',
+      endsOn: '2026-01-01',
+      items: [normalized],
+    });
+    if (problems.length) throw new Error(problems.join(' '));
+
+    const duplicate = this.favorites().some(
+      (favorite) =>
+        favorite.ownerDoctorId === doctorId &&
+        favorite.item.medicineName.toLocaleLowerCase() ===
+          normalized.medicineName.toLocaleLowerCase() &&
+        favorite.item.dose.toLocaleLowerCase() === normalized.dose.toLocaleLowerCase() &&
+        favorite.item.route.toLocaleLowerCase() === normalized.route.toLocaleLowerCase() &&
+        favorite.item.frequency.toLocaleLowerCase() === normalized.frequency.toLocaleLowerCase(),
+    );
+    if (duplicate) throw new Error('This medicine is already in your favourites.');
+
+    const favorite: DoctorFavorite = {
+      id: `favorite-${crypto.randomUUID()}`,
+      ownerDoctorId: doctorId,
+      item: { ...normalized, id: `favorite-item-${crypto.randomUUID()}` },
+      createdAt: new Date().toISOString(),
+    };
+    this.favorites.update((items) => [...items, favorite]);
+    return structuredClone(favorite);
+  }
+
+  removeFavorite(doctorId: string, id: string): void {
+    this.favorites.update((items) =>
+      items.filter((favorite) => favorite.id !== id || favorite.ownerDoctorId !== doctorId),
+    );
+  }
+
+  listTemplates(doctorId: string): PrescriptionTemplate[] {
+    return structuredClone(
+      this.templates().filter((template) => template.ownerDoctorId === doctorId),
+    );
+  }
+
+  saveTemplate(
+    doctorId: string,
+    name: string,
+    items: PrescriptionItem[],
+    id?: string,
+  ): PrescriptionTemplate {
+    if (!doctorId.trim()) throw new Error('A doctor account is required to save a template.');
+    const cleanName = name.trim();
+    if (!cleanName || cleanName.length > 80) {
+      throw new Error('Enter a template name between 1 and 80 characters.');
+    }
+
+    const cleanItems = cleanInput({ startsOn: '2026-01-01', endsOn: '2026-01-01', items }).items;
+    const problems = draftProblems({
+      startsOn: '2026-01-01',
+      endsOn: '2026-01-01',
+      items: cleanItems,
+    });
+    if (problems.length) throw new Error(problems.join(' '));
+
+    const existing = id ? this.templates().find((template) => template.id === id) : undefined;
+    if (id && (!existing || existing.ownerDoctorId !== doctorId)) {
+      throw new Error('Only the owner doctor can edit this template.');
+    }
+
+    const timestamp = new Date().toISOString();
+    const template: PrescriptionTemplate = {
+      id: existing?.id ?? `template-${crypto.randomUUID()}`,
+      ownerDoctorId: doctorId,
+      name: cleanName,
+      items: cleanItems,
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+    this.templates.update((all) =>
+      existing
+        ? all.map((item) => (item.id === existing.id ? template : item))
+        : [...all, template],
+    );
+    return structuredClone(template);
+  }
+
+  removeTemplate(doctorId: string, id: string): void {
+    this.templates.update((items) =>
+      items.filter((template) => template.id !== id || template.ownerDoctorId !== doctorId),
+    );
   }
 
   save(id: string, input: PrescriptionDraftInput): PrescriptionDraft {
@@ -257,7 +360,31 @@ export class PrescriptionDraftPreviewStore {
     return structuredClone(draft);
   }
 
+  issuePreviewDraft(id: string): PrescriptionDraft {
+    const existing = this.prescriptions().find((item) => item.id === id);
+    if (!existing || !canEditPrescriptionDraft(existing, SAMPLE_DOCTOR_ID)) {
+      throw new Error('Only the owner doctor can issue an editable sample draft.');
+    }
+
+    const problems = draftProblems({
+      startsOn: existing.startsOn,
+      endsOn: existing.endsOn,
+      items: existing.items,
+    });
+    if (problems.length) throw new Error(problems.join(' '));
+
+    const updated: PrescriptionDraft = {
+      ...existing,
+      status: 'active',
+      updatedAt: new Date().toISOString(),
+    };
+    this.prescriptions.update((items) => items.map((item) => (item.id === id ? updated : item)));
+    return structuredClone(updated);
+  }
+
   reset(): void {
     this.prescriptions.set(createSamplePrescriptions());
+    this.favorites.set([]);
+    this.templates.set([]);
   }
 }

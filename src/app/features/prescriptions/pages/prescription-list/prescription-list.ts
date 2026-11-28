@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { SAMPLE_DOCTOR_ID } from '../../data/prescription-draft.samples';
@@ -22,12 +22,19 @@ import { PrescriptionDraftPreviewStore } from '../../services/prescription-draft
 })
 export class PrescriptionList {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly roles = inject(ActiveRoleService);
   private readonly store = inject(PrescriptionDraftPreviewStore);
 
   readonly pageState = signal<PrescriptionPageState>('ready');
   readonly searchTerm = signal('');
   readonly statusFilter = signal('all');
+  readonly favorites = computed(() => this.store.listFavorites(SAMPLE_DOCTOR_ID));
+  readonly templates = computed(() => this.store.listTemplates(SAMPLE_DOCTOR_ID));
+  readonly renewalId = signal('');
+  readonly renewalReason = signal('');
+  readonly renewalError = signal('');
+  readonly renewalPending = signal(false);
   readonly statusLabels: Record<PrescriptionStatus, string> = {
     draft: 'Draft',
     active: 'Active',
@@ -80,6 +87,70 @@ export class PrescriptionList {
 
   canEdit(prescription: PrescriptionDraft): boolean {
     return this.permitted() && canEditPrescriptionDraft(prescription, SAMPLE_DOCTOR_ID);
+  }
+
+  canRenew(prescription: PrescriptionDraft): boolean {
+    return (
+      this.permitted() &&
+      prescription.source === 'doctor' &&
+      prescription.ownerDoctorId === SAMPLE_DOCTOR_ID &&
+      (prescription.status === 'active' || prescription.status === 'completed')
+    );
+  }
+
+  openRenewal(prescription: PrescriptionDraft): void {
+    if (!this.canRenew(prescription)) return;
+    this.renewalId.set(prescription.id);
+    this.renewalReason.set('');
+    this.renewalError.set('');
+  }
+
+  cancelRenewal(): void {
+    if (this.renewalPending()) return;
+    this.renewalId.set('');
+    this.renewalReason.set('');
+    this.renewalError.set('');
+  }
+
+  async createRenewalDraft(prescription: PrescriptionDraft): Promise<void> {
+    if (!this.canRenew(prescription) || this.renewalId() !== prescription.id) return;
+    const reason = this.renewalReason().trim();
+    if (!reason || reason.length > 1000) {
+      this.renewalError.set('Enter a reason between 1 and 1000 characters.');
+      return;
+    }
+
+    this.renewalPending.set(true);
+    this.renewalError.set('');
+    try {
+      const draft = this.store.createLinkedDraft(prescription.id, 'renew', reason);
+      const navigated = await this.router.navigate([
+        '/workspace/doctor/prescriptions',
+        draft.id,
+        'edit',
+      ]);
+      if (!navigated) {
+        this.renewalError.set(
+          'A sample draft was created. Open it from the prescription list to continue editing.',
+        );
+      }
+    } catch (error) {
+      this.renewalError.set(
+        error instanceof Error ? error.message : 'Unable to prepare a sample renewal draft.',
+      );
+    } finally {
+      this.renewalPending.set(false);
+    }
+  }
+
+  removeFavorite(id: string): void {
+    if (!this.permitted()) return;
+    this.store.removeFavorite(SAMPLE_DOCTOR_ID, id);
+  }
+
+  removeTemplate(id: string): void {
+    if (!this.permitted()) return;
+    this.store.removeTemplate(SAMPLE_DOCTOR_ID, id);
   }
 
   retry(): void {

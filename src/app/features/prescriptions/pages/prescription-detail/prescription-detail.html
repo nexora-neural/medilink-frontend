@@ -11,6 +11,14 @@
     preview cannot issue a real prescription.
   </aside>
 
+  @if (prescription()?.previousPrescriptionId && editable()) {
+    <aside class="preview-notice renewal-note" role="note">
+      <strong>Renewal draft only.</strong> This editable copy stays a draft until a doctor completes
+      final review and explicitly confirms the local issue preview. The preview does not clinically
+      verify or send a prescription.
+    </aside>
+  }
+
   @if (!permitted() || pageState() === 'denied') {
     <section class="panel">
       <h2>Access unavailable</h2>
@@ -72,9 +80,14 @@
       </dl>
 
       @if (editable()) {
-        <a [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'edit']">
-          Edit draft
-        </a>
+        <div class="actions">
+          <a [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'edit']">
+            Edit draft
+          </a>
+          <a [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'issue']">
+            Review and issue preview
+          </a>
+        </div>
       } @else {
         <p>
           Read-only sample. Editing is available only for the owner doctor's doctor-source drafts.

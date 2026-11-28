@@ -76,6 +76,49 @@ select {
   gap: 16px;
 }
 
+.library-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.library-items {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.renewal-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #b7d8e8;
+  border-radius: 12px;
+  background: #f2f9fc;
+}
+
+.renewal-form h4,
+.renewal-form p {
+  margin: 0;
+}
+
+.renewal-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid #adbed1;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.renewal-form [role='alert'] {
+  color: #b42318;
+}
+
 .prescription-card {
   padding: 20px;
   border: 1px solid #d6e3ef;
@@ -161,11 +204,14 @@ button {
   }
 
   .filters,
-  dl {
+  dl,
+  .library-overview {
     grid-template-columns: 1fr;
   }
 
-  .actions a {
+  .actions a,
+  .actions button,
+  .renewal-form .actions button {
     width: 100%;
   }
 }

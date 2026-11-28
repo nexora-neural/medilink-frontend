@@ -11,6 +11,14 @@
     samples. No real prescription is issued.
   </aside>
 
+  @if (prescription()?.previousPrescriptionId) {
+    <aside class="preview-notice renewal-note" role="note">
+      <strong>Renewal draft.</strong> Review and edit every copied item. Saving keeps it in draft
+      status; a doctor must separately complete the final review and explicitly confirm the local
+      issue preview.
+    </aside>
+  }
+
   @if (!permitted() || pageState() === 'denied') {
     <section class="panel">
       <h2>Access unavailable</h2>
@@ -41,6 +49,77 @@
       <h2>{{ prescription()?.patientName }}</h2>
       <p>Patient reference: {{ prescription()?.patientReference }}</p>
       <p>Consultation: {{ prescription()?.consultationId }}</p>
+    </section>
+
+    <section class="panel library-panel" aria-labelledby="library-heading">
+      <h2 id="library-heading">Your favourites and prescription templates</h2>
+      <p>
+        These reusable sample items belong to your doctor workspace and remain editable. Adding one
+        only changes this local draft preview; nothing is clinically verified or issued.
+      </p>
+
+      <div class="library-columns">
+        <section aria-labelledby="favorites-heading">
+          <h3 id="favorites-heading">Favourites</h3>
+          @for (favorite of favorites(); track favorite.id) {
+            <article class="library-card">
+              <strong>{{ favorite.item.medicineName }}</strong>
+              <p>
+                {{ favorite.item.dose }} · {{ favorite.item.route }} · {{ favorite.item.frequency }}
+              </p>
+              <div class="actions">
+                <button type="button" (click)="addFavorite(favorite)">Add to draft</button>
+                <button type="button" (click)="removeFavorite(favorite)">Remove</button>
+              </div>
+            </article>
+          } @empty {
+            <p class="library-empty">No favourites saved yet. Save a medicine from this draft.</p>
+          }
+        </section>
+
+        <section aria-labelledby="templates-heading">
+          <h3 id="templates-heading">Templates</h3>
+          @for (template of templates(); track template.id) {
+            <article class="library-card">
+              <strong>{{ template.name }}</strong>
+              <p>{{ template.items.length }} editable medicine item(s)</p>
+              <div class="actions">
+                <button type="button" (click)="addTemplate(template)">Add items to draft</button>
+                <button type="button" (click)="saveTemplate(template)">
+                  Update from reviewed draft
+                </button>
+                <button type="button" (click)="removeTemplate(template)">Remove</button>
+              </div>
+            </article>
+          } @empty {
+            <p class="library-empty">No templates saved yet. Review this draft to create one.</p>
+          }
+
+          <div class="field template-save">
+            <label for="template-name">Save reviewed draft as a template</label>
+            <input
+              id="template-name"
+              type="text"
+              maxlength="80"
+              [value]="templateName()"
+              (input)="templateName.set($any($event.target).value)"
+              aria-describedby="template-help"
+            />
+            <p id="template-help">Review validates every item before saving this local template.</p>
+            <button type="button" (click)="saveTemplate()">Review and save template</button>
+          </div>
+        </section>
+      </div>
+
+      @if (libraryError()) {
+        <p class="validation-errors" role="alert">{{ libraryError() }}</p>
+      }
+      @if (libraryMessage()) {
+        <p role="status" aria-live="polite">{{ libraryMessage() }}</p>
+      }
+      <p class="keyboard-help">
+        Keyboard: use Tab or Shift+Tab to move, then Enter or Space to activate controls.
+      </p>
     </section>
 
     @if (errors().length > 0) {
@@ -200,6 +279,17 @@
                   [attr.aria-label]="'Remove medicine ' + (i + 1)"
                 >
                   Remove medicine
+                </button>
+                <button
+                  type="button"
+                  [disabled]="isFavorite($any(group.getRawValue()))"
+                  (click)="saveFavorite(i)"
+                >
+                  {{
+                    isFavorite($any(group.getRawValue()))
+                      ? 'Already a favourite'
+                      : 'Save as favourite'
+                  }}
                 </button>
               </fieldset>
             } @empty {

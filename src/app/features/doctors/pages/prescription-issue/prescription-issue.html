@@ -8,8 +8,8 @@
     <a class="back-link" routerLink="/workspace/doctor/prescriptions">← Back to prescriptions</a>
   </header>
   <aside class="preview" role="note">
-    <strong>Sample preview — ML-117.</strong> Synthetic data only. Nothing is sent to a patient or
-    saved to a clinical record. Real API integration is ML-162.
+    <strong>Sample preview only.</strong> Synthetic data only. Confirming changes this local preview
+    only. Nothing is clinically verified, sent to a patient or saved to a clinical record.
   </aside>
   @if (!permitted() || state() === 'denied') {
     <section class="panel" role="alert">
@@ -34,9 +34,7 @@
     <section class="panel">
       <div class="section-heading">
         <h2>Prescription summary</h2>
-        <span class="badge">{{
-          order.status === 'active' ? 'Active · sample' : 'Draft · sample'
-        }}</span>
+        <span class="badge">{{ statusLabel(order.status) }}</span>
       </div>
       <dl class="summary">
         <div>

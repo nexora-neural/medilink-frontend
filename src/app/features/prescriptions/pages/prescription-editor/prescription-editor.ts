@@ -7,8 +7,10 @@ import { ActiveRoleService } from '../../../../core/context/active-role.service'
 import { SAMPLE_DOCTOR_ID } from '../../data/prescription-draft.samples';
 import {
   canEditPrescriptionDraft,
+  DoctorFavorite,
   PrescriptionItem,
   PrescriptionPageState,
+  PrescriptionTemplate,
 } from '../../models/prescription-draft.model';
 import {
   draftProblems,
@@ -70,6 +72,11 @@ export class PrescriptionEditor {
   readonly pageState = signal<PrescriptionPageState>('ready');
   readonly errors = signal<string[]>([]);
   readonly review = signal<PrescriptionDraftInput | null>(null);
+  readonly favorites = computed(() => this.store.listFavorites(SAMPLE_DOCTOR_ID));
+  readonly templates = computed(() => this.store.listTemplates(SAMPLE_DOCTOR_ID));
+  readonly templateName = signal('');
+  readonly libraryMessage = signal('');
+  readonly libraryError = signal('');
 
   readonly textFields = [
     { key: 'medicineName', label: 'Medicine name', max: 200 },
@@ -177,6 +184,104 @@ export class PrescriptionEditor {
     );
 
     this.form.markAsDirty();
+  }
+
+  addFavorite(favorite: DoctorFavorite): void {
+    if (!this.editable()) return;
+    this.items.push(
+      itemForm({ ...structuredClone(favorite.item), id: `sample-item-${crypto.randomUUID()}` }),
+    );
+    this.form.markAsDirty();
+    this.review.set(null);
+    this.libraryError.set('');
+    this.libraryMessage.set(`${favorite.item.medicineName} added to this editable draft.`);
+  }
+
+  addTemplate(template: PrescriptionTemplate): void {
+    if (!this.editable()) return;
+    for (const item of template.items) {
+      this.items.push(
+        itemForm({ ...structuredClone(item), id: `sample-item-${crypto.randomUUID()}` }),
+      );
+    }
+    this.form.markAsDirty();
+    this.review.set(null);
+    this.libraryError.set('');
+    this.libraryMessage.set(
+      `${template.name} added to the draft. Review and edit every item before saving.`,
+    );
+  }
+
+  isFavorite(item: PrescriptionItem): boolean {
+    return this.favorites().some(
+      (favorite) =>
+        favorite.item.medicineName.toLocaleLowerCase() ===
+          item.medicineName.trim().toLocaleLowerCase() &&
+        favorite.item.dose.toLocaleLowerCase() === item.dose.trim().toLocaleLowerCase() &&
+        favorite.item.route.toLocaleLowerCase() === item.route.trim().toLocaleLowerCase() &&
+        favorite.item.frequency.toLocaleLowerCase() === item.frequency.trim().toLocaleLowerCase(),
+    );
+  }
+
+  saveFavorite(index: number): void {
+    if (!this.editable() || index < 0 || index >= this.items.length) return;
+    const raw = this.items.at(index).getRawValue();
+    const item: PrescriptionItem = {
+      ...raw,
+      durationDays: raw.durationDays ?? Number.NaN,
+      quantity: raw.quantity ?? Number.NaN,
+    };
+    this.libraryError.set('');
+    this.libraryMessage.set('');
+    try {
+      this.store.addFavorite(SAMPLE_DOCTOR_ID, item);
+      this.libraryMessage.set(`${item.medicineName.trim()} saved to your doctor favourites.`);
+    } catch (error) {
+      this.libraryError.set(
+        error instanceof Error ? error.message : 'Unable to save this sample favourite.',
+      );
+    }
+  }
+
+  removeFavorite(favorite: DoctorFavorite): void {
+    if (!this.editable() || favorite.ownerDoctorId !== SAMPLE_DOCTOR_ID) return;
+    this.store.removeFavorite(SAMPLE_DOCTOR_ID, favorite.id);
+    this.libraryMessage.set(`${favorite.item.medicineName} removed from your favourites.`);
+    this.libraryError.set('');
+  }
+
+  saveTemplate(template?: PrescriptionTemplate): void {
+    if (!this.editable()) return;
+    this.libraryError.set('');
+    this.libraryMessage.set('');
+    this.reviewDraft();
+    const input = this.review();
+    if (!input) {
+      this.libraryError.set('Complete all required fields and resolve validation errors first.');
+      return;
+    }
+
+    const name = template?.name ?? this.templateName();
+    try {
+      const saved = this.store.saveTemplate(SAMPLE_DOCTOR_ID, name, input.items, template?.id);
+      this.templateName.set(saved.name);
+      this.libraryMessage.set(
+        template
+          ? `${saved.name} updated from the reviewed editable draft.`
+          : `${saved.name} saved as a doctor-owned template in this local preview.`,
+      );
+    } catch (error) {
+      this.libraryError.set(
+        error instanceof Error ? error.message : 'Unable to save this sample template.',
+      );
+    }
+  }
+
+  removeTemplate(template: PrescriptionTemplate): void {
+    if (!this.editable() || template.ownerDoctorId !== SAMPLE_DOCTOR_ID) return;
+    this.store.removeTemplate(SAMPLE_DOCTOR_ID, template.id);
+    this.libraryMessage.set(`${template.name} removed from your templates.`);
+    this.libraryError.set('');
   }
 
   removeMedicine(index: number): void {

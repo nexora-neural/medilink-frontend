@@ -56,8 +56,60 @@ textarea:focus-visible {
   border-color: #c64242;
 }
 
+.library-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.library-card {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid #d6e3ef;
+  border-radius: 12px;
+  background: #f8fbfd;
+}
+
+.library-card p,
+.library-empty,
+.keyboard-help {
+  color: #526a85;
+}
+
+.template-save {
+  margin-top: 20px;
+}
+
+.template-save p {
+  margin: 0;
+}
+
+input {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #adbed1;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+}
+
+:where(button, input):focus-visible {
+  outline: 3px solid #008ac0;
+  outline-offset: 3px;
+}
+
+.keyboard-help {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 600px) {
   .medicine-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .library-columns {
     grid-template-columns: 1fr;
   }
 

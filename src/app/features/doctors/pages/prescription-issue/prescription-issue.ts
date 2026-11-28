@@ -43,6 +43,9 @@ export class PrescriptionIssue {
   readonly saving = signal(false);
   readonly actionError = signal('');
   readonly message = signal('');
+  statusLabel(status: IssueReview['status']): string {
+    return `${status.charAt(0).toUpperCase()}${status.slice(1)} · sample`;
+  }
   readonly problems = computed(() => (this.review() ? issueProblems(this.review()!) : []));
   readonly reviewedAll = computed(
     () =>
