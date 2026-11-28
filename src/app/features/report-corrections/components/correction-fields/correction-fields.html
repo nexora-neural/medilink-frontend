@@ -1,0 +1,18 @@
+<div class="fields" (input)="changed.emit()">
+  <label>Report type *<input [(ngModel)]="draft().type" /></label
+  ><label>Report date *<input type="date" [(ngModel)]="draft().date" /></label
+  ><label>Laboratory reference *<input [(ngModel)]="draft().reference" /></label
+  ><label
+    >Replacement PDF or image *<input
+      type="file"
+      accept="application/pdf,image/*"
+      (change)="fileSelected.emit($event)" /></label
+  ><label class="wide">Notes<textarea rows="2" [(ngModel)]="draft().notes"></textarea></label
+  ><label class="wide"
+    >Reason for correction *<textarea
+      rows="3"
+      [ngModel]="reason()"
+      (ngModelChange)="reasonChange.emit($event)"
+    ></textarea>
+  </label>
+</div>

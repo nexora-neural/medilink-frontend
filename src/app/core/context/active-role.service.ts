@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Subject } from 'rxjs';
 
 export type ActiveRole =
   'Patient' | 'Doctor' | 'Pharmacist' | 'Lab Staff' | 'Admin' | 'Super Admin';
@@ -19,10 +20,17 @@ export class ActiveRoleService {
   private readonly availableRoles = signal<ActiveRole[]>([]);
   private readonly selectedRole = signal<ActiveRole>('Patient');
   private readonly accountId = signal<string | null>(null);
+  private readonly accountChanges = new Subject<void>();
+  private readonly workspaceChanges = new Subject<void>();
+
+  readonly workspaceChanges$ = this.workspaceChanges.asObservable();
 
   readonly activeAccountId = this.accountId.asReadonly();
   readonly roles = this.availableRoles.asReadonly();
   readonly activeRole = this.selectedRole.asReadonly();
+
+  // Subscribers clear account-specific state synchronously.
+  readonly accountChanges$ = this.accountChanges.asObservable();
 
   setAccountRoles(accountId: string, codes: string[]): void {
     const roles = [
@@ -32,6 +40,10 @@ export class ActiveRoleService {
     ];
 
     const accountChanged = this.accountId() !== accountId;
+    const previousRole = this.selectedRole();
+    const previousRoles = this.availableRoles();
+    const rolesChanged =
+      previousRoles.length !== roles.length || previousRoles.some((role) => !roles.includes(role));
 
     this.accountId.set(accountId);
     this.availableRoles.set(roles);
@@ -44,13 +56,22 @@ export class ActiveRoleService {
     }
 
     this.saveRole();
+
+    if (accountChanged) {
+      this.accountChanges.next();
+    }
+
+    if (accountChanged || rolesChanged || previousRole !== this.selectedRole()) {
+      this.workspaceChanges.next();
+    }
   }
 
   setActiveRole(role: ActiveRole): void {
-    if (!this.roles().includes(role)) return;
+    if (!this.roles().includes(role) || this.selectedRole() === role) return;
 
     this.selectedRole.set(role);
     this.saveRole();
+    this.workspaceChanges.next();
   }
 
   clear(): void {
@@ -67,6 +88,9 @@ export class ActiveRoleService {
     this.accountId.set(null);
     this.availableRoles.set([]);
     this.selectedRole.set('Patient');
+
+    this.accountChanges.next();
+    this.workspaceChanges.next();
   }
 
   private storageKey(accountId: string): string {

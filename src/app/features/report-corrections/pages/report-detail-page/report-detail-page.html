@@ -1,0 +1,12 @@
+<a class="back" [routerLink]="s.base">← Uploaded reports</a>
+@if (s.selected; as report) {
+  <app-report-details-card
+    [report]="report"
+    [base]="s.base"
+    [canCorrect]="s.canCorrect"
+    [canWithdraw]="s.canWithdraw"
+    (correction)="correct()"
+  />
+} @else {
+  <app-report-empty-state title="Select a report first" [base]="s.base" />
+}

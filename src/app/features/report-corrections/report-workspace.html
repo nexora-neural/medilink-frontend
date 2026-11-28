@@ -1,0 +1,16 @@
+@if (s.message) {
+  <div
+    class="notice"
+    [class.notice-error]="s.messageKind === 'error'"
+    [attr.role]="s.messageKind === 'error' ? 'alert' : 'status'"
+  >
+    {{ s.message }} <button type="button" (click)="s.setMessage('')" aria-label="Dismiss">x</button>
+  </div>
+}
+@if (s.loading) {
+  <p role="status">Loading reports…</p>
+} @else if (s.loadError) {
+  <p class="error" role="alert">{{ s.loadError }}</p>
+} @else {
+  <router-outlet />
+}

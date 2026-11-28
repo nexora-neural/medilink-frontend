@@ -1,0 +1,15 @@
+<div
+  class="confirm"
+  tabindex="-1"
+  aria-label="Confirm withdrawal"
+  (keydown.escape)="!pending() && back.emit()"
+>
+  <strong>Confirm withdrawal?</strong>
+  <p>Reason: {{ reason() || 'A reason is required.' }}</p>
+  <button class="button secondary" type="button" [disabled]="pending()" (click)="back.emit()">
+    Back
+  </button>
+  <button class="button primary" type="button" [disabled]="pending()" (click)="confirmed.emit()">
+    Confirm withdrawal
+  </button>
+</div>

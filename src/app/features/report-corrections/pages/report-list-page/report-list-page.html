@@ -1,0 +1,66 @@
+<div class="heading">
+  <div>
+    <h1>{{ isPatient ? 'Medical reports' : 'Uploaded reports' }}</h1>
+
+    <p *ngIf="isPatient">
+      Find reports shared with you or added by you.
+    </p>
+
+    <p *ngIf="!isPatient">
+      Reports published by {{ s.laboratory }} in this session.
+    </p>
+  </div>
+
+  <div *ngIf="!isPatient" class="actions" style="margin-top: 0">
+    <a
+      class="button secondary"
+      routerLink="/workspace/lab-staff/report-uploads"
+    >
+      Upload / download reports
+    </a>
+    <a class="button primary" [routerLink]="requestRoute">
+      + Find request
+    </a>
+  </div>
+</div>
+
+<section class="panel">
+  <p class="empty" *ngIf="!s.reports.length">
+    {{
+      isPatient
+        ? 'No reports found.'
+        : 'No reports have been published yet.'
+    }}
+  </p>
+
+  <button
+    type="button"
+    class="patient-row"
+    *ngFor="let report of s.reports"
+    (click)="select(report.id)"
+  >
+    <span class="icon material-symbols-outlined">description</span>
+
+    <span class="grow">
+      <strong>{{ report.type }} · v{{ report.version }}</strong>
+
+      <small *ngIf="isPatient">
+        {{ report.date }}
+      </small>
+
+      <small *ngIf="!isPatient">
+        {{ report.patient }} · {{ report.reference }} · {{ report.date }}
+      </small>
+    </span>
+
+    <span
+      class="badge"
+      [class.green]="report.status === 'Published'"
+      [class.amber]="report.status !== 'Published'"
+    >
+      {{ report.status }}
+    </span>
+
+    →
+  </button>
+</section>

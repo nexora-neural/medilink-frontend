@@ -1,3 +1,4 @@
+import { ReportCorrectionStore } from './features/report-corrections/services/report-correction.store';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -9,6 +10,139 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it('opens live lab upload and download from the ML-128 report list', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/reports');
+
+    expect(harness.routeNativeElement?.querySelector('app-report-list-page')).not.toBeNull();
+
+    const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
+      'a[href="/workspace/lab-staff/report-uploads"]',
+    );
+    expect(link).toBeTruthy();
+
+    link!.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/report-uploads');
+    expect(harness.routeNativeElement?.querySelector('app-reports-live')).not.toBeNull();
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
+      'Laboratory reports',
+    );
+    expect(harness.routeNativeElement?.textContent).toContain('Patient request token');
+    expect(harness.routeNativeElement?.textContent).toContain('Upload report');
+    expect(harness.routeNativeElement?.textContent).toContain('Saved reports');
+  });
+
+  it('supports direct navigation to live lab report uploads', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/report-uploads');
+    expect(harness.routeNativeElement?.querySelector('app-reports-live')).not.toBeNull();
+    expect(
+      serverRoutes.find((route) => route.path === 'workspace/lab-staff/report-uploads')?.renderMode,
+    ).toBe(RenderMode.Client);
+  });
+
+  it('denies Patient access to live lab report uploads', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-patient', ['patient']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/access-denied');
+  });
+
+  it('redirects signed-out lab upload visitors to login', async () => {
+    TestBed.inject(ActiveRoleService).clear();
+    vi.mocked(TestBed.inject(AuthService).restoreSession).mockResolvedValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/report-uploads');
+
+    expect(TestBed.inject(Router).url).toBe('/login');
+  });
+
+  it.each([
+    ['', 'app-report-list-page'],
+    ['/LR-1', 'app-report-detail-page'],
+    ['/LR-1/correct', 'app-report-correction-page'],
+    ['/LR-1/withdraw', 'app-report-withdrawal-page'],
+  ])(
+    'opens ML-128 lab report screens through the application routes: %s',
+    async (suffix, selector) => {
+      const roles = TestBed.inject(ActiveRoleService);
+      roles.setAccountRoles('routing-lab-user', ['lab_staff']);
+
+      const store = TestBed.inject(ReportCorrectionStore);
+      store.setReports(
+        [
+          {
+            id: 'LR-1',
+            patient: 'Test Patient',
+            request: 'LAB-TEST-1',
+            type: 'Full blood count',
+            date: '2026-11-24',
+            reference: 'LAB-TEST-1',
+            notes: '',
+            file: 'test-report.pdf',
+            url: 'blob:test-report',
+            mime: 'application/pdf',
+            status: 'Published',
+            version: 1,
+          },
+        ],
+        { 'LR-1': { correct: true, withdraw: true } },
+      );
+
+      const harness = await RouterTestingHarness.create();
+      const path = '/workspace/lab-staff/reports' + suffix;
+      await harness.navigateByUrl(path);
+
+      expect(TestBed.inject(Router).url).toBe(path);
+      expect(harness.routeNativeElement?.querySelector(selector)).not.toBeNull();
+      expect(harness.routeNativeElement?.querySelector('app-reports-live')).toBeNull();
+      expect(store.base).toBe('/workspace/lab-staff/reports');
+
+      if (suffix) {
+        expect(store.selectedId).toBe('LR-1');
+        expect(store.canCorrect).toBe(true);
+        expect(store.canWithdraw).toBe(true);
+      }
+    },
+  );
+
+  it('opens the ML-128 empty lab list through the application routes', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/reports');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/reports');
+    expect(harness.routeNativeElement?.querySelector('app-report-list-page')).not.toBeNull();
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'No reports have been published yet.',
+    );
+  });
+
+  it.each(['', '/LR-1', '/LR-1/correct', '/LR-1/withdraw'])(
+    'denies a Patient access to the lab report route: %s',
+    async (suffix) => {
+      TestBed.inject(ActiveRoleService).setAccountRoles('routing-patient', ['patient']);
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/workspace/lab-staff/reports' + suffix);
+
+      expect(TestBed.inject(Router).url).toBe('/access-denied');
+    },
+  );
+
   it('defines patient notification and settings routes with client-side direct navigation', async () => {
     const workspaceRoutes = routes.find((route) => route.path === 'workspace')?.children ?? [];
     const notifications = workspaceRoutes.find((route) => route.path === 'patient/notifications');

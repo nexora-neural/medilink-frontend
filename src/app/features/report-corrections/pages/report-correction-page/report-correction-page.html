@@ -1,0 +1,38 @@
+<a class="back" [routerLink]="[s.base, s.selectedId]">← Report details</a>
+@if (s.canCorrect) {
+  <section class="panel form-panel" [attr.aria-busy]="s.pending">
+    <div class="eyebrow">CORRECT REPORT</div>
+    <h1>Publish a corrected version</h1>
+    <p>The original remains in history as superseded.</p>
+    <app-report-correction-fields
+      [draft]="s.correctionDraft"
+      [(reason)]="s.correctionReason"
+      (changed)="s.markDirty()"
+      (reasonChange)="s.markDirty()"
+      (fileSelected)="s.chooseFile($event)"
+    />
+    @if (s.correctionDraft.file) {
+      <p>
+        Selected: {{ s.correctionDraft.file }}
+        <a [href]="s.correctionDraft.url" target="_blank" rel="noopener">Preview ?</a>
+      </p>
+    }
+    <button
+      class="button primary"
+      type="button"
+      [disabled]="s.pending"
+      (click)="s.reviewCorrection()"
+    >
+      Review corrected version
+    </button>
+    @if (s.showConfirm) {
+      <app-report-correction-confirmation
+        [pending]="s.pending"
+        (back)="s.showConfirm = false"
+        (confirmed)="s.correct()"
+      />
+    }
+  </section>
+} @else {
+  <app-report-empty-state [base]="s.base" />
+}

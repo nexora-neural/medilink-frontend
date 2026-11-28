@@ -1,0 +1,15 @@
+<div
+  class="confirm"
+  tabindex="-1"
+  aria-label="Confirm correction"
+  (keydown.escape)="!pending() && back.emit()"
+>
+  <strong>Publish this corrected version?</strong>
+  <p>The original report remains in history. Confirm the reason and replacement file.</p>
+  <button class="button secondary" type="button" [disabled]="pending()" (click)="back.emit()">
+    Back
+  </button>
+  <button class="button primary" type="button" [disabled]="pending()" (click)="confirmed.emit()">
+    Confirm correction
+  </button>
+</div>
