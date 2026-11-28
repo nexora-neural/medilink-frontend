@@ -97,3 +97,17 @@
     margin-left: 0;
   }
 }
+
+.app-layout:has(app-lab-dashboard) {
+  background: #f3f7fb;
+}
+
+.content:has(> app-lab-dashboard) {
+  padding: 36px 38px 80px;
+}
+
+@media (max-width: 850px) {
+  .content:has(> app-lab-dashboard) {
+    padding: 28px 20px 100px;
+  }
+}
