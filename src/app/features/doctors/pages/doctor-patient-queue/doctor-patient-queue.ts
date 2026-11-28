@@ -16,6 +16,7 @@ interface QueuePatient {
   referenceNumber: string;
   lastVisit: string;
   readAccess: AccessStatus;
+  hasPrescriptionAccess: boolean;
   consultationPermission: ConsultationPermission;
   consultationContext: string;
   status: QueueStatus;
@@ -77,7 +78,10 @@ export class DoctorPatientQueue {
         total = result.total;
         if (!result.items.length) break;
       } while (all.length < total);
-      const grouped = new Map<string, QueuePatient & { categories: Set<string> }>();
+      const grouped = new Map<
+        string,
+        Omit<QueuePatient, 'hasPrescriptionAccess'> & { categories: Set<string> }
+      >();
       for (const x of all) {
         const id = x.patient.patient_user_id;
         let patient = grouped.get(id);
@@ -109,6 +113,7 @@ export class DoctorPatientQueue {
       }
       const active = [...grouped.values()].map(({ categories, ...patient }) => ({
         ...patient,
+        hasPrescriptionAccess: categories.has('prescriptions'),
         consultationContext: [...categories].join(', '),
       }));
       this.patients.set(active);

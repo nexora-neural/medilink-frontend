@@ -170,6 +170,18 @@
                   >
                     View patient records
                   </a>
+                  @if (patient.hasPrescriptionAccess) {
+                    <a
+                      class="secondary-button"
+                      routerLink="/workspace/doctor/prescriptions"
+                      [queryParams]="{
+                        patientId: patient.id,
+                        consultationId: patient.consultationId,
+                      }"
+                    >
+                      View prescriptions
+                    </a>
+                  }
                   @if (patient.status === 'waiting') {
                     <button
                       type="button"
