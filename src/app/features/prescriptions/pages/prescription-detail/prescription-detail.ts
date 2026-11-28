@@ -10,6 +10,7 @@ import {
   PrescriptionPageState,
 } from '../../models/prescription-draft.model';
 import { PrescriptionDraftPreviewStore } from '../../services/prescription-draft-preview.store';
+import { isPrescriptionPdfExportEligible } from '../../pdf-export/prescription-pdf-export.models';
 
 @Component({
   selector: 'app-prescription-detail',
@@ -38,6 +39,15 @@ export class PrescriptionDetail {
     const prescription = this.prescription();
 
     return prescription !== null && canEditPrescriptionDraft(prescription, SAMPLE_DOCTOR_ID);
+  });
+
+  readonly canExportPdf = computed(() => {
+    const prescription = this.prescription();
+    return (
+      this.permitted() &&
+      prescription !== null &&
+      isPrescriptionPdfExportEligible(prescription, SAMPLE_DOCTOR_ID)
+    );
   });
 
   readonly action = signal<'complete' | 'cancel' | 'discontinue'>('complete');

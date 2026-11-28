@@ -1,0 +1,183 @@
+<main class="export-page" aria-labelledby="export-heading">
+  <header class="page-heading">
+    <p class="eyebrow">Doctor workspace / prescription record</p>
+    <h1 id="export-heading">Export prescription PDF</h1>
+    <p>Review the current prescription version before downloading its PDF preview.</p>
+    @if (record(); as exportRecord) {
+      <a [routerLink]="['/workspace/doctor/prescriptions', exportRecord.prescription.id]">
+        Back to prescription details
+      </a>
+    } @else {
+      <a routerLink="/workspace/doctor/prescriptions">Back to prescriptions</a>
+    }
+  </header>
+
+  <aside class="preview-notice" aria-label="Sample PDF preview information">
+    <strong>Synthetic preview only.</strong>
+    This screen uses fictional sample data. Its browser-generated PDF is not a private clinical
+    document. ML-190 must connect a server endpoint that rechecks authorization and returns the
+    latest version before real prescription downloads are enabled.
+  </aside>
+
+  @if (!permitted() || state() === 'denied') {
+    <section class="panel state-panel" aria-labelledby="denied-heading">
+      <h2 id="denied-heading">Export access unavailable</h2>
+      <p>Select an available Doctor role to review prescription exports.</p>
+    </section>
+  } @else if (state() === 'loading') {
+    <section class="panel state-panel" role="status" aria-live="polite" aria-busy="true">
+      <h2>Loading prescription</h2>
+      <p>Checking the latest sample record and version.</p>
+    </section>
+  } @else if (state() === 'error') {
+    <section class="panel state-panel" role="alert">
+      <h2>Unable to load this prescription</h2>
+      <p>No PDF was downloaded. The record could not be loaded.</p>
+      <button type="button" class="button primary" (click)="retry()">Try again</button>
+    </section>
+  } @else if (state() === 'empty' || !record()) {
+    <section class="panel state-panel" aria-labelledby="empty-heading">
+      <h2 id="empty-heading">Prescription not found</h2>
+      <p>There is no prescription to export at this address.</p>
+      <a class="button secondary" routerLink="/workspace/doctor/prescriptions">
+        View prescriptions
+      </a>
+    </section>
+  } @else if (record(); as exportRecord) {
+    <div class="export-layout">
+      <section class="panel preview-card" aria-labelledby="preview-heading">
+        <div class="preview-toolbar">
+          <div>
+            <p class="eyebrow">PDF preview</p>
+            <h2 id="preview-heading">Doctor-issued prescription</h2>
+          </div>
+          <span class="badge">Version {{ exportRecord.prescription.version ?? 1 }}</span>
+        </div>
+
+        @if (problems().length) {
+          <div class="validation-panel" role="alert" aria-labelledby="validation-heading">
+            <h3 id="validation-heading">This prescription cannot be exported</h3>
+            <p>Resolve the following record or access issue before requesting a PDF:</p>
+            <ul>
+              @for (problem of problems(); track problem) {
+                <li>{{ problem }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <article class="document" aria-label="Prescription PDF contents">
+          <header class="document-heading">
+            <div>
+              <p class="eyebrow">MediLink / sample record</p>
+              <h3>Prescription</h3>
+            </div>
+            <span class="lifecycle-badge" [class.current]="exportRecord.prescription.status === 'active'">
+              {{ exportRecord.prescription.status }}
+            </span>
+          </header>
+
+          <section class="document-section" aria-labelledby="identity-heading">
+            <h4 id="identity-heading">Record and patient</h4>
+            <dl class="metadata-grid">
+              <div><dt>Prescription ID</dt><dd>{{ exportRecord.prescription.id }}</dd></div>
+              <div><dt>Patient</dt><dd>{{ exportRecord.prescription.patientName }}</dd></div>
+              <div><dt>Patient reference</dt><dd>{{ exportRecord.prescription.patientReference }}</dd></div>
+              <div><dt>Consultation</dt><dd>{{ exportRecord.prescription.consultationId }}</dd></div>
+              <div><dt>Source</dt><dd>{{ exportRecord.prescription.source === 'doctor' ? 'Doctor-issued' : 'Patient-added' }}</dd></div>
+              <div><dt>Lifecycle status</dt><dd>{{ exportRecord.prescription.status }}</dd></div>
+              <div><dt>Issuer</dt><dd>{{ exportRecord.issuerName }}</dd></div>
+              <div><dt>Issuer verification</dt><dd>{{ exportRecord.issuerVerificationStatus }}</dd></div>
+              <div><dt>Review status</dt><dd>{{ exportRecord.reviewStatus }}</dd></div>
+              <div><dt>Current version</dt><dd>{{ exportRecord.prescription.version ?? 1 }}</dd></div>
+              <div><dt>Starts</dt><dd>{{ exportRecord.prescription.startsOn | date: 'mediumDate' }}</dd></div>
+              <div><dt>Ends</dt><dd>{{ exportRecord.prescription.endsOn | date: 'mediumDate' }}</dd></div>
+              <div><dt>Created</dt><dd>{{ exportRecord.prescription.createdAt | date: 'medium' }}</dd></div>
+              <div><dt>Last updated</dt><dd>{{ exportRecord.prescription.updatedAt | date: 'medium' }}</dd></div>
+              <div class="wide-field"><dt>Previous version</dt><dd>{{ exportRecord.prescription.previousPrescriptionId || 'None' }}</dd></div>
+            </dl>
+          </section>
+
+          <section class="document-section" aria-labelledby="items-heading">
+            <h4 id="items-heading">Prescribed items</h4>
+            @for (item of exportRecord.prescription.items; track item.id; let index = $index) {
+              <article class="medicine-card">
+                <div class="medicine-heading">
+                  <h5>Medicine {{ index + 1 }} · {{ item.medicineName }}</h5>
+                  <span class="badge" [class.warning-badge]="item.isPrn">{{ item.isPrn ? 'As needed (PRN)' : 'Scheduled' }}</span>
+                </div>
+                <dl class="medicine-grid">
+                  <div><dt>Dose</dt><dd>{{ item.dose }}</dd></div>
+                  <div><dt>Route</dt><dd>{{ item.route }}</dd></div>
+                  <div><dt>Frequency</dt><dd>{{ item.frequency }}</dd></div>
+                  <div><dt>Duration</dt><dd>{{ item.durationDays }} day(s)</dd></div>
+                  <div><dt>Quantity</dt><dd>{{ item.quantity }} {{ item.quantityUnit }}</dd></div>
+                  <div class="wide-field"><dt>Instructions</dt><dd>{{ item.instructions || 'None provided' }}</dd></div>
+                </dl>
+              </article>
+            } @empty {
+              <p class="inline-empty">No prescription items are available.</p>
+            }
+          </section>
+
+          <section class="document-section" aria-labelledby="history-heading">
+            <h4 id="history-heading">Lifecycle and version history</h4>
+            @if (exportRecord.prescription.history?.length) {
+              <ol class="history-list">
+                @for (entry of exportRecord.prescription.history; track entry.id) {
+                  <li>
+                    <strong>{{ entry.action }} · {{ entry.performedAt | date: 'medium' }}</strong>
+                    <span>Recorded by {{ entry.performedBy }}. {{ entry.reason }}</span>
+                    @if (entry.relatedPrescriptionId) {
+                      <span>Related prescription: {{ entry.relatedPrescriptionId }}</span>
+                    }
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p>No lifecycle changes are recorded for this sample version.</p>
+            }
+          </section>
+
+          <footer class="document-footer">
+            Synthetic sample only · Not for clinical use · Updated {{ exportRecord.prescription.updatedAt | date: 'medium' }}
+          </footer>
+        </article>
+      </section>
+
+      <aside class="panel action-card" aria-labelledby="download-heading">
+        <p class="eyebrow">PRIVATE DOWNLOAD</p>
+        <h2 id="download-heading">Download current version</h2>
+        <p>The export is checked against prescription ID, version and last-updated time.</p>
+        <p class="security-note">
+          This sample uses fictional data. The browser preview can demonstrate the download flow,
+          but it cannot enforce private access. The production API must repeat the authorization
+          check and return the current PDF.
+        </p>
+
+        @if (downloadMessage()) {
+          <p class="success-message" role="status">{{ downloadMessage() }}</p>
+        }
+        @if (downloadError()) {
+          <div class="error-message" role="alert">
+            <p>{{ downloadError() }}</p>
+            <button type="button" class="button secondary" (click)="load()">Reload current version</button>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="button primary download-button"
+          [disabled]="!canDownload()"
+          [attr.aria-busy]="downloading()"
+          (click)="downloadPdf()"
+        >
+          {{ downloading() ? 'Preparing PDF…' : 'Download sample PDF' }}
+        </button>
+        @if (!problems().length) {
+          <p class="fine-print">File name: prescription-{{ exportRecord.prescription.id }}-v{{ exportRecord.prescription.version ?? 1 }}.pdf</p>
+        }
+      </aside>
+    </div>
+  }
+</main>

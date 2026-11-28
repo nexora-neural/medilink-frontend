@@ -140,6 +140,13 @@ button {
   cursor: pointer;
 }
 
+a.export-link {
+  margin-top: 12px;
+  border-color: #007fa8;
+  background: #007fa8;
+  color: #fff;
+}
+
 :where(a, button, input, select):focus-visible {
   outline: 3px solid #008ac0;
   outline-offset: 3px;
