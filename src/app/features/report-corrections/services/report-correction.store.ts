@@ -40,7 +40,7 @@ export class ReportCorrectionStore implements OnDestroy {
   private saved = false;
   private sequence = 0;
 
-  private readonly accountChangesSubscription = this.roleContext.accountChanges$.subscribe(() => {
+  private readonly accountChangesSubscription = this.roleContext.workspaceChanges$.subscribe(() => {
     this.clearAccountState();
   });
 

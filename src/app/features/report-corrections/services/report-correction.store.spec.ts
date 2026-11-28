@@ -62,6 +62,91 @@ describe('report correction store', () => {
     store.correctionReason = 'Corrected report';
   };
 
+  it('clears workspace state and cancels correction on same-account role switches', () => {
+    const roles = TestBed.inject(ActiveRoleService);
+    roles.setAccountRoles('test-lab-user', ['lab_staff', 'patient']);
+
+    for (const nextRole of ['Patient', 'Lab Staff'] as const) {
+      store.base =
+        roles.activeRole() === 'Patient'
+          ? '/workspace/patient/reports'
+          : '/workspace/lab-staff/reports';
+
+      prepare();
+      store.dirty = true;
+      store.reviewCorrection();
+      store.correct();
+
+      expect(store.pending).toBe(true);
+
+      roles.setActiveRole(nextRole);
+
+      expect(store.reports).toEqual([]);
+      expect(store.selectedId).toBe('');
+      expect(store.correctionDraft.file).toBe('');
+      expect(store.correctionReason).toBe('');
+      expect(store.showConfirm).toBe(false);
+      expect(store.dirty).toBe(false);
+      expect(store.pending).toBe(false);
+
+      vi.advanceTimersByTime(400);
+
+      expect(store.reports).toEqual([]);
+      expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+
+      // Reusing an ID cannot recover permissions from the previous workspace.
+      store.base =
+        nextRole === 'Patient' ? '/workspace/patient/reports' : '/workspace/lab-staff/reports';
+      store.setReports([uploadedReport()], {});
+      store.select('LR-1');
+
+      expect(store.canCorrect).toBe(false);
+      expect(store.canWithdraw).toBe(false);
+    }
+  });
+
+  it('clears state and cancels withdrawal when a same-account role is removed', () => {
+    const roles = TestBed.inject(ActiveRoleService);
+
+    for (const remainingRoles of [['patient'], ['lab_staff']]) {
+      roles.setAccountRoles('test-lab-user', ['lab_staff', 'patient']);
+      roles.setActiveRole('Lab Staff');
+      store.base = '/workspace/lab-staff/reports';
+      prepare();
+
+      store.dirty = true;
+      store.reviewWithdrawal();
+      store.withdraw();
+
+      expect(store.pending).toBe(true);
+
+      roles.setAccountRoles('test-lab-user', remainingRoles);
+
+      expect(store.reports).toEqual([]);
+      expect(store.selectedId).toBe('');
+      expect(store.correctionDraft.file).toBe('');
+      expect(store.correctionReason).toBe('');
+      expect(store.showConfirm).toBe(false);
+      expect(store.dirty).toBe(false);
+      expect(store.pending).toBe(false);
+
+      vi.advanceTimersByTime(400);
+
+      expect(store.reports).toEqual([]);
+      expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+
+      store.base =
+        roles.activeRole() === 'Patient'
+          ? '/workspace/patient/reports'
+          : '/workspace/lab-staff/reports';
+      store.setReports([uploadedReport()], {});
+      store.select('LR-1');
+
+      expect(store.canCorrect).toBe(false);
+      expect(store.canWithdraw).toBe(false);
+    }
+  });
+
   it('starts with the same empty reports collection as the reference', () => {
     expect(store.reports).toEqual([]);
     expect(store.selected).toBeUndefined();

@@ -21,6 +21,9 @@ export class ActiveRoleService {
   private readonly selectedRole = signal<ActiveRole>('Patient');
   private readonly accountId = signal<string | null>(null);
   private readonly accountChanges = new Subject<void>();
+  private readonly workspaceChanges = new Subject<void>();
+
+  readonly workspaceChanges$ = this.workspaceChanges.asObservable();
 
   readonly activeAccountId = this.accountId.asReadonly();
   readonly roles = this.availableRoles.asReadonly();
@@ -37,6 +40,10 @@ export class ActiveRoleService {
     ];
 
     const accountChanged = this.accountId() !== accountId;
+    const previousRole = this.selectedRole();
+    const previousRoles = this.availableRoles();
+    const rolesChanged =
+      previousRoles.length !== roles.length || previousRoles.some((role) => !roles.includes(role));
 
     this.accountId.set(accountId);
     this.availableRoles.set(roles);
@@ -53,13 +60,18 @@ export class ActiveRoleService {
     if (accountChanged) {
       this.accountChanges.next();
     }
+
+    if (accountChanged || rolesChanged || previousRole !== this.selectedRole()) {
+      this.workspaceChanges.next();
+    }
   }
 
   setActiveRole(role: ActiveRole): void {
-    if (!this.roles().includes(role)) return;
+    if (!this.roles().includes(role) || this.selectedRole() === role) return;
 
     this.selectedRole.set(role);
     this.saveRole();
+    this.workspaceChanges.next();
   }
 
   clear(): void {
@@ -78,6 +90,7 @@ export class ActiveRoleService {
     this.selectedRole.set('Patient');
 
     this.accountChanges.next();
+    this.workspaceChanges.next();
   }
 
   private storageKey(accountId: string): string {
