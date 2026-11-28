@@ -54,34 +54,10 @@ h2 {
   text-decoration: none;
   white-space: nowrap;
 }
-.preview-note {
-  display: flex;
-  gap: 7px;
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid #d9eaf3;
-  border-radius: 8px;
-  background: #f2f8fb;
-  color: #55758b;
-  font-size: 11px;
-  line-height: 1.45;
-}
-.preview-tools {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-  color: #8194a5;
-  font-size: 11px;
-}
-.preview-tools button {
-  border: 1px solid #d7e6f0;
-  border-radius: 6px;
-  background: #fff;
-  color: #386f93;
-  padding: 6px 9px;
+.dashboard-refresh {
+  border: 0;
   cursor: pointer;
+  margin-bottom: 14px;
 }
 .dashboard-columns {
   display: grid;
