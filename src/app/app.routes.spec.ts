@@ -149,7 +149,10 @@ describe('workspace routing', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/workspace');
     expect(harness.routeNativeElement?.textContent).toContain('Your care overview');
-    expect(harness.routeNativeElement?.textContent).toContain('Sample preview only');
+    await harness.fixture.whenStable();
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'Dashboard information is unavailable',
+    );
 
     await harness.navigateByUrl('/workspace/patient/medications');
     expect(harness.routeNativeElement?.textContent).toContain('Medications');
