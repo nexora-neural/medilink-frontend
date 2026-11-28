@@ -1,4 +1,4 @@
-export type LabDashboardState = 'ready' | 'loading' | 'empty' | 'error' | 'denied';
+export type LabDashboardState = 'ready' | 'loading' | 'empty' | 'error' | 'denied' | 'expired';
 
 export interface LabDashboardReport {
   id: string;
@@ -9,8 +9,7 @@ export interface LabDashboardReport {
 }
 
 export interface LabDashboardSummary {
-  openRequests: number;
-  publishedReports: number;
+  totalReports: number;
   laboratory: string;
   verification: string;
 }
