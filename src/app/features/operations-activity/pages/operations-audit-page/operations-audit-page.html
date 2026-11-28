@@ -1,60 +1,114 @@
 <div class="heading">
   <div>
-    <h1>
-      {{
-        privileged
-          ? 'Privileged audit and recovery'
-          : 'Operations and audit'
-      }}
-    </h1>
-
-    <p>
-      Review {{ privileged ? 'privileged' : 'permitted operational' }} activity.
-    </p>
+    <h1>{{ privileged ? 'Privileged audit and recovery' : 'Operations and audit' }}</h1>
+    <p>Review permitted activity, background jobs and backup evidence.</p>
   </div>
+  <button type="button" [disabled]="refreshing() || retrying()" (click)="refresh()">Refresh</button>
 </div>
-
-<section
-  class="panel"
-  aria-label="Audit activity"
-  [attr.aria-busy]="state() === 'loading'"
->
-  @if (state() === 'ready' && visibleEvents().length) {
-    <app-audit-event-list [events]="visibleEvents()" />
+<section class="panel" aria-label="Operations summary">
+  @if (summary(); as counts) {
+    <p>
+      Pending verifications: {{ counts.pending_verifications }} · Active organizations:
+      {{ counts.active_organizations }} · Failed jobs: {{ counts.failed_jobs }}
+    </p>
+    <p>Last complete backup: {{ counts.last_backup_at || 'No complete backup recorded' }}</p>
+  } @else if (summaryError()) {
+    <p role="alert">{{ summaryError() }}</p>
+    <button type="button" (click)="loadSummary()">Try again</button>
   } @else {
-    <app-activity-state
-      [state]="state() === 'ready' ? 'empty' : state()"
-      emptyText="No audit activity."
-      (retry)="reloadPreview()"
-    />
-  }
-
-  @if (state() === 'ready') {
-    <div class="tip">
-      {{
-        privileged
-          ? 'Backup and recovery status: available in sample data.'
-          : 'Failed jobs: none in sample data.'
-      }}
-    </div>
+    <p role="status">Loading summary.</p>
   }
 </section>
-
-@if (privileged && state() === 'ready') {
-  <p class="preview">Sample preview only.</p>
-
+<section class="panel" aria-label="Audit activity" [attr.aria-busy]="auditState() === 'loading'">
+  <form (ngSubmit)="applyFilter()">
+    <label for="audit-action">Action</label>
+    <input
+      id="audit-action"
+      name="action"
+      [(ngModel)]="actionFilter"
+      maxlength="200"
+      placeholder="All actions"
+      [disabled]="auditState() === 'loading'"
+    />
+    <button type="submit" [disabled]="auditState() === 'loading'">Filter</button>
+  </form>
+  @if (auditError()) {
+    <p role="alert">{{ auditError() }}</p>
+  }
+  @if (auditState() === 'ready') {
+    <app-audit-event-list [events]="events()" />
+  } @else {
+    <app-activity-state
+      [state]="auditState()"
+      emptyText="No audit activity."
+      (retry)="loadAudit()"
+    />
+  }
+  @if (auditState() === 'ready' || auditState() === 'empty') {
+    <app-activity-page-controls
+      label="Audit pages"
+      [page]="auditPage()"
+      [total]="auditTotal()"
+      [busy]="auditState() === 'loading' || retrying()"
+      (changePage)="loadAudit($event)"
+    />
+  }
+</section>
+<section class="panel" aria-label="Backup evidence" [attr.aria-busy]="backupsState() === 'loading'">
+  @if (backupsError()) {
+    <p role="alert">{{ backupsError() }}</p>
+  }
+  @if (backupsState() === 'ready') {
+    <app-backup-evidence-panel [evidence]="backupEvidence()" />
+  } @else {
+    <h2>Backup evidence</h2>
+    <app-activity-state
+      [state]="backupsState()"
+      emptyText="No backup evidence available."
+      (retry)="loadBackups()"
+    />
+  }
+  @if (backupsState() === 'ready' || backupsState() === 'empty') {
+    <app-activity-page-controls
+      label="Backup pages"
+      [page]="backupsPage()"
+      [total]="backupsTotal()"
+      [busy]="backupsState() === 'loading'"
+      (changePage)="loadBackups($event)"
+    />
+  }
+</section>
+<section
+  class="panel"
+  aria-label="Background jobs"
+  [attr.aria-busy]="jobsState() === 'loading' || retrying()"
+>
   @if (retryNotice()) {
     <p class="notice" role="status">{{ retryNotice() }}</p>
   }
-
-  <section class="panel" aria-label="Backup evidence">
-    <app-backup-evidence-panel [evidence]="backupEvidence" />
-  </section>
-
-  <section class="panel" aria-label="Background jobs">
-    <app-job-status-panel
-      [jobs]="jobs()"
-      (retryJob)="retryPreviewJob($event)"
+  @if (retryError()) {
+    <p role="alert">{{ retryError() }}</p>
+  }
+  @if (jobsError()) {
+    <p role="alert">{{ jobsError() }}</p>
+  }
+  @if (jobsState() === 'ready') {
+    <app-job-status-panel [jobs]="jobs()" [busy]="retrying()" (retryJob)="retryJob($event)" />
+  } @else {
+    <h2>Background jobs</h2>
+    <app-activity-state
+      [state]="jobsState()"
+      emptyText="No background jobs available."
+      (retry)="loadJobs()"
     />
-  </section>
-}
+  }
+  @if (jobsState() === 'ready' || jobsState() === 'empty') {
+    <app-activity-page-controls
+      label="Job pages"
+      [page]="jobsPage()"
+      [total]="jobsTotal()"
+      [busy]="jobsState() === 'loading' || retrying()"
+      (changePage)="loadJobs($event)"
+    />
+  }
+</section>

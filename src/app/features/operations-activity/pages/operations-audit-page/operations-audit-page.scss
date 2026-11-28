@@ -1,7 +1,13 @@
 :host {
   display: block;
   color: #17334f;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
 }
 
 .heading {
@@ -78,4 +84,45 @@ h1 {
   color: #648598;
   font-size: 12px;
   line-height: 1.6;
+}
+
+button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #dbe9f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #317a9d;
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #167fac;
+  outline-offset: 3px;
+}
+[role='alert'] {
+  color: #b74f53;
+  overflow-wrap: anywhere;
+}
+form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+input {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #dbe9f1;
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
 }
