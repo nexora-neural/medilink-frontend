@@ -56,6 +56,8 @@ export class OperationsAuditPage implements OnInit {
   readonly retryError = signal('');
   actionFilter = '';
   private appliedAction = '';
+  private auditRequest = { page: 1, action: '' };
+  private auditRequestId = 0;
   private readonly retryKeys = new Map<string, { reason: string; key: string }>();
   ngOnInit(): void {
     void this.refresh();
@@ -85,14 +87,22 @@ export class OperationsAuditPage implements OnInit {
   }
   applyFilter(): void {
     this.appliedAction = this.actionFilter.trim();
-    void this.loadAudit(1);
+    void this.loadAudit(1, this.appliedAction);
   }
-  async loadAudit(page = this.auditPage()): Promise<void> {
+
+  async loadAudit(page = this.auditRequest.page, action = this.auditRequest.action): Promise<void> {
+    const requestId = ++this.auditRequestId;
+    this.auditRequest = { page, action };
+
     this.auditState.set('loading');
     this.events.set([]);
     this.auditError.set('');
+
     try {
-      const result = await this.api.audit(page, this.appliedAction);
+      const result = await this.api.audit(page, action);
+
+      if (requestId !== this.auditRequestId) return;
+
       this.events.set(
         result.items.map((row) => ({
           id: row.id,
@@ -108,10 +118,13 @@ export class OperationsAuditPage implements OnInit {
           outcome: row.outcome,
         })),
       );
+
       this.auditPage.set(result.page);
       this.auditTotal.set(result.total);
       this.auditState.set(result.items.length ? 'ready' : 'empty');
     } catch (e) {
+      if (requestId !== this.auditRequestId) return;
+
       this.auditError.set(activityError(e));
       this.auditState.set('error');
     }

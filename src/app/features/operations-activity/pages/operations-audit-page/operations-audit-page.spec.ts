@@ -180,4 +180,89 @@ describe('OperationsAuditPage integration', () => {
       expect(element.querySelectorAll('app-activity-page-controls')).toHaveLength(3);
     },
   );
+
+  it('retries the failed filter page instead of the previously displayed page', async () => {
+    api.audit.mockResolvedValueOnce({ ...empty, page: 3, total: 60 });
+    await page.loadAudit(3);
+
+    expect(page.auditPage()).toBe(3);
+
+    api.audit.mockRejectedValueOnce({ status: 503 });
+    page.actionFilter = 'job.retry.requested';
+    page.applyFilter();
+
+    await vi.waitFor(() => {
+      expect(page.auditState()).toBe('error');
+    });
+
+    expect(api.audit).toHaveBeenLastCalledWith(1, 'job.retry.requested');
+
+    // Unsubmitted input must not change the filter being retried.
+    page.actionFilter = 'job.retry.completed';
+    api.audit.mockResolvedValueOnce(empty);
+
+    // The template's Try again button calls loadAudit().
+    await page.loadAudit();
+
+    expect(api.audit).toHaveBeenLastCalledWith(1, 'job.retry.requested');
+    expect(page.auditPage()).toBe(1);
+    expect(page.auditState()).toBe('empty');
+    expect(page.auditError()).toBe('');
+  });
+
+  it('ignores an older refresh response after a newer filter succeeds', async () => {
+    let resolveOlder!: (value: unknown) => void;
+    api.audit.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOlder = resolve;
+      }),
+    );
+
+    const olderRefresh = page.refresh();
+
+    const currentRow = {
+      id: 'current',
+      action: 'job.retry.requested',
+      actor_user_id: null,
+      actor_client_id: null,
+      target_type: 'job_run',
+      target_id: null,
+      outcome: 'success',
+      request_id: 'current-request',
+      metadata: {},
+      created_at: '2026-11-28T00:00:00Z',
+    };
+
+    api.audit.mockResolvedValueOnce({
+      ...empty,
+      items: [currentRow],
+      total: 1,
+    });
+    page.actionFilter = 'job.retry.requested';
+    page.applyFilter();
+
+    await vi.waitFor(() => {
+      expect(page.events().map((row) => row.id)).toEqual(['current']);
+    });
+
+    resolveOlder({
+      ...empty,
+      page: 3,
+      total: 60,
+      items: [
+        {
+          ...currentRow,
+          id: 'older',
+          action: 'job.retry.completed',
+        },
+      ],
+    });
+    await olderRefresh;
+
+    expect(page.events().map((row) => row.id)).toEqual(['current']);
+    expect(page.auditPage()).toBe(1);
+    expect(page.auditTotal()).toBe(1);
+    expect(page.auditState()).toBe('ready');
+    expect(page.auditError()).toBe('');
+  });
 });
