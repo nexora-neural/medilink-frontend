@@ -36,6 +36,12 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Patient: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'My profile', icon: 'person', path: '/workspace/patient/profile' },
+    {
+      label: 'Notifications',
+      icon: 'notifications',
+      path: '/workspace/patient/notifications',
+    },
+    { label: 'Settings', icon: 'settings', path: '/workspace/patient/settings' },
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/patient/prescriptions' },
     {
