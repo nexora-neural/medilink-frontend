@@ -10,21 +10,8 @@ import { PublicShell } from './features/public/public-shell';
 import { PublicHome } from './features/public/home/home';
 import { PublicInformational } from './features/public/informational/informational';
 import { SuperAdminShell } from './features/administration/super-admin-shell/super-admin-shell';
-import { Organizations } from './features/administration/organizations/organizations';
-import { OrganizationDetail } from './features/administration/organization-detail/organization-detail';
-import { MembershipRequest } from './features/administration/membership-request/membership-request';
-import { PatientProfile } from './features/patients/pages/patient-profile/patient-profile';
-import { ProfessionalVerification } from './features/professional-verification/professional-verification';
-import { DoctorDashboard } from './features/doctors/pages/doctor-dashboard/doctor-dashboard';
-import { DoctorPatientQueue } from './features/doctors/pages/doctor-patient-queue/doctor-patient-queue';
 import { DoctorPlaceholder } from './features/doctors/pages/doctor-placeholder/doctor-placeholder';
-import { AccountSupport } from './features/administration/account-support/account-support';
-import { AdminAccounts } from './features/administration/admin-accounts/admin-accounts';
-import { PatientMeasurements } from './features/measurements/pages/patient-measurements/patient-measurements';
-import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
-import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
-import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
-import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
+
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -114,7 +101,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/history',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (m) => m.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Medical history | MediLink',
     data: {
@@ -171,7 +161,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'doctor/records',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (m) => m.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Patient clinical records | MediLink',
     data: {
@@ -288,7 +281,10 @@ export const routes: Routes = [
       },
       {
         path: 'doctor/dashboard',
-        component: DoctorDashboard,
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-dashboard/doctor-dashboard').then(
+            (m) => m.DoctorDashboard,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor'],
@@ -296,7 +292,10 @@ export const routes: Routes = [
       },
       {
         path: 'doctor/medicines',
-        component: DoctorMedicineSearch,
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-medicine-search/doctor-medicine-search').then(
+            (m) => m.DoctorMedicineSearch,
+          ),
         canActivate: [roleGuard],
         title: 'Medicine catalogue | MediLink',
         data: {
@@ -305,7 +304,10 @@ export const routes: Routes = [
       },
       {
         path: 'doctor/patients',
-        component: DoctorPatientQueue,
+        loadComponent: () =>
+          import('./features/doctors/pages/doctor-patient-queue/doctor-patient-queue').then(
+            (m) => m.DoctorPatientQueue,
+          ),
         canActivate: [roleGuard],
         title: 'Patient queue | MediLink',
         data: {
@@ -363,7 +365,10 @@ export const routes: Routes = [
 
       {
         path: 'patient/profile',
-        component: PatientProfile,
+        loadComponent: () =>
+          import('./features/patients/pages/patient-profile/patient-profile').then(
+            (m) => m.PatientProfile,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Patient'],
@@ -371,7 +376,10 @@ export const routes: Routes = [
       },
       {
         path: 'patient/measurements',
-        component: PatientMeasurements,
+        loadComponent: () =>
+          import('./features/measurements/pages/patient-measurements/patient-measurements').then(
+            (m) => m.PatientMeasurements,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Patient'],
@@ -379,11 +387,17 @@ export const routes: Routes = [
       },
       {
         path: 'professional-verification',
-        component: ProfessionalVerification,
+        loadComponent: () =>
+          import('./features/professional-verification/professional-verification').then(
+            (m) => m.ProfessionalVerification,
+          ),
       },
       {
         path: 'professional-verification/membership-request',
-        component: MembershipRequest,
+        loadComponent: () =>
+          import('./features/administration/membership-request/membership-request').then(
+            (m) => m.MembershipRequest,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Doctor', 'Pharmacist', 'Lab Staff'],
@@ -392,7 +406,10 @@ export const routes: Routes = [
       },
       {
         path: 'admin/dashboard',
-        component: AdminDashboard,
+        loadComponent: () =>
+          import('./features/administration/admin-dashboard/admin-dashboard').then(
+            (m) => m.AdminDashboard,
+          ),
         canActivate: [roleGuard],
         title: 'Admin dashboard | MediLink',
         data: {
@@ -425,7 +442,10 @@ export const routes: Routes = [
       },
       {
         path: 'admin/account-support',
-        component: AccountSupport,
+        loadComponent: () =>
+          import('./features/administration/account-support/account-support').then(
+            (m) => m.AccountSupport,
+          ),
         canActivate: [roleGuard],
         data: {
           allowedRoles: ['Admin', 'Super Admin'],
@@ -569,11 +589,17 @@ export const routes: Routes = [
       },
       {
         path: 'organizations',
-        component: Organizations,
+        loadComponent: () =>
+          import('./features/administration/organizations/organizations').then(
+            (m) => m.Organizations,
+          ),
       },
       {
         path: 'organizations/:id',
-        component: OrganizationDetail,
+        loadComponent: () =>
+          import('./features/administration/organization-detail/organization-detail').then(
+            (m) => m.OrganizationDetail,
+          ),
       },
       {
         path: 'applications',
@@ -593,11 +619,17 @@ export const routes: Routes = [
       },
       {
         path: 'account-support',
-        component: AccountSupport,
+        loadComponent: () =>
+          import('./features/administration/account-support/account-support').then(
+            (m) => m.AccountSupport,
+          ),
       },
       {
         path: 'admin-accounts',
-        component: AdminAccounts,
+        loadComponent: () =>
+          import('./features/administration/admin-accounts/admin-accounts').then(
+            (m) => m.AdminAccounts,
+          ),
       },
       {
         path: 'integrations',
@@ -620,7 +652,10 @@ export const routes: Routes = [
       },
       {
         path: 'medicine-catalogue',
-        component: MedicineCatalogue,
+        loadComponent: () =>
+          import('./features/administration/medicine-catalogue/medicine-catalogue').then(
+            (m) => m.MedicineCatalogue,
+          ),
         title: 'Medicine catalogue | MediLink',
       },
     ],

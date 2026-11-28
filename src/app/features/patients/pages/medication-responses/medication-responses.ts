@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type Choice = 'Taken' | 'Skipped';
@@ -24,7 +31,39 @@ interface Occurrence {
   templateUrl: './medication-responses.html',
   styleUrl: './medication-responses.scss',
 })
-export class MedicationResponses {
+export class MedicationResponses implements AfterViewChecked {
+  @ViewChild('viewHeading') viewHeading?: ElementRef<HTMLElement>;
+  @ViewChildren('scheduleAction') scheduleActions?: QueryList<ElementRef<HTMLButtonElement>>;
+  private pendingFocus: 'view' | 'schedule' | null = null;
+  private scheduleOrigin: 'response' | 'history' = 'response';
+
+  ngAfterViewChecked(): void {
+    if (this.pendingFocus === 'view' && this.viewHeading) {
+      this.viewHeading.nativeElement.focus();
+      this.pendingFocus = null;
+    } else if (this.pendingFocus === 'schedule' && this.selected) {
+      const target = this.scheduleActions?.find(
+        (action) =>
+          action.nativeElement.dataset['occurrence'] === String(this.selected?.id) &&
+          action.nativeElement.dataset['action'] === this.scheduleOrigin,
+      );
+      if (target) {
+        target.nativeElement.focus();
+        this.pendingFocus = null;
+      }
+    }
+  }
+
+  showState(state: 'loading' | 'ready' | 'empty' | 'error'): void {
+    this.state = state;
+    this.view = 'schedule';
+    this.pendingFocus = null;
+  }
+
+  retry(): void {
+    this.showState('ready');
+  }
+
   state: 'loading' | 'ready' | 'empty' | 'error' = 'ready';
   view: 'schedule' | 'form' | 'history' = 'schedule';
   occurrences: Occurrence[] = [
@@ -57,6 +96,7 @@ export class MedicationResponses {
     return this.occurrences.filter((item) => item.versions.length > 0).length;
   }
   start(item: Occurrence): void {
+    if (this.view === 'schedule') this.scheduleOrigin = 'response';
     this.selected = item;
     this.choice = item.versions[0]?.choice ?? '';
     this.reportedAt = item.versions[0]?.reportedAt ?? this.localNow();
@@ -64,11 +104,14 @@ export class MedicationResponses {
     this.submitted = false;
     this.notice = '';
     this.view = 'form';
+    this.pendingFocus = 'view';
   }
   history(item: Occurrence): void {
+    if (this.view === 'schedule') this.scheduleOrigin = 'history';
     this.selected = item;
     this.notice = '';
     this.view = 'history';
+    this.pendingFocus = 'view';
   }
   save(): void {
     this.submitted = true;
@@ -89,9 +132,11 @@ export class MedicationResponses {
     });
     this.notice = 'Response recorded in this preview.';
     this.view = 'history';
+    this.pendingFocus = 'view';
   }
   back(): void {
     this.view = 'schedule';
+    this.pendingFocus = 'schedule';
     this.notice = '';
   }
   invalidDateMarker(): boolean {
