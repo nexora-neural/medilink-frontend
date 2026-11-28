@@ -51,7 +51,7 @@ describe('Prescription preview routing', () => {
   });
 
   it('opens the list and shows the sample prescriptions', async () => {
-    await harness.navigateByUrl(base, PrescriptionList);
+    await harness.navigateByUrl(`${base}?preview=ready`, PrescriptionList);
 
     expect(text()).toContain('Sample patient A');
     expect(text()).toContain('Sample patient B');
@@ -62,7 +62,7 @@ describe('Prescription preview routing', () => {
   });
 
   it('searches the list by patient reference', async () => {
-    await harness.navigateByUrl(base, PrescriptionList);
+    await harness.navigateByUrl(`${base}?preview=ready`, PrescriptionList);
 
     const input =
       harness.routeNativeElement!.querySelector<HTMLInputElement>('#prescription-search')!;
@@ -77,7 +77,7 @@ describe('Prescription preview routing', () => {
   });
 
   it('filters the list to active prescriptions', async () => {
-    await harness.navigateByUrl(base, PrescriptionList);
+    await harness.navigateByUrl(`${base}?preview=ready`, PrescriptionList);
 
     const select =
       harness.routeNativeElement!.querySelector<HTMLSelectElement>('#prescription-status')!;
@@ -92,7 +92,7 @@ describe('Prescription preview routing', () => {
   });
 
   it('opens a prescription directly with all medicine details', async () => {
-    await harness.navigateByUrl(`${base}/sample-draft-01`, PrescriptionDetail);
+    await harness.navigateByUrl(`${base}/sample-draft-01?preview=ready`, PrescriptionDetail);
 
     expect(text()).toContain('Sample patient A');
     expect(text()).toContain('Sample medicine A');
@@ -102,7 +102,10 @@ describe('Prescription preview routing', () => {
   });
 
   it('retains saved edits when navigating between editor, detail and list', async () => {
-    const editor = await harness.navigateByUrl(`${base}/sample-draft-01/edit`, PrescriptionEditor);
+    const editor = await harness.navigateByUrl(
+      `${base}/sample-draft-01/edit?preview=ready`,
+      PrescriptionEditor,
+    );
 
     editor.items
       .at(0)
@@ -115,27 +118,30 @@ describe('Prescription preview routing', () => {
     await harness.fixture.whenStable();
     harness.detectChanges();
 
-    expect(TestBed.inject(Router).url).toBe(`${base}/sample-draft-01`);
+    expect(TestBed.inject(Router).url).toBe(`${base}/sample-draft-01?preview=ready`);
     expect(text()).toContain('Updated synthetic instructions across routes.');
 
-    await harness.navigateByUrl(base, PrescriptionList);
+    await harness.navigateByUrl(`${base}?preview=ready`, PrescriptionList);
 
     expect(text()).toContain('Sample patient A');
 
-    await harness.navigateByUrl(`${base}/sample-draft-01`, PrescriptionDetail);
+    await harness.navigateByUrl(`${base}/sample-draft-01?preview=ready`, PrescriptionDetail);
 
     expect(text()).toContain('Updated synthetic instructions across routes.');
   });
 
   it('shows an unavailable message for an unknown prescription', async () => {
-    await harness.navigateByUrl(`${base}/unknown-prescription`, PrescriptionDetail);
+    await harness.navigateByUrl(`${base}/unknown-prescription?preview=ready`, PrescriptionDetail);
 
     expect(text()).toContain('Prescription unavailable');
     expect(text()).not.toContain('Sample patient A');
   });
 
   it('opens another doctor draft as read-only', async () => {
-    await harness.navigateByUrl(`${base}/sample-other-owner-01/edit`, PrescriptionEditor);
+    await harness.navigateByUrl(
+      `${base}/sample-other-owner-01/edit?preview=ready`,
+      PrescriptionEditor,
+    );
 
     expect(text()).toContain('This prescription is read-only');
     expect(harness.routeNativeElement!.querySelector('form')).toBeNull();
@@ -154,7 +160,10 @@ describe('Prescription preview routing', () => {
     },
   );
   it('clears lifecycle form state when navigating to another prescription', async () => {
-    const detail = await harness.navigateByUrl(`${base}/sample-replacement-01`, PrescriptionDetail);
+    const detail = await harness.navigateByUrl(
+      `${base}/sample-replacement-01?preview=ready`,
+      PrescriptionDetail,
+    );
 
     detail.reason.set('Synthetic completion reason.');
     detail.finishPrescription();
@@ -168,7 +177,7 @@ describe('Prescription preview routing', () => {
     detail.linkedReason.set('Linked reason belonging to the previous prescription.');
 
     const previous = await harness.navigateByUrl(
-      `${base}/sample-superseded-01`,
+      `${base}/sample-superseded-01?preview=ready`,
       PrescriptionDetail,
     );
     harness.detectChanges();
@@ -186,13 +195,16 @@ describe('Prescription preview routing', () => {
   });
 
   it('defaults to Renewal when opening a completed prescription', async () => {
-    await harness.navigateByUrl(base, PrescriptionList);
+    await harness.navigateByUrl(`${base}?preview=ready`, PrescriptionList);
 
     const store = harness.routeDebugElement!.injector.get(PrescriptionDraftPreviewStore);
 
     store.finish('sample-active-01', 'complete', 'Synthetic completion before opening the page.');
 
-    const detail = await harness.navigateByUrl(`${base}/sample-active-01`, PrescriptionDetail);
+    const detail = await harness.navigateByUrl(
+      `${base}/sample-active-01?preview=ready`,
+      PrescriptionDetail,
+    );
     harness.detectChanges();
 
     const select = harness.routeNativeElement!.querySelector<HTMLSelectElement>('#linked-action')!;
@@ -206,12 +218,15 @@ describe('Prescription preview routing', () => {
     await detail.createLinkedDraft();
     await harness.fixture.whenStable();
 
-    expect(TestBed.inject(Router).url).toMatch(/\/edit$/);
+    expect(TestBed.inject(Router).url).toMatch(/\/edit\?preview=ready$/);
     expect(detail.linkedError()).toBe('');
   });
 
   it('switches Correction to Renewal after completing the current prescription', async () => {
-    const detail = await harness.navigateByUrl(`${base}/sample-active-01`, PrescriptionDetail);
+    const detail = await harness.navigateByUrl(
+      `${base}/sample-active-01?preview=ready`,
+      PrescriptionDetail,
+    );
 
     expect(detail.linkedAction()).toBe('correct');
 

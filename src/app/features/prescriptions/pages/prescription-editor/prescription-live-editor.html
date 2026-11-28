@@ -1,0 +1,294 @@
+<section class="prescription-page" aria-labelledby="live-editor-heading">
+  <header>
+    <p class="eyebrow">Doctor workspace</p>
+    <h1 id="live-editor-heading">
+      {{ creating() ? 'Create prescription draft' : 'Edit prescription draft' }}
+    </h1>
+  </header>
+
+  @if (state() === 'loading') {
+    <section class="panel" role="status">
+      <h2>Loading draft</h2>
+    </section>
+  } @else if (state() === 'denied') {
+    <section class="panel" role="alert">
+      <h2>Access unavailable</h2>
+    </section>
+  } @else if (state() === 'missing') {
+    <section class="panel">
+      <h2>Draft unavailable</h2>
+    </section>
+  } @else if (state() === 'readonly') {
+    <section class="panel">
+      <h2>This prescription is read-only</h2>
+      <p>Only the owner doctor can edit an unissued doctor-source draft.</p>
+    </section>
+  } @else if (state() === 'error') {
+    <section class="panel" role="alert">
+      <h2>Unable to load draft</h2>
+      <button type="button" (click)="reload()">Try again</button>
+    </section>
+  } @else if (deleted()) {
+    <section class="panel" role="status">
+      <h2>Draft deleted</h2>
+      <p>The prescription draft was deleted successfully.</p>
+    </section>
+  } @else if (state() === 'ready') {
+    <section class="panel">
+      @if (creating()) {
+        <h2>New prescription draft</h2>
+        <p>Patient reference: {{ newPatientId() }}</p>
+        <p>Consultation reference: {{ newConsultationId() }}</p>
+      } @else if (detail(); as result) {
+        <h2>Prescription draft</h2>
+        <p>Patient reference: {{ result.prescription.patient_user_id }}</p>
+        <p>Version: {{ result.prescription.version }}</p>
+      }
+    </section>
+    @if (!creating()) {
+      <section class="panel" aria-labelledby="delete-draft-heading">
+        <h2 id="delete-draft-heading">Delete draft</h2>
+
+        @if (deleteRequested()) {
+          <p role="alert">
+            Delete this prescription draft? Unsaved changes will also be lost. This action cannot be
+            undone.
+          </p>
+
+          <div class="actions">
+            <button type="button" [disabled]="saving()" (click)="deleteRequested.set(false)">
+              Keep draft
+            </button>
+
+            <button type="button" [disabled]="saving() || needsReload()" (click)="confirmDelete()">
+              {{ saving() ? 'Deleting...' : 'Yes, delete draft' }}
+            </button>
+          </div>
+        } @else {
+          <button
+            type="button"
+            [disabled]="saving() || needsReload()"
+            (click)="deleteRequested.set(true)"
+          >
+            Delete draft
+          </button>
+        }
+      </section>
+    }
+
+    @if (errors().length > 0) {
+      <section class="panel" role="alert">
+        <h2>Check the draft</h2>
+        <ul>
+          @for (error of errors(); track error) {
+            <li>{{ error }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (saveMessage()) {
+      <section class="panel" role="status">
+        <p>{{ saveMessage() }}</p>
+      </section>
+    }
+
+    @if (needsReload()) {
+      <section class="panel">
+        @if (creating()) {
+          <p>
+            Check the patient prescription list for the saved draft before creating another one.
+          </p>
+          <button type="button" (click)="reload()">Check prescription list</button>
+        } @else {
+          <p>Reloading will replace the form with the latest saved draft.</p>
+          <button type="button" (click)="reload()">Reload draft</button>
+        }
+      </section>
+    }
+
+    @if (review(); as summary) {
+      <section class="panel" aria-labelledby="live-review-heading">
+        <h2 id="live-review-heading">Review draft</h2>
+
+        <p>
+          Dates: {{ summary.starts_on ?? 'Not supplied' }} to
+          {{ summary.ends_on ?? 'Not supplied' }}
+        </p>
+
+        <div class="prescription-list">
+          @for (item of summary.items; track $index) {
+            <article class="prescription-card">
+              <h3>{{ $index + 1 }}. {{ item.medicine_name_snapshot }}</h3>
+
+              <dl>
+                <div>
+                  <dt>Dose</dt>
+                  <dd>{{ item.dose_text }}</dd>
+                </div>
+                <div>
+                  <dt>Route</dt>
+                  <dd>{{ item.route ?? 'Not supplied' }}</dd>
+                </div>
+                <div>
+                  <dt>Frequency</dt>
+                  <dd>{{ item.frequency }}</dd>
+                </div>
+                <div>
+                  <dt>Duration in days</dt>
+                  <dd>{{ item.duration_days ?? 'Not supplied' }}</dd>
+                </div>
+                <div>
+                  <dt>Quantity</dt>
+                  <dd>
+                    {{ item.quantity ?? 'Not supplied' }}
+                    {{ item.quantity_unit ?? '' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt>As needed (PRN)</dt>
+                  <dd>{{ item.is_prn ? 'Yes' : 'No' }}</dd>
+                </div>
+                <div>
+                  <dt>Instructions</dt>
+                  <dd>{{ item.instructions ?? 'No additional instructions.' }}</dd>
+                </div>
+              </dl>
+            </article>
+          } @empty {
+            <p>No medicine items in this draft.</p>
+          }
+        </div>
+
+        <div class="actions">
+          <button type="button" [disabled]="saving()" (click)="backToEditing()">
+            Back to editing
+          </button>
+
+          <button type="button" [disabled]="saving() || needsReload()" (click)="saveDraft()">
+            {{ saving() ? 'Saving...' : 'Save draft' }}
+          </button>
+        </div>
+      </section>
+    }
+    @if (!review() && !deleteRequested()) {
+      <form [formGroup]="form" (submit)="$event.preventDefault()" novalidate>
+        <section class="panel">
+          <h2>Prescription dates</h2>
+
+          <div class="filters">
+            <div class="field">
+              <label for="live-start">Starts on</label>
+              <input id="live-start" type="date" formControlName="starts_on" />
+            </div>
+
+            <div class="field">
+              <label for="live-end">Ends on</label>
+              <input id="live-end" type="date" formControlName="ends_on" />
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Medicines</h2>
+          <p>Fields marked * are required.</p>
+
+          <div formArrayName="items" class="prescription-list">
+            @for (group of form.controls.items.controls; track group; let i = $index) {
+              <fieldset [formGroupName]="i" class="prescription-card">
+                <legend>Medicine {{ i + 1 }}</legend>
+
+                <div class="medicine-fields">
+                  @for (field of textFields; track field.key) {
+                    <div class="field">
+                      <label [for]="'live-' + field.key + '-' + i">
+                        {{ field.label }} {{ field.required ? '*' : '' }}
+                      </label>
+
+                      <input
+                        [id]="'live-' + field.key + '-' + i"
+                        type="text"
+                        [formControlName]="field.key"
+                        [maxlength]="field.max"
+                        [required]="field.required"
+                        [attr.aria-invalid]="
+                          group.controls[field.key].touched && group.controls[field.key].invalid
+                        "
+                      />
+                    </div>
+                  }
+
+                  <div class="field">
+                    <label [for]="'live-duration-' + i">Duration in days</label>
+                    <input
+                      [id]="'live-duration-' + i"
+                      type="number"
+                      min="1"
+                      step="1"
+                      formControlName="duration_days"
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label [for]="'live-quantity-' + i">Quantity</label>
+                    <input
+                      [id]="'live-quantity-' + i"
+                      type="text"
+                      inputmode="decimal"
+                      formControlName="quantity"
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label [for]="'live-unit-' + i">Quantity unit</label>
+                    <select [id]="'live-unit-' + i" formControlName="quantity_unit">
+                      <option value="">Not supplied</option>
+                      <option value="tablet">tablet</option>
+                      <option value="capsule">capsule</option>
+                      <option value="mL">mL</option>
+                    </select>
+                  </div>
+
+                  <div class="field instructions-field">
+                    <label [for]="'live-instructions-' + i">Instructions</label>
+                    <textarea
+                      [id]="'live-instructions-' + i"
+                      rows="3"
+                      maxlength="2000"
+                      formControlName="instructions"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <label class="checkbox-field">
+                  <input type="checkbox" formControlName="is_prn" />
+                  As needed (PRN)
+                </label>
+
+                <button
+                  type="button"
+                  (click)="removeMedicine(i)"
+                  [attr.aria-label]="'Remove medicine ' + (i + 1)"
+                >
+                  Remove medicine
+                </button>
+              </fieldset>
+            } @empty {
+              <p>No medicines added.</p>
+            }
+          </div>
+
+          <div class="actions">
+            <button type="button" [disabled]="needsReload()" (click)="addMedicine()">
+              Add medicine
+            </button>
+
+            <button type="button" [disabled]="needsReload()" (click)="reviewDraft()">
+              Review draft
+            </button>
+          </div>
+        </section>
+      </form>
+    }
+  }
+</section>

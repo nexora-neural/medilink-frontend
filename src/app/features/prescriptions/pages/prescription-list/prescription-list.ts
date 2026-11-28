@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { PrescriptionLiveList } from './prescription-live-list';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { SAMPLE_DOCTOR_ID } from '../../data/prescription-draft.samples';
@@ -16,7 +17,7 @@ import { PrescriptionDraftPreviewStore } from '../../services/prescription-draft
 @Component({
   selector: 'app-prescription-list',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, PrescriptionLiveList],
   templateUrl: './prescription-list.html',
   styleUrl: './prescription-list.scss',
 })
@@ -61,6 +62,13 @@ export class PrescriptionList {
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const preview = params.get('preview');
+      this.routePreview.set(
+        preview === 'ready' ||
+          preview === 'loading' ||
+          preview === 'empty' ||
+          preview === 'error' ||
+          preview === 'denied',
+      );
 
       this.pageState.set(
         preview === 'loading' || preview === 'empty' || preview === 'error' || preview === 'denied'
@@ -87,4 +95,7 @@ export class PrescriptionList {
 
     this.pageState.set('ready');
   }
+  readonly previewMode = computed(() => this.routePreview());
+
+  private readonly routePreview = signal(false);
 }

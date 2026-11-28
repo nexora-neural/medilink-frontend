@@ -1,271 +1,286 @@
-<section class="prescription-page" aria-labelledby="detail-heading">
-  <header>
-    <p class="eyebrow">Doctor workspace</p>
-    <h1 id="detail-heading">Prescription details</h1>
-    <a routerLink="/workspace/doctor/prescriptions"> Back to prescriptions </a>
-  </header>
+@if (!previewMode()) {
+  <app-prescription-live-detail />
+} @else {
+  <section class="prescription-page" aria-labelledby="detail-heading">
+    <header>
+      <p class="eyebrow">Doctor workspace</p>
+      <h1 id="detail-heading">Prescription details</h1>
+      <a routerLink="/workspace/doctor/prescriptions" [queryParams]="{ preview: 'ready' }">
+        Back to prescriptions
+      </a>
+    </header>
 
-  <aside class="preview-notice" aria-label="Sample preview information">
-    <strong>Sample preview only.</strong>
-    Patients, medicines and instructions are fictional. Changes disappear after refresh. This
-    preview cannot issue a real prescription.
-  </aside>
+    <aside class="preview-notice" aria-label="Sample preview information">
+      <strong>Sample preview only.</strong>
+      Patients, medicines and instructions are fictional. Changes disappear after refresh. This
+      preview cannot issue a real prescription.
+    </aside>
 
-  @if (!permitted() || pageState() === 'denied') {
-    <section class="panel">
-      <h2>Access unavailable</h2>
-      <p>Select an available Doctor role to view this workspace.</p>
-    </section>
-  } @else if (pageState() === 'loading') {
-    <section class="panel" role="status">
-      <h2>Loading prescription</h2>
-      <p>Please wait while the details load.</p>
-    </section>
-  } @else if (pageState() === 'error') {
-    <section class="panel" role="alert">
-      <h2>Unable to load prescription</h2>
-      <p>Try loading the sample details again.</p>
-      <button type="button" (click)="retry()">Try again</button>
-    </section>
-  } @else if (prescription(); as prescription) {
-    <section class="panel" aria-labelledby="patient-heading">
-      <div class="card-heading">
-        <h2 id="patient-heading">{{ prescription.patientName }}</h2>
-        <span class="badge">
-          {{ prescription.status }}
-        </span>
-      </div>
+    @if (!permitted() || pageState() === 'denied') {
+      <section class="panel">
+        <h2>Access unavailable</h2>
+        <p>Select an available Doctor role to view this workspace.</p>
+      </section>
+    } @else if (pageState() === 'loading') {
+      <section class="panel" role="status">
+        <h2>Loading prescription</h2>
+        <p>Please wait while the details load.</p>
+      </section>
+    } @else if (pageState() === 'error') {
+      <section class="panel" role="alert">
+        <h2>Unable to load prescription</h2>
+        <p>Try loading the sample details again.</p>
+        <button type="button" (click)="retry()">Try again</button>
+      </section>
+    } @else if (prescription(); as prescription) {
+      <section class="panel" aria-labelledby="patient-heading">
+        <div class="card-heading">
+          <h2 id="patient-heading">{{ prescription.patientName }}</h2>
+          <span class="badge">
+            {{ prescription.status }}
+          </span>
+        </div>
 
-      <dl>
-        <div>
-          <dt>Patient reference</dt>
-          <dd>{{ prescription.patientReference }}</dd>
-        </div>
-        <div>
-          <dt>Prescription ID</dt>
-          <dd>{{ prescription.id }}</dd>
-        </div>
-        <div>
-          <dt>Consultation reference</dt>
-          <dd>{{ prescription.consultationId }}</dd>
-        </div>
-        <div>
-          <dt>Source</dt>
-          <dd>{{ prescription.source === 'doctor' ? 'Doctor' : 'Patient' }}</dd>
-        </div>
-        <div>
-          <dt>Starts on</dt>
-          <dd>{{ prescription.startsOn | date: 'mediumDate' }}</dd>
-        </div>
-        <div>
-          <dt>Ends on</dt>
-          <dd>{{ prescription.endsOn | date: 'mediumDate' }}</dd>
-        </div>
-        <div>
-          <dt>Created</dt>
-          <dd>{{ prescription.createdAt | date: 'medium' }}</dd>
-        </div>
-        <div>
-          <dt>Updated</dt>
-          <dd>{{ prescription.updatedAt | date: 'medium' }}</dd>
-        </div>
-      </dl>
-
-      @if (editable()) {
-        <a [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'edit']">
-          Edit draft
-        </a>
-      } @else {
-        <p>
-          Read-only sample. Editing is available only for the owner doctor's doctor-source drafts.
-        </p>
-      }
-    </section>
-
-    <section class="panel" aria-labelledby="lifecycle-heading">
-      <h2 id="lifecycle-heading">Prescription actions</h2>
-
-      @if (actionMessage()) {
-        <p role="status">{{ actionMessage() }}</p>
-      }
-
-      @if (canFinish()) {
-        <form (submit)="$event.preventDefault(); finishPrescription()">
-          <div class="field">
-            <label for="lifecycle-action">Action</label>
-            <select
-              id="lifecycle-action"
-              [value]="action()"
-              (change)="selectAction($any($event.target).value)"
-            >
-              <option value="complete">Mark as completed</option>
-              <option value="cancel">Cancel prescription</option>
-              <option value="discontinue">Discontinue prescription</option>
-            </select>
+        <dl>
+          <div>
+            <dt>Patient reference</dt>
+            <dd>{{ prescription.patientReference }}</dd>
           </div>
-
-          <div class="field reason-field">
-            <label for="lifecycle-reason">Reason (required)</label>
-            <textarea
-              id="lifecycle-reason"
-              rows="4"
-              maxlength="1000"
-              [value]="reason()"
-              (input)="reason.set($any($event.target).value)"
-              [attr.aria-invalid]="actionError() ? 'true' : null"
-              aria-describedby="reason-help lifecycle-error"
-            ></textarea>
-            <p id="reason-help">Enter a reason, up to 1000 characters.</p>
+          <div>
+            <dt>Prescription ID</dt>
+            <dd>{{ prescription.id }}</dd>
           </div>
+          <div>
+            <dt>Consultation reference</dt>
+            <dd>{{ prescription.consultationId }}</dd>
+          </div>
+          <div>
+            <dt>Source</dt>
+            <dd>{{ prescription.source === 'doctor' ? 'Doctor' : 'Patient' }}</dd>
+          </div>
+          <div>
+            <dt>Starts on</dt>
+            <dd>{{ prescription.startsOn | date: 'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt>Ends on</dt>
+            <dd>{{ prescription.endsOn | date: 'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{{ prescription.createdAt | date: 'medium' }}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd>{{ prescription.updatedAt | date: 'medium' }}</dd>
+          </div>
+        </dl>
 
-          <p id="lifecycle-error" role="alert" class="action-error">
-            {{ actionError() }}
+        @if (editable()) {
+          <a
+            [routerLink]="['/workspace/doctor/prescriptions', prescription.id, 'edit']"
+            [queryParams]="{ preview: 'ready' }"
+          >
+            Edit draft
+          </a>
+        } @else {
+          <p>
+            Read-only sample. Editing is available only for the owner doctor's doctor-source drafts.
+          </p>
+        }
+      </section>
+
+      <section class="panel" aria-labelledby="lifecycle-heading">
+        <h2 id="lifecycle-heading">Prescription actions</h2>
+
+        @if (actionMessage()) {
+          <p role="status">{{ actionMessage() }}</p>
+        }
+
+        @if (canFinish()) {
+          <form (submit)="$event.preventDefault(); finishPrescription()">
+            <div class="field">
+              <label for="lifecycle-action">Action</label>
+              <select
+                id="lifecycle-action"
+                [value]="action()"
+                (change)="selectAction($any($event.target).value)"
+              >
+                <option value="complete">Mark as completed</option>
+                <option value="cancel">Cancel prescription</option>
+                <option value="discontinue">Discontinue prescription</option>
+              </select>
+            </div>
+
+            <div class="field reason-field">
+              <label for="lifecycle-reason">Reason (required)</label>
+              <textarea
+                id="lifecycle-reason"
+                rows="4"
+                maxlength="1000"
+                [value]="reason()"
+                (input)="reason.set($any($event.target).value)"
+                [attr.aria-invalid]="actionError() ? 'true' : null"
+                aria-describedby="reason-help lifecycle-error"
+              ></textarea>
+              <p id="reason-help">Enter a reason, up to 1000 characters.</p>
+            </div>
+
+            <p id="lifecycle-error" role="alert" class="action-error">
+              {{ actionError() }}
+            </p>
+
+            <button type="submit">Confirm sample action</button>
+          </form>
+        } @else {
+          <p>
+            Completion, cancellation and discontinuation are available only for the owner doctor's
+            active doctor-source prescriptions.
+          </p>
+        }
+      </section>
+      <section class="panel" aria-labelledby="versions-heading">
+        <h2 id="versions-heading">Versions and linked prescriptions</h2>
+
+        <p>Version: {{ prescription.version ?? 1 }}</p>
+
+        @if (prescription.previousPrescriptionId) {
+          <a
+            [routerLink]="['/workspace/doctor/prescriptions', prescription.previousPrescriptionId]"
+            [queryParams]="{ preview: 'ready' }"
+          >
+            View previous prescription
+          </a>
+        }
+
+        @if (canCreateLinkedDraft()) {
+          <p>
+            Create a draft for review. The original prescription remains unchanged until a
+            replacement is explicitly issued.
           </p>
 
-          <button type="submit">Confirm sample action</button>
-        </form>
-      } @else {
-        <p>
-          Completion, cancellation and discontinuation are available only for the owner doctor's
-          active doctor-source prescriptions.
-        </p>
-      }
-    </section>
-    <section class="panel" aria-labelledby="versions-heading">
-      <h2 id="versions-heading">Versions and linked prescriptions</h2>
+          <form (submit)="$event.preventDefault(); createLinkedDraft()">
+            <div class="field">
+              <label for="linked-action">Draft purpose</label>
+              <select
+                id="linked-action"
+                [value]="linkedAction()"
+                (change)="selectLinkedAction($any($event.target).value)"
+              >
+                <option value="correct" [disabled]="prescription.status !== 'active'">
+                  Correction
+                </option>
+                <option value="renew">Renewal</option>
+                <option value="reissue">Reissue</option>
+              </select>
+            </div>
 
-      <p>Version: {{ prescription.version ?? 1 }}</p>
+            <div class="field reason-field">
+              <label for="linked-reason">Reason (required)</label>
+              <textarea
+                id="linked-reason"
+                rows="3"
+                maxlength="1000"
+                [value]="linkedReason()"
+                (input)="linkedReason.set($any($event.target).value)"
+                [attr.aria-invalid]="linkedError() ? 'true' : null"
+                aria-describedby="linked-error"
+              ></textarea>
+            </div>
 
-      @if (prescription.previousPrescriptionId) {
-        <a [routerLink]="['/workspace/doctor/prescriptions', prescription.previousPrescriptionId]">
-          View previous prescription
-        </a>
-      }
+            <p id="linked-error" role="alert" class="action-error">
+              {{ linkedError() }}
+            </p>
 
-      @if (canCreateLinkedDraft()) {
-        <p>
-          Create a draft for review. The original prescription remains unchanged until a replacement
-          is explicitly issued.
-        </p>
-
-        <form (submit)="$event.preventDefault(); createLinkedDraft()">
-          <div class="field">
-            <label for="linked-action">Draft purpose</label>
-            <select
-              id="linked-action"
-              [value]="linkedAction()"
-              (change)="selectLinkedAction($any($event.target).value)"
-            >
-              <option value="correct" [disabled]="prescription.status !== 'active'">
-                Correction
-              </option>
-              <option value="renew">Renewal</option>
-              <option value="reissue">Reissue</option>
-            </select>
-          </div>
-
-          <div class="field reason-field">
-            <label for="linked-reason">Reason (required)</label>
-            <textarea
-              id="linked-reason"
-              rows="3"
-              maxlength="1000"
-              [value]="linkedReason()"
-              (input)="linkedReason.set($any($event.target).value)"
-              [attr.aria-invalid]="linkedError() ? 'true' : null"
-              aria-describedby="linked-error"
-            ></textarea>
-          </div>
-
-          <p id="linked-error" role="alert" class="action-error">
-            {{ linkedError() }}
-          </p>
-
-          <button type="submit">Create sample draft and edit</button>
-        </form>
-      }
-    </section>
-
-    <section class="panel" aria-labelledby="history-heading">
-      <h2 id="history-heading">History</h2>
-
-      <div class="prescription-list">
-        @for (entry of prescription.history ?? []; track entry.id) {
-          <article class="prescription-card">
-            <h3>{{ entry.action }}</h3>
-            <p>{{ entry.reason }}</p>
-
-            <dl>
-              <div>
-                <dt>Recorded</dt>
-                <dd>{{ entry.performedAt | date: 'medium' }}</dd>
-              </div>
-              <div>
-                <dt>Recorded by</dt>
-                <dd>{{ entry.performedBy }}</dd>
-              </div>
-            </dl>
-
-            @if (entry.relatedPrescriptionId) {
-              <a [routerLink]="['/workspace/doctor/prescriptions', entry.relatedPrescriptionId]">
-                View linked prescription
-              </a>
-            }
-          </article>
-        } @empty {
-          <p>No lifecycle actions have been recorded for this sample.</p>
+            <button type="submit">Create sample draft and edit</button>
+          </form>
         }
-      </div>
-    </section>
+      </section>
 
-    <section class="panel" aria-labelledby="medicines-heading">
-      <h2 id="medicines-heading">Medicines</h2>
+      <section class="panel" aria-labelledby="history-heading">
+        <h2 id="history-heading">History</h2>
 
-      <div class="prescription-list">
-        @for (item of prescription.items; track item.id) {
-          <article class="prescription-card">
-            <h3>{{ $index + 1 }}. {{ item.medicineName }}</h3>
+        <div class="prescription-list">
+          @for (entry of prescription.history ?? []; track entry.id) {
+            <article class="prescription-card">
+              <h3>{{ entry.action }}</h3>
+              <p>{{ entry.reason }}</p>
 
-            <dl>
-              <div>
-                <dt>Dose</dt>
-                <dd>{{ item.dose }}</dd>
-              </div>
-              <div>
-                <dt>Route</dt>
-                <dd>{{ item.route }}</dd>
-              </div>
-              <div>
-                <dt>Frequency</dt>
-                <dd>{{ item.frequency }}</dd>
-              </div>
-              <div>
-                <dt>Duration</dt>
-                <dd>{{ item.durationDays }} day(s)</dd>
-              </div>
-              <div>
-                <dt>Quantity</dt>
-                <dd>{{ item.quantity }} {{ item.quantityUnit }}</dd>
-              </div>
-              <div>
-                <dt>As needed (PRN)</dt>
-                <dd>{{ item.isPrn ? 'Yes' : 'No' }}</dd>
-              </div>
-              <div>
-                <dt>Instructions</dt>
-                <dd>{{ item.instructions || 'No additional instructions.' }}</dd>
-              </div>
-            </dl>
-          </article>
-        } @empty {
-          <p>No medicine items are available.</p>
-        }
-      </div>
-    </section>
-  } @else {
-    <section class="panel">
-      <h2>Prescription unavailable</h2>
-      <p>No sample prescription was found for this reference.</p>
-    </section>
-  }
-</section>
+              <dl>
+                <div>
+                  <dt>Recorded</dt>
+                  <dd>{{ entry.performedAt | date: 'medium' }}</dd>
+                </div>
+                <div>
+                  <dt>Recorded by</dt>
+                  <dd>{{ entry.performedBy }}</dd>
+                </div>
+              </dl>
+
+              @if (entry.relatedPrescriptionId) {
+                <a
+                  [routerLink]="['/workspace/doctor/prescriptions', entry.relatedPrescriptionId]"
+                  [queryParams]="{ preview: 'ready' }"
+                >
+                  View linked prescription
+                </a>
+              }
+            </article>
+          } @empty {
+            <p>No lifecycle actions have been recorded for this sample.</p>
+          }
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="medicines-heading">
+        <h2 id="medicines-heading">Medicines</h2>
+
+        <div class="prescription-list">
+          @for (item of prescription.items; track item.id) {
+            <article class="prescription-card">
+              <h3>{{ $index + 1 }}. {{ item.medicineName }}</h3>
+
+              <dl>
+                <div>
+                  <dt>Dose</dt>
+                  <dd>{{ item.dose }}</dd>
+                </div>
+                <div>
+                  <dt>Route</dt>
+                  <dd>{{ item.route }}</dd>
+                </div>
+                <div>
+                  <dt>Frequency</dt>
+                  <dd>{{ item.frequency }}</dd>
+                </div>
+                <div>
+                  <dt>Duration</dt>
+                  <dd>{{ item.durationDays }} day(s)</dd>
+                </div>
+                <div>
+                  <dt>Quantity</dt>
+                  <dd>{{ item.quantity }} {{ item.quantityUnit }}</dd>
+                </div>
+                <div>
+                  <dt>As needed (PRN)</dt>
+                  <dd>{{ item.isPrn ? 'Yes' : 'No' }}</dd>
+                </div>
+                <div>
+                  <dt>Instructions</dt>
+                  <dd>{{ item.instructions || 'No additional instructions.' }}</dd>
+                </div>
+              </dl>
+            </article>
+          } @empty {
+            <p>No medicine items are available.</p>
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="panel">
+        <h2>Prescription unavailable</h2>
+        <p>No sample prescription was found for this reference.</p>
+      </section>
+    }
+  </section>
+}

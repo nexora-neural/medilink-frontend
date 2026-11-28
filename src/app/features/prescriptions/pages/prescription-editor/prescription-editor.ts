@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PrescriptionLiveEditor } from './prescription-live-editor';
 
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
 import { SAMPLE_DOCTOR_ID } from '../../data/prescription-draft.samples';
@@ -56,7 +57,7 @@ function itemForm(item: PrescriptionItem) {
 @Component({
   selector: 'app-prescription-editor',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PrescriptionLiveEditor],
   templateUrl: './prescription-editor.html',
   styleUrls: ['../prescription-list/prescription-list.scss', './prescription-editor.scss'],
 })
@@ -68,6 +69,7 @@ export class PrescriptionEditor {
 
   readonly prescriptionId = signal('');
   readonly pageState = signal<PrescriptionPageState>('ready');
+  readonly previewMode = signal(false);
   readonly errors = signal<string[]>([]);
   readonly review = signal<PrescriptionDraftInput | null>(null);
 
@@ -115,6 +117,13 @@ export class PrescriptionEditor {
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const preview = params.get('preview');
+      this.previewMode.set(
+        preview === 'ready' ||
+          preview === 'loading' ||
+          preview === 'empty' ||
+          preview === 'error' ||
+          preview === 'denied',
+      );
 
       this.pageState.set(
         preview === 'loading' || preview === 'empty' || preview === 'error' || preview === 'denied'
@@ -236,7 +245,9 @@ export class PrescriptionEditor {
       const saved = this.store.save(current.id, input);
       this.form.markAsPristine();
 
-      void this.router.navigate(['/workspace/doctor/prescriptions', saved.id]);
+      void this.router.navigate(['/workspace/doctor/prescriptions', saved.id], {
+        queryParams: { preview: 'ready' },
+      });
     } catch {
       this.errors.set([
         'The sample draft could not be saved. Return to editing and review the fields.',
