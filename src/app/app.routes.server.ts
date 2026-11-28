@@ -38,6 +38,8 @@ export const serverRoutes: ServerRoute[] = [
     path: 'workspace/patient/profile',
     renderMode: RenderMode.Client,
   },
+  { path: 'workspace/patient/notifications', renderMode: RenderMode.Client },
+  { path: 'workspace/patient/settings', renderMode: RenderMode.Client },
   {
     path: 'workspace/doctor/patients',
     renderMode: RenderMode.Client,

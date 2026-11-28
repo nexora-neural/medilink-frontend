@@ -4,6 +4,25 @@ import { of } from 'rxjs';
 import { WorkspaceHeader } from './workspace-header';
 
 describe('WorkspaceHeader', () => {
+  it('exposes the patient notification bell as a keyboard-accessible route link', async () => {
+    await TestBed.configureTestingModule({
+      imports: [WorkspaceHeader],
+      providers: [provideRouter([])],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(WorkspaceHeader);
+    fixture.componentRef.setInput('activeRole', 'Patient');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const link = fixture.nativeElement.querySelector(
+      '.patient-notifications-link',
+    ) as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/workspace/patient/notifications');
+    expect(link.getAttribute('aria-label')).toBe('Notifications');
+    link.focus();
+    expect(document.activeElement).toBe(link);
+  });
+
   it('renders its content and controls', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const data = {

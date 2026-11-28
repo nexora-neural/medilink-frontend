@@ -9,6 +9,21 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it('defines patient notification and settings routes with client-side direct navigation', async () => {
+    const workspaceRoutes = routes.find((route) => route.path === 'workspace')?.children ?? [];
+    const notifications = workspaceRoutes.find((route) => route.path === 'patient/notifications');
+    const settings = workspaceRoutes.find((route) => route.path === 'patient/settings');
+
+    expect(notifications?.data?.['allowedRoles']).toEqual(['Patient']);
+    expect(settings?.data?.['allowedRoles']).toEqual(['Patient']);
+    expect(await notifications?.loadComponent?.()).toBeTypeOf('function');
+    expect(await settings?.loadComponent?.()).toBeTypeOf('function');
+
+    for (const path of ['workspace/patient/notifications', 'workspace/patient/settings']) {
+      expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
+    }
+  });
+
   it('renders admin application review routes on the client', () => {
     for (const path of ['workspace/admin/applications', 'workspace/admin/applications/:id']) {
       expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
@@ -147,6 +162,8 @@ describe('workspace routing', () => {
       ['/workspace/patient/measurements', 'Measurements'],
       ['/workspace/patient/vaccinations', 'Vaccinations'],
       ['/workspace/patient/access', 'Doctor access'],
+      ['/workspace/patient/notifications', 'Notifications'],
+      ['/workspace/patient/settings', 'Settings'],
     ]) {
       await harness.navigateByUrl(path);
       expect(harness.routeNativeElement?.textContent).toContain(heading);

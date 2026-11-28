@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ActiveRole } from '../../../../core/context/active-role.service';
+import { ActiveRole, ActiveRoleService } from '../../../../core/context/active-role.service';
+import { PatientNotificationPreviewStore } from '../../../../features/patients/pages/patient-notifications/patient-notification-preview.store';
 
 @Component({
   selector: 'app-workspace-header',
@@ -11,6 +12,8 @@ import { ActiveRole } from '../../../../core/context/active-role.service';
 })
 export class WorkspaceHeader {
   private readonly router = inject(Router);
+  private readonly roles = inject(ActiveRoleService);
+  private readonly notificationStore = inject(PatientNotificationPreviewStore);
 
   @Input({ required: true }) activeRole!: ActiveRole;
   @Input() menuOpen = false;
@@ -19,6 +22,12 @@ export class WorkspaceHeader {
 
   get isDoctorWorkspace(): boolean {
     return this.activeRole === 'Doctor';
+  }
+
+  get patientUnreadCount(): number {
+    return this.activeRole === 'Patient'
+      ? this.notificationStore.unreadCountFor(this.roles.activeAccountId())
+      : 0;
   }
 
   get doctorPageTitle(): string {

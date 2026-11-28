@@ -386,6 +386,30 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'patient/notifications',
+        loadComponent: () =>
+          import('./features/patients/pages/patient-notifications/patient-notifications').then(
+            (module) => module.PatientNotifications,
+          ),
+        canActivate: [roleGuard],
+        title: 'Notifications | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
+      {
+        path: 'patient/settings',
+        loadComponent: () =>
+          import('./features/patients/pages/patient-settings/patient-settings').then(
+            (module) => module.PatientSettings,
+          ),
+        canActivate: [roleGuard],
+        title: 'Settings | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
+      {
         path: 'patient/measurements',
         component: PatientMeasurements,
         canActivate: [roleGuard],

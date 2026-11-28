@@ -1,0 +1,120 @@
+<section class="notifications-page" aria-labelledby="notifications-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">YOUR UPDATES</p>
+      <h1 id="notifications-title">Notifications</h1>
+      <p>Reminders, records and account updates.</p>
+    </div>
+    <div class="heading-actions">
+      <button
+        class="secondary-button"
+        type="button"
+        (click)="refresh()"
+        [disabled]="refreshing()"
+        [attr.aria-busy]="refreshing()"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+        {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+      <button
+        class="secondary-button"
+        type="button"
+        (click)="markAllRead()"
+        [disabled]="unreadCount() === 0 || state() !== 'ready'"
+      >
+        Mark all as read
+      </button>
+    </div>
+  </header>
+
+  <aside class="preview-note" role="note">
+    Sample notifications for this patient account. This preview is not connected to a live
+    notification service.
+  </aside>
+
+  @if (error() && state() === 'ready') {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="sr-status" role="status" aria-live="polite">{{ message() }}</p>
+  }
+
+  <section class="notification-card" aria-labelledby="recent-notifications-title">
+    <div class="card-heading">
+      <div>
+        <h2 id="recent-notifications-title">Recent notifications</h2>
+        @if (state() === 'ready') {
+          <p>{{ unreadCount() ? unreadCount() + ' unread' : 'You’re all caught up' }}</p>
+        } @else {
+          <p>Sample updates for your account</p>
+        }
+      </div>
+      @if (state() === 'ready') {
+        <span class="notification-total">{{ notifications().length }} total</span>
+      }
+    </div>
+
+    @if (state() === 'loading') {
+      <app-ui-state
+        kind="loading"
+        title="Loading notifications"
+        description="Please wait while your sample updates are prepared."
+      />
+    } @else if (state() === 'error') {
+      <app-ui-state
+        kind="error"
+        title="Notifications are unavailable"
+        description="The sample notification list could not be loaded. Try again."
+        actionLabel="Retry"
+        (action)="refresh()"
+      />
+    } @else if (notifications().length === 0) {
+      <app-ui-state
+        kind="empty"
+        title="No notifications yet"
+        description="New updates for your account will appear here."
+      />
+    } @else {
+      <ul class="notification-list" aria-label="Patient notifications">
+        @for (notification of notifications(); track notification.id) {
+          <li>
+            <article class="notification-row" [class.unread]="!notification.read">
+              <span class="notification-icon material-symbols-outlined" aria-hidden="true">
+                {{ notification.icon }}
+              </span>
+              <div class="notification-copy">
+                <h3>
+                  <a
+                    [routerLink]="notification.path"
+                    (click)="markRead(notification)"
+                    [attr.aria-label]="
+                      'View ' + notification.title + (notification.read ? '' : ', unread')
+                    "
+                    >{{ notification.title }}</a
+                  >
+                  @if (!notification.read) {
+                    <span class="new-badge">New</span>
+                  }
+                </h3>
+                <p>{{ notification.body }}</p>
+                <time>{{ notification.time }}</time>
+              </div>
+              @if (!notification.read) {
+                <button
+                  class="mark-read-button"
+                  type="button"
+                  (click)="markRead(notification)"
+                  [attr.aria-label]="'Mark ' + notification.title + ' as read'"
+                >
+                  Mark read
+                </button>
+              } @else {
+                <span class="read-label">Read</span>
+              }
+            </article>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</section>
