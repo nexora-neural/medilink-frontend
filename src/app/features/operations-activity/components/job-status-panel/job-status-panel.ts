@@ -10,12 +10,13 @@ import { OperationJob } from '../../operations-activity.models';
 })
 export class JobStatusPanel {
   readonly jobs = input.required<readonly OperationJob[]>();
+  readonly busy = input(false);
   readonly retryJob = output<{ id: string; reason: string }>();
   readonly selectedId = signal<string | null>(null);
   readonly reason = signal('');
   readonly error = signal('');
   prepare(job: OperationJob): void {
-    if (job.status !== 'Failed' || job.attempts >= job.maxAttempts) return;
+    if (this.busy() || !job.retryable) return;
     this.selectedId.set(job.id);
     this.reason.set('');
     this.error.set('');
@@ -26,17 +27,10 @@ export class JobStatusPanel {
     this.error.set('');
   }
   confirm(job: OperationJob): void {
-    if (
-      this.selectedId() !== job.id ||
-      job.status !== 'Failed' ||
-      job.attempts >= job.maxAttempts
-    ) {
-      this.cancel();
-      return;
-    }
+    if (this.busy() || this.selectedId() !== job.id || !job.retryable) return;
     const reason = this.reason().trim();
-    if (!reason || reason.length > 500) {
-      this.error.set('Enter a reason between 1 and 500 characters.');
+    if (!reason || reason.length > 1000) {
+      this.error.set('Enter a reason between 1 and 1000 characters.');
       return;
     }
     this.retryJob.emit({ id: job.id, reason });

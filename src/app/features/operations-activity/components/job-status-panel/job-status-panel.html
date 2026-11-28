@@ -1,35 +1,55 @@
 <h2>Background jobs</h2>
-@if (!jobs().length) {
-  <div class="tip">Failed jobs: none in sample data.</div>
-}
 @for (job of jobs(); track job.id) {
   <div class="record">
     <div>
       <strong>{{ job.name }}</strong>
-      <small>{{ job.id }} · {{ job.status }} · Attempts {{ job.attempts }}/{{ job.maxAttempts }}</small>
+      <small
+        >{{ job.id }} · {{ job.status }} · Attempts {{ job.attempts }}
+        @if (job.maxAttempts) {
+          /{{ job.maxAttempts }}
+        }
+      </small>
+      @if (job.errorCode) {
+        <small>{{ job.errorCode }}</small>
+      }
     </div>
-    <button type="button"
-            [disabled]="job.status !== 'Failed' || job.attempts >= job.maxAttempts || selectedId() !== null"
-            [attr.aria-label]="'Retry ' + job.name" (click)="prepare(job)">Retry
+    <button
+      type="button"
+      [disabled]="busy() || !job.retryable || selectedId() !== null"
+      [attr.aria-label]="'Retry ' + job.name"
+      (click)="prepare(job)"
+    >
+      Retry
     </button>
   </div>
-  @if (job.attempts >= job.maxAttempts) {
+  @if (job.maxAttempts && job.attempts >= job.maxAttempts) {
     <p class="hint">Retry limit reached.</p>
   }
   @if (selectedId() === job.id) {
-    <form class="confirm" (ngSubmit)="confirm(job)" [attr.aria-label]="'Confirm retry for ' + job.name">
+    <form
+      class="confirm"
+      (ngSubmit)="confirm(job)"
+      [attr.aria-label]="'Confirm retry for ' + job.name"
+    >
       <label [for]="'retry-reason-' + job.id">Reason for retry *</label>
-      <textarea [id]="'retry-reason-' + job.id" name="reason" rows="3" maxlength="500"
-                [ngModel]="reason()" (ngModelChange)="reason.set($event)"
-                [attr.aria-invalid]="error() ? 'true' : null"
-                [attr.aria-describedby]="error() ? 'retry-error-' + job.id : null"></textarea>
+      <textarea
+        [id]="'retry-reason-' + job.id"
+        name="reason"
+        rows="3"
+        maxlength="1000"
+        [disabled]="busy()"
+        [ngModel]="reason()"
+        (ngModelChange)="reason.set($event)"
+        [attr.aria-invalid]="error() ? 'true' : null"
+        [attr.aria-describedby]="error() ? 'retry-error-' + job.id : null"
+      ></textarea>
       @if (error()) {
         <p class="error" [id]="'retry-error-' + job.id" role="alert">{{ error() }}</p>
       }
-      <p class="hint">This queues a retry in the sample preview only.</p>
+      <p class="hint">The background worker processes accepted retries.</p>
       <div class="actions">
-        <button type="button" (click)="cancel()">Cancel</button>
-        <button type="submit">Confirm retry</button>
+        <button type="button" [disabled]="busy()" (click)="cancel()">Cancel</button>
+        <button type="submit" [disabled]="busy()">Confirm retry</button>
       </div>
     </form>
   }

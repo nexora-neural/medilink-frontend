@@ -1,15 +1,27 @@
 <div class="page-heading">
-  <div><h1>Access history</h1>
-    <p>Your doctor sharing activity.</p>
+  <div>
+    <h1>Access history</h1>
+    <p>Your record and sharing activity.</p>
   </div>
+  <button type="button" [disabled]="state() === 'loading'" (click)="load()">Refresh</button>
 </div>
-
-<section class="panel" aria-label="Your record access activity" [attr.aria-busy]="state() === 'loading'">
-  @if (state() === 'ready' && activities.length) {
-    <app-patient-activity-list [activities]="activities" />
+<section class="panel" aria-label="Your record activity" [attr.aria-busy]="state() === 'loading'">
+  @if (error()) {
+    <p role="alert">{{ error() }}</p>
+  }
+  @if (state() === 'ready') {
+    <app-patient-activity-list [activities]="activities()" />
   } @else {
-    <app-activity-state [state]="state() === 'ready' ? 'empty' : state()"
-                        emptyText="No record access activity." (retry)="reloadPreview()" />
+    <app-activity-state [state]="state()" emptyText="No record activity." (retry)="load()" />
+  }
+  @if (state() === 'ready' || state() === 'empty') {
+    <app-activity-page-controls
+      label="Your activity pages"
+      [page]="page()"
+      [total]="total()"
+      [busy]="state() === 'loading'"
+      (changePage)="load($event)"
+    />
   }
   <a routerLink="/workspace/patient/access">← Back to access</a>
 </section>

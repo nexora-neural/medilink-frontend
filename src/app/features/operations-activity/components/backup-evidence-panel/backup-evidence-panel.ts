@@ -11,6 +11,10 @@ import { BackupEvidence } from '../../operations-activity.models';
           <strong>{{ item.id }}</strong>
           <small>{{ item.completedAt }}</small>
           <small>{{ item.verification }}</small>
+          <small>{{ item.coverage }}</small>
+          @if (item.errorCode) {
+            <small>{{ item.errorCode }}</small>
+          }
         </div>
         <span class="badge">{{ item.status }}</span>
       </div>

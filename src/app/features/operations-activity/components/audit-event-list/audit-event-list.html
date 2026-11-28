@@ -4,6 +4,6 @@
       <strong>{{ item.event }}</strong>
       <small>{{ item.actor }} · {{ item.date }} · {{ item.reason }}</small>
     </div>
-    <span class="badge">{{ item.privileged ? 'Privileged' : 'Operational' }}</span>
+    <span class="badge">{{ item.outcome || 'Activity' }}</span>
   </div>
 }
