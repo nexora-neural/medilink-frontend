@@ -132,3 +132,13 @@ a:focus-visible {
   font-size: 13px;
   line-height: 1.6;
 }
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+button.button {
+  cursor: pointer;
+}

@@ -1,22 +1,25 @@
 <div class="stats" aria-label="Laboratory activity summary">
   <div class="stat accent">
-    <span>Open sample requests</span>
-    <strong>{{ summary().openRequests }}</strong>
-    <small>Patient-created requests</small>
+    <span>Upload requests</span>
+    <strong class="metric">Find request</strong>
+    <small>Use a patient-shared token below</small>
   </div>
+
   <div class="stat">
-    <span>Reports published</span>
-    <strong>{{ summary().publishedReports }}</strong>
-    <small>Current session</small>
+    <span>Reports</span>
+    <strong>{{ summary().totalReports }}</strong>
+    <small>All statuses, authorized laboratories</small>
   </div>
+
   <div class="stat">
-    <span>Laboratory</span>
+    <span>Laboratory memberships</span>
     <strong class="metric">{{ summary().laboratory }}</strong>
-    <small>Associated laboratory</small>
+    <small>Approved Lab Staff memberships</small>
   </div>
+
   <div class="stat">
     <span>Verification</span>
     <strong class="verified">{{ summary().verification }}</strong>
-    <small>Professional account</small>
+    <small>Professional profile</small>
   </div>
 </div>
