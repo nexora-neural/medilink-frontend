@@ -1,0 +1,268 @@
+<section class="settings-page" aria-labelledby="settings-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">YOUR ACCOUNT</p>
+      <h1 id="settings-title">Settings</h1>
+      <p>Manage your account, preferences and privacy in one place.</p>
+    </div>
+  </header>
+
+  <aside class="preview-note" role="note">
+    Notification controls on this page are a local preview. Changes are saved in this browser for
+    this account until ML-207 connects preferences to the notification service.
+  </aside>
+
+  <div class="settings-layout">
+    <aside class="settings-sidebar">
+      <div class="settings-profile">
+        <span class="settings-avatar" aria-hidden="true">P</span>
+        <div>
+          <strong>Current patient</strong>
+          <small>Patient account</small>
+        </div>
+      </div>
+      <p class="settings-side-label">ACCOUNT SETTINGS</p>
+      <nav aria-label="Account settings sections">
+        <a href="#settings-account">
+          <span class="material-symbols-outlined" aria-hidden="true">person</span>Account
+        </a>
+        <a href="#settings-notifications">
+          <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+          Notifications
+        </a>
+        <a href="#settings-security">
+          <span class="material-symbols-outlined" aria-hidden="true">lock</span>Password &amp;
+          security
+        </a>
+        <a href="#settings-privacy">
+          <span class="material-symbols-outlined" aria-hidden="true">shield_person</span>Privacy
+          &amp; access
+        </a>
+        <a href="#settings-help">
+          <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>Help &amp;
+          support
+        </a>
+      </nav>
+    </aside>
+
+    <div class="settings-content">
+      <section id="settings-account" class="settings-card" aria-labelledby="account-title">
+        <div class="settings-card-header">
+          <span class="settings-card-icon material-symbols-outlined" aria-hidden="true"
+            >person</span
+          >
+          <div>
+            <h2 id="account-title">Account</h2>
+            <p>Your personal details and contact information.</p>
+          </div>
+        </div>
+        <div class="settings-link-row">
+          <div>
+            <strong>Personal information</strong>
+            <small>Review or update your name and contact details.</small>
+          </div>
+          <a routerLink="/workspace/patient/profile">
+            View profile
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+          </a>
+        </div>
+      </section>
+
+      <section
+        id="settings-notifications"
+        class="settings-card"
+        aria-labelledby="notifications-preferences-title"
+      >
+        <div class="settings-card-header">
+          <span class="settings-card-icon material-symbols-outlined" aria-hidden="true"
+            >notifications</span
+          >
+          <div>
+            <h2 id="notifications-preferences-title">Notifications</h2>
+            <p>Choose which sample updates to show in this account preview.</p>
+          </div>
+        </div>
+
+        @if (state() === 'loading') {
+          <app-ui-state
+            kind="loading"
+            title="Loading preferences"
+            description="Please wait while this browser's saved preview preferences are loaded."
+          />
+        } @else if (state() === 'error') {
+          <app-ui-state
+            kind="error"
+            title="Preferences are unavailable"
+            description="Saved preview preferences could not be read. Retry or restore the sample defaults."
+            actionLabel="Retry"
+            (action)="load()"
+          />
+          <button class="text-button" type="button" (click)="restoreDefaults()">
+            Restore sample defaults
+          </button>
+        } @else {
+          <div class="preference-list" [attr.aria-busy]="saving()">
+            <label class="settings-toggle-row">
+              <span>
+                <strong>Medication reminders</strong>
+                <small
+                  >Preview preference for medication schedule reminders. It does not change dose
+                  instructions.</small
+                >
+              </span>
+              <span class="settings-switch">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-label="Medication reminders"
+                  [checked]="draft().medication"
+                  [disabled]="saving()"
+                  (change)="setPreference('medication', $event)"
+                />
+                <span aria-hidden="true"></span>
+              </span>
+            </label>
+            <label class="settings-toggle-row">
+              <span>
+                <strong>Report updates</strong>
+                <small>Preview preference for updates about health reports.</small>
+              </span>
+              <span class="settings-switch">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-label="Report updates"
+                  [checked]="draft().reports"
+                  [disabled]="saving()"
+                  (change)="setPreference('reports', $event)"
+                />
+                <span aria-hidden="true"></span>
+              </span>
+            </label>
+            <label class="settings-toggle-row">
+              <span>
+                <strong>Account updates</strong>
+                <small>Preview preference for updates related to your account.</small>
+              </span>
+              <span class="settings-switch">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-label="Account updates"
+                  [checked]="draft().account"
+                  [disabled]="saving()"
+                  (change)="setPreference('account', $event)"
+                />
+                <span aria-hidden="true"></span>
+              </span>
+            </label>
+          </div>
+
+          @if (validationError()) {
+            <p class="error-message" role="alert">{{ validationError() }}</p>
+          }
+          @if (error()) {
+            <p class="error-message" role="alert">{{ error() }}</p>
+          }
+
+          <div class="settings-actions">
+            <span class="settings-storage">
+              <span class="material-symbols-outlined" aria-hidden="true">devices</span>
+              Saved on this browser for this account
+            </span>
+            <div>
+              <button
+                class="cancel-button"
+                type="button"
+                [disabled]="!dirty() || saving()"
+                (click)="discard()"
+              >
+                Discard
+              </button>
+              <button
+                class="save-button"
+                type="button"
+                [disabled]="!dirty() || saving()"
+                (click)="save()"
+              >
+                {{ saving() ? 'Saving…' : error() ? 'Retry save' : 'Save changes' }}
+              </button>
+            </div>
+          </div>
+          @if (message()) {
+            <p class="success-message" role="status" aria-live="polite">{{ message() }}</p>
+          }
+          <p id="notification-preferences-note" class="settings-footnote">
+            These preview preferences do not send notifications or change medication doses. This
+            page does not promise push alerts when the browser is closed or on another device.
+            Notification delivery requires the ML-207 service integration.
+          </p>
+        }
+      </section>
+
+      <section id="settings-security" class="settings-card" aria-labelledby="security-title">
+        <div class="settings-card-header">
+          <span class="settings-card-icon material-symbols-outlined" aria-hidden="true">lock</span>
+          <div>
+            <h2 id="security-title">Password &amp; security</h2>
+            <p>Manage access to your account.</p>
+          </div>
+        </div>
+        <div class="settings-link-row">
+          <div>
+            <strong>Password</strong>
+            <small>Start a password reset if you need to update it.</small>
+          </div>
+          <a routerLink="/forgot">
+            Reset password
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="settings-privacy" class="settings-card" aria-labelledby="privacy-title">
+        <div class="settings-card-header">
+          <span class="settings-card-icon material-symbols-outlined" aria-hidden="true"
+            >shield_person</span
+          >
+          <div>
+            <h2 id="privacy-title">Privacy &amp; access</h2>
+            <p>Review the access you have shared with doctors.</p>
+          </div>
+        </div>
+        <div class="settings-link-row">
+          <div>
+            <strong>Doctor access</strong>
+            <small>See the scope and expiry of your access grants.</small>
+          </div>
+          <a routerLink="/workspace/patient/access">
+            Manage access
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="settings-help" class="settings-card" aria-labelledby="help-title">
+        <div class="settings-card-header">
+          <span class="settings-card-icon material-symbols-outlined" aria-hidden="true"
+            >support_agent</span
+          >
+          <div>
+            <h2 id="help-title">Help &amp; support</h2>
+            <p>Find answers and information about MediLink.</p>
+          </div>
+        </div>
+        <div class="settings-link-row">
+          <div>
+            <strong>Need help?</strong>
+            <small>Learn more about your account and sharing access.</small>
+          </div>
+          <a routerLink="/help">
+            Visit help centre
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

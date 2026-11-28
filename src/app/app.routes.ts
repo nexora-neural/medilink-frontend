@@ -395,6 +395,30 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'patient/notifications',
+        loadComponent: () =>
+          import('./features/patients/pages/patient-notifications/patient-notifications').then(
+            (module) => module.PatientNotifications,
+          ),
+        canActivate: [roleGuard],
+        title: 'Notifications | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
+      {
+        path: 'patient/settings',
+        loadComponent: () =>
+          import('./features/patients/pages/patient-settings/patient-settings').then(
+            (module) => module.PatientSettings,
+          ),
+        canActivate: [roleGuard],
+        title: 'Settings | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
+      {
         path: 'patient/measurements',
         loadComponent: () =>
           import('./features/measurements/pages/patient-measurements/patient-measurements').then(
@@ -531,6 +555,31 @@ export const routes: Routes = [
           mode: 'history',
         },
       },
+      {
+        path: 'admin/audit',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Operations and audit | MediLink',
+        data: {
+          allowedRoles: ['Admin'],
+          auditAudience: 'admin',
+        },
+      },
+      {
+        path: 'patient/access-history',
+        loadComponent: () =>
+          import('./features/operations-activity/pages/patient-activity-page/patient-activity-page').then(
+            (m) => m.PatientActivityPage,
+          ),
+        canActivate: [roleGuard],
+        title: 'Access history | MediLink',
+        data: {
+          allowedRoles: ['Patient'],
+        },
+      },
 
       ...rolePages,
     ],
@@ -590,11 +639,12 @@ export const routes: Routes = [
       {
         path: 'audit',
         loadComponent: () =>
-          import('./features/administration/super-admin-preview/super-admin-preview').then(
-            (m) => m.SuperAdminPreview,
+          import('./features/operations-activity/pages/operations-audit-page/operations-audit-page').then(
+            (m) => m.OperationsAuditPage,
           ),
+        title: 'Privileged audit and recovery | MediLink',
         data: {
-          previewPage: 'audit',
+          auditAudience: 'super-admin',
         },
       },
       {

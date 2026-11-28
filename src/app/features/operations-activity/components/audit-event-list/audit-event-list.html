@@ -1,0 +1,9 @@
+@for (item of events(); track item.id) {
+  <div class="record">
+    <div class="record-main">
+      <strong>{{ item.event }}</strong>
+      <small>{{ item.actor }} · {{ item.date }} · {{ item.reason }}</small>
+    </div>
+    <span class="badge">{{ item.privileged ? 'Privileged' : 'Operational' }}</span>
+  </div>
+}

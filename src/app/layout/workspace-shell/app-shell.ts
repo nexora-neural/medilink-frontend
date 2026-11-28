@@ -9,19 +9,24 @@ import { NavigationItem } from './models/navigation-item';
 const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Admin: [
     {
-      label: 'Professional applications',
-      icon: 'fact_check',
-      path: '/workspace/admin/applications',
-    },
-    {
       label: 'Overview',
       icon: 'dashboard',
       path: '/workspace/admin/dashboard',
     },
     {
-      label: 'Account support',
+      label: 'Applications',
+      icon: 'fact_check',
+      path: '/workspace/admin/applications',
+    },
+    {
+      label: 'Support issues',
       icon: 'support_agent',
       path: '/workspace/admin/account-support',
+    },
+    {
+      label: 'Operations & audit',
+      icon: 'history',
+      path: '/workspace/admin/audit',
     },
   ],
   'Super Admin': [
@@ -31,6 +36,12 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
   Patient: [
     { label: 'Overview', icon: 'dashboard', path: '/workspace' },
     { label: 'My profile', icon: 'person', path: '/workspace/patient/profile' },
+    {
+      label: 'Notifications',
+      icon: 'notifications',
+      path: '/workspace/patient/notifications',
+    },
+    { label: 'Settings', icon: 'settings', path: '/workspace/patient/settings' },
     { label: 'Medications', icon: 'medication', path: '/workspace/patient/medications' },
     { label: 'Prescriptions', icon: 'prescriptions', path: '/workspace/patient/prescriptions' },
     {
@@ -53,6 +64,11 @@ const navigationByRole: Record<ActiveRole, NavigationItem[]> = {
     { label: 'Measurements', icon: 'monitor_heart', path: '/workspace/patient/measurements' },
     { label: 'Vaccinations', icon: 'vaccines', path: '/workspace/patient/vaccinations' },
     { label: 'Doctor access', icon: 'shield_person', path: '/workspace/patient/access' },
+    {
+      label: 'Access history',
+      icon: 'history',
+      path: '/workspace/patient/access-history',
+    },
     {
       label: 'Professional verification',
       icon: 'verified_user',

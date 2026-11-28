@@ -1,0 +1,15 @@
+<div class="page-heading">
+  <div><h1>Access history</h1>
+    <p>Your doctor sharing activity.</p>
+  </div>
+</div>
+
+<section class="panel" aria-label="Your record access activity" [attr.aria-busy]="state() === 'loading'">
+  @if (state() === 'ready' && activities.length) {
+    <app-patient-activity-list [activities]="activities" />
+  } @else {
+    <app-activity-state [state]="state() === 'ready' ? 'empty' : state()"
+                        emptyText="No record access activity." (retry)="reloadPreview()" />
+  }
+  <a routerLink="/workspace/patient/access">← Back to access</a>
+</section>

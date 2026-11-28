@@ -1,6 +1,8 @@
-
-<header class="topbar"
-        [class.doctor-dashboard-header]="isDoctorWorkspace">
+<header
+  class="topbar"
+  [class.doctor-dashboard-header]="isDoctorWorkspace"
+  [class.patient-workspace-header]="activeRole === 'Patient'"
+>
   <button
     class="menu-button"
     type="button"
@@ -8,20 +10,12 @@
     [attr.aria-expanded]="menuOpen"
     (click)="menuToggle.emit()"
   >
-    <span
-      class="material-symbols-outlined"
-      aria-hidden="true"
-    >menu</span>
+    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
 
-  <a
-    class="mobile-brand"
-    routerLink="/workspace"
-    aria-label="MediLink workspace"
-  >
+  <a class="mobile-brand" routerLink="/workspace" aria-label="MediLink workspace">
     <img src="/medilink-logo-horizontal.svg" alt="MediLink" />
   </a>
-
 
   <div class="breadcrumb">
     @if (isDoctorWorkspace) {
@@ -35,13 +29,11 @@
     }
   </div>
 
-
   <div class="topbar-actions">
     @if (activeRole === 'Doctor') {
-      <span
-        class="material-symbols-outlined notification-icon"
-        aria-hidden="true"
-      >notifications</span>
+      <span class="material-symbols-outlined notification-icon" aria-hidden="true"
+        >notifications</span
+      >
 
       <div class="user-summary">
         <span class="avatar" aria-hidden="true">MP</span>
@@ -51,23 +43,44 @@
           <small>Doctor account</small>
         </span>
 
-        <span
-          class="material-symbols-outlined"
-          aria-hidden="true"
-        >keyboard_arrow_down</span>
+        <span class="material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+      </div>
+    } @else if (activeRole === 'Patient') {
+      <span class="role-chip">{{ activeRole }}</span>
+
+      <a
+        class="material-symbols-outlined notification-icon patient-notifications-link"
+        routerLink="/workspace/patient/notifications"
+        [attr.aria-label]="
+          patientUnreadCount ? 'Notifications, ' + patientUnreadCount + ' unread' : 'Notifications'
+        "
+        title="Notifications"
+      >
+        notifications
+        @if (patientUnreadCount > 0) {
+          <span class="notification-count" aria-hidden="true">
+            {{ patientUnreadCount > 99 ? '99+' : patientUnreadCount }}
+          </span>
+        }
+      </a>
+
+      <div class="user-summary">
+        <span class="avatar" aria-hidden="true">P</span>
+
+        <span>
+          <strong>Patient</strong>
+          <small>MediLink account</small>
+        </span>
       </div>
     } @else {
       <span class="role-chip">{{ activeRole }}</span>
 
-      <span
-        class="material-symbols-outlined notification-icon"
-        aria-hidden="true"
-      >notifications</span>
+      <span class="material-symbols-outlined notification-icon" aria-hidden="true"
+        >notifications</span
+      >
 
       <div class="user-summary">
-        <span class="avatar" aria-hidden="true">
-          {{ activeRole.slice(0, 1) }}
-        </span>
+        <span class="avatar" aria-hidden="true">{{ activeRole.slice(0, 1) }}</span>
 
         <span>
           <strong>{{ activeRole }}</strong>
