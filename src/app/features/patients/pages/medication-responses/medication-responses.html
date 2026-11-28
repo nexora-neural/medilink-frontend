@@ -12,7 +12,7 @@
   @else if (state === 'empty') { <div class="panel"><h2>No medications scheduled</h2><p>Your scheduled medications will appear here.</p></div> }
   @else if (view === 'schedule') {
     <section class="stats" aria-label="Response summary"><div><span>Scheduled</span><strong>{{ occurrences.length }}</strong></div><div><span>Responses recorded</span><strong>{{ reportedCount }}</strong></div><div><span>Awaiting response</span><strong>{{ occurrences.length - reportedCount }}</strong></div></section>
-    <section class="panel"><h2>Medication schedule</h2><p class="muted">Choose an occurrence to record or review a response.</p>
+    <section class="panel"><h2 #scheduleHeading tabindex="-1">Medication schedule</h2><p class="muted">Choose an occurrence to record or review a response.</p>
       @if (!occurrences.length) { <p>No medications scheduled.</p> }
       <div class="cards">@for (item of occurrences; track item.id) { <article class="card"><div class="card-top"><div><h3>{{ item.medicine }}</h3><p>{{ item.dose }}</p></div><span class="badge">{{ item.versions[0]?.choice || 'Awaiting response' }}</span></div><p class="scheduled">Scheduled: {{ item.scheduled }}</p><div class="actions"><button #scheduleAction [attr.data-occurrence]="item.id" data-action="response" type="button" (click)="start(item)">{{ item.versions.length ? 'Correct response' : 'Record response' }}</button><button #scheduleAction [attr.data-occurrence]="item.id" data-action="history" type="button" class="secondary" (click)="history(item)">Response history</button></div></article> }</div>
     </section>

@@ -90,7 +90,44 @@ describe('MedicationResponses preview', () => {
     expect(root.textContent).toContain('Medication schedule');
   });
 
-  it('moves focus between views and restores the originating schedule action', async () => {
+  it('focuses the medication schedule heading after retrying an error', () => {
+    const fixture = TestBed.createComponent(MedicationResponses);
+
+    document.body.appendChild(fixture.nativeElement);
+
+    try {
+      fixture.changeDetectorRef.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+
+      const findButton = (label: string) =>
+        [...root.querySelectorAll('button')].find(
+          (button) => button.textContent?.trim() === label,
+        )!;
+
+      findButton('Error').click();
+      fixture.changeDetectorRef.detectChanges();
+
+      const retryButton = findButton('Try again');
+      retryButton.focus();
+
+      expect(document.activeElement).toBe(retryButton);
+
+      retryButton.click();
+      fixture.changeDetectorRef.detectChanges();
+
+      const scheduleHeading = [...root.querySelectorAll('h2')].find(
+        (heading) => heading.textContent?.trim() === 'Medication schedule',
+      );
+
+      expect(scheduleHeading).toBeDefined();
+      expect(document.activeElement).toBe(scheduleHeading);
+    } finally {
+      fixture.nativeElement.remove();
+    }
+  });
+
+  it('moves focus between views and restores the originating schedule action', () => {
     const fixture = TestBed.createComponent(MedicationResponses);
 
     document.body.appendChild(fixture.nativeElement);
@@ -107,7 +144,6 @@ describe('MedicationResponses preview', () => {
 
       const back = () => root.querySelector<HTMLButtonElement>('button.back')!;
 
-      // Open history and check focus.
       action('history').focus();
       action('history').click();
       fixture.changeDetectorRef.detectChanges();
@@ -115,20 +151,17 @@ describe('MedicationResponses preview', () => {
       expect(document.activeElement).toBe(heading());
       expect(heading()?.textContent).toContain('Response history');
 
-      // Go back and check that focus returns to Response history.
       back().click();
       fixture.changeDetectorRef.detectChanges();
 
       expect(document.activeElement).toBe(action('history'));
 
-      // Open the response form and check focus.
       action('response').click();
       fixture.changeDetectorRef.detectChanges();
 
       expect(document.activeElement).toBe(heading());
       expect(heading()?.textContent).toContain('Record response');
 
-      // Save a response and check focus in history.
       fixture.componentInstance.choice = 'Taken';
       fixture.componentInstance.reportedAt = '2020-01-01T08:00';
       fixture.componentInstance.save();
@@ -137,13 +170,11 @@ describe('MedicationResponses preview', () => {
       expect(document.activeElement).toBe(heading());
       expect(heading()?.textContent).toContain('Response history');
 
-      // Go back and check that focus returns to the response action.
       back().click();
       fixture.changeDetectorRef.detectChanges();
 
       expect(document.activeElement).toBe(action('response'));
 
-      // Open the form again and cancel.
       action('response').click();
       fixture.changeDetectorRef.detectChanges();
 

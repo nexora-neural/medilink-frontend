@@ -32,13 +32,17 @@ interface Occurrence {
   styleUrl: './medication-responses.scss',
 })
 export class MedicationResponses implements AfterViewChecked {
+  @ViewChild('scheduleHeading') scheduleHeading?: ElementRef<HTMLElement>;
   @ViewChild('viewHeading') viewHeading?: ElementRef<HTMLElement>;
   @ViewChildren('scheduleAction') scheduleActions?: QueryList<ElementRef<HTMLButtonElement>>;
-  private pendingFocus: 'view' | 'schedule' | null = null;
+  private pendingFocus: 'view' | 'schedule' | 'schedule-heading' | null = null;
   private scheduleOrigin: 'response' | 'history' = 'response';
 
   ngAfterViewChecked(): void {
-    if (this.pendingFocus === 'view' && this.viewHeading) {
+    if (this.pendingFocus === 'schedule-heading' && this.scheduleHeading) {
+      this.scheduleHeading.nativeElement.focus();
+      this.pendingFocus = null;
+    } else if (this.pendingFocus === 'view' && this.viewHeading) {
       this.viewHeading.nativeElement.focus();
       this.pendingFocus = null;
     } else if (this.pendingFocus === 'schedule' && this.selected) {
@@ -62,6 +66,7 @@ export class MedicationResponses implements AfterViewChecked {
 
   retry(): void {
     this.showState('ready');
+    this.pendingFocus = 'schedule-heading';
   }
 
   state: 'loading' | 'ready' | 'empty' | 'error' = 'ready';
