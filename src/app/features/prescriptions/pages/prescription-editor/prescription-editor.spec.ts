@@ -97,6 +97,45 @@ describe('PrescriptionEditor preview', () => {
     expect(component.items.at(0).controls.id.value).toBe(remainingId);
   });
 
+  it('saves a doctor-owned favourite and adds a fresh editable copy to the draft', () => {
+    component.saveFavorite(0);
+    expect(component.favorites()).toHaveLength(1);
+    expect(component.favorites()[0].ownerDoctorId).toBe('sample-doctor-01');
+
+    component.addFavorite(component.favorites()[0]);
+    expect(component.items.length).toBe(3);
+    expect(component.items.at(2).controls.medicineName.value).toBe('Sample medicine A');
+    expect(component.items.at(2).controls.id.value).not.toBe(
+      component.items.at(0).controls.id.value,
+    );
+    expect(component.libraryMessage()).toContain('added to this editable draft');
+  });
+
+  it('validates before saving a reusable template and can append it to a draft', () => {
+    component.templateName.set('Sample set');
+    component.saveTemplate();
+
+    expect(component.templates()).toHaveLength(1);
+    expect(component.templates()[0].ownerDoctorId).toBe('sample-doctor-01');
+    expect(component.review()).not.toBeNull();
+
+    component.addTemplate(component.templates()[0]);
+    expect(component.items.length).toBe(4);
+    expect(component.libraryMessage()).toContain('Review and edit every item');
+  });
+
+  it('does not save an invalid draft as a template', () => {
+    component.templateName.set('Invalid set');
+    component.items.at(0).controls.dose.setValue('');
+    component.saveTemplate();
+
+    expect(component.templates()).toEqual([]);
+    expect(component.libraryError()).toContain('Complete all required fields');
+    expect(component.errors()).toContain(
+      'Medicine 1: complete medicine, dose, route and frequency.',
+    );
+  });
+
   it('blocks review after all medicines are removed', () => {
     component.removeMedicine(1);
     component.removeMedicine(0);

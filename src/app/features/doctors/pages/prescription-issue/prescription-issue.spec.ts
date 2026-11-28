@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ActiveRoleService } from '../../../../core/context/active-role.service';
+import { PrescriptionDraftPreviewStore } from '../../../prescriptions/services/prescription-draft-preview.store';
 import { PrescriptionIssue } from './prescription-issue';
 import { IssueReview, issueProblems } from './prescription-issue.models';
 import {
@@ -264,7 +265,7 @@ describe('ML-117 issue validation and sample state', () => {
     }
   });
   it('retains active preview state on reload and is idempotent for repeated issue', async () => {
-    const store = new PrescriptionIssuePreviewStore();
+    const store = new PrescriptionIssuePreviewStore(new PrescriptionDraftPreviewStore());
     expect(await store.load('unknown')).toBeNull();
     await expect(store.issue('unknown')).rejects.toThrow();
     expect((await store.issue('sample-order')).status).toBe('active');

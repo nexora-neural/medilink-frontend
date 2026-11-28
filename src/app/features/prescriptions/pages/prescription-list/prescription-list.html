@@ -33,6 +33,60 @@
       <p>Prescriptions will appear here when they are available.</p>
     </section>
   } @else {
+    <section class="panel" aria-labelledby="library-heading">
+      <h2 id="library-heading">Your prescription library</h2>
+      <p>
+        Favourites and templates are scoped to your doctor workspace in this local preview. Open an
+        editable draft to add or update reusable items; they never issue a prescription.
+      </p>
+      <div class="library-overview">
+        <section aria-labelledby="favorite-list-heading">
+          <h3 id="favorite-list-heading">Favourites ({{ favorites().length }})</h3>
+          <div class="library-items">
+            @for (favorite of favorites(); track favorite.id) {
+              <article class="prescription-card">
+                <strong>{{ favorite.item.medicineName }}</strong>
+                <p>
+                  {{ favorite.item.dose }} · {{ favorite.item.route }} ·
+                  {{ favorite.item.frequency }}
+                </p>
+                <button type="button" (click)="removeFavorite(favorite.id)">
+                  Remove favourite
+                </button>
+              </article>
+            } @empty {
+              <div class="empty-state">
+                <p>No favourites saved yet.</p>
+                <a [routerLink]="['/workspace/doctor/prescriptions', 'sample-draft-01', 'edit']">
+                  Open an editable sample draft
+                </a>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section aria-labelledby="template-list-heading">
+          <h3 id="template-list-heading">Templates ({{ templates().length }})</h3>
+          <div class="library-items">
+            @for (template of templates(); track template.id) {
+              <article class="prescription-card">
+                <strong>{{ template.name }}</strong>
+                <p>{{ template.items.length }} editable medicine item(s)</p>
+                <button type="button" (click)="removeTemplate(template.id)">Remove template</button>
+              </article>
+            } @empty {
+              <div class="empty-state">
+                <p>No templates saved yet.</p>
+                <a [routerLink]="['/workspace/doctor/prescriptions', 'sample-draft-01', 'edit']">
+                  Open an editable sample draft
+                </a>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section class="panel" aria-labelledby="list-heading">
       <h2 id="list-heading">Sample prescriptions</h2>
 
@@ -113,7 +167,50 @@
                   Edit draft
                 </a>
               }
+              @if (canRenew(prescription)) {
+                <button type="button" (click)="openRenewal(prescription)">
+                  Prepare renewal draft
+                </button>
+              }
             </div>
+
+            @if (renewalId() === prescription.id) {
+              <form
+                class="renewal-form"
+                (submit)="$event.preventDefault(); createRenewalDraft(prescription)"
+              >
+                <h4>Prepare an editable renewal draft</h4>
+                <p>
+                  This copies the current sample into a draft only. Review and edit every field;
+                  nothing is clinically approved, issued or sent.
+                </p>
+                <label [for]="'renewal-reason-' + prescription.id"
+                  >Reason for renewal request *</label
+                >
+                <textarea
+                  [id]="'renewal-reason-' + prescription.id"
+                  rows="3"
+                  maxlength="1000"
+                  required
+                  [value]="renewalReason()"
+                  (input)="renewalReason.set($any($event.target).value)"
+                  [attr.aria-invalid]="renewalError() ? 'true' : null"
+                  aria-describedby="renewal-reason-help renewal-error"
+                ></textarea>
+                <p id="renewal-reason-help">Enter a reason, up to 1000 characters.</p>
+                @if (renewalError()) {
+                  <p id="renewal-error" role="alert">{{ renewalError() }}</p>
+                }
+                <div class="actions">
+                  <button type="button" [disabled]="renewalPending()" (click)="cancelRenewal()">
+                    Cancel
+                  </button>
+                  <button type="submit" [disabled]="renewalPending() || !renewalReason().trim()">
+                    {{ renewalPending() ? 'Preparing draft…' : 'Continue to edit draft' }}
+                  </button>
+                </div>
+              </form>
+            }
           </article>
         } @empty {
           <div class="empty-state">

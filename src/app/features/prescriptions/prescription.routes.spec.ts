@@ -141,6 +141,21 @@ describe('Prescription preview routing', () => {
     expect(harness.routeNativeElement!.querySelector('form')).toBeNull();
   });
 
+  it('offers the explicit issue preview only from an owner doctor draft', async () => {
+    const store = TestBed.inject(PrescriptionDraftPreviewStore);
+    const renewal = store.createLinkedDraft(
+      'sample-active-01',
+      'renew',
+      'Synthetic renewal issue preview test.',
+    );
+
+    await harness.navigateByUrl(`${base}/${renewal.id}`, PrescriptionDetail);
+
+    expect(text()).toContain('Renewal draft only.');
+    expect(text()).toContain('Review and issue preview');
+    expect(harness.routeNativeElement!.querySelector('a[href*="/issue"]')).not.toBeNull();
+  });
+
   it.each(['', '/sample-draft-01', '/sample-draft-01/edit'])(
     'denies the Patient role access to %s',
     async (suffix) => {

@@ -21,7 +21,7 @@ export interface IssueReview {
   consultationPermitted: boolean;
   prescriptionGrant: boolean;
   source: 'doctor' | 'patient';
-  status: 'draft' | 'active';
+  status: 'draft' | 'active' | 'superseded' | 'completed' | 'cancelled' | 'discontinued';
   startsOn: string;
   endsOn: string;
   warnings: string[];
@@ -31,6 +31,7 @@ export interface IssueReview {
 /** UI checks are guidance; the issue API must revalidate all authority and data. */
 export function issueProblems(review: IssueReview): string[] {
   const errors: string[] = [];
+  if (review.status !== 'draft') errors.push('Only a draft prescription can be issued.');
   if (!review.verifiedDoctor) errors.push('Doctor verification is required.');
   if (!review.ownerDoctor || review.source !== 'doctor')
     errors.push('Only the owner doctor can issue a doctor-source draft.');

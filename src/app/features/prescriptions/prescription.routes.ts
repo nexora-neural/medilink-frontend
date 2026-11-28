@@ -1,11 +1,9 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/guards/role.guard';
-import { PrescriptionDraftPreviewStore } from './services/prescription-draft-preview.store';
 
 export const PRESCRIPTION_ROUTES: Routes = [
   {
     path: '',
-    providers: [PrescriptionDraftPreviewStore],
     canActivate: [roleGuard],
     data: {
       allowedRoles: ['Doctor'],
