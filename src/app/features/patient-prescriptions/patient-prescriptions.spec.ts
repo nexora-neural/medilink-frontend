@@ -5,19 +5,48 @@ import { roleGuard } from '../../core/guards/role.guard';
 import { PatientPrescriptions } from './patient-prescriptions';
 import {
   PATIENT_PRESCRIPTIONS_STORE,
+  PATIENT_PRESCRIPTION_OCR_PROCESSOR,
   PatientPrescriptionsPreviewStore,
+  PrescriptionOcrResult,
 } from './patient-prescriptions.store';
 
 describe('Patient-added prescriptions', () => {
   let store: PatientPrescriptionsPreviewStore;
+  let ocrProcessor: { extract: (file: File) => Promise<PrescriptionOcrResult> };
+  const sampleOcrDraft: PrescriptionOcrResult = {
+    status: 'completed',
+    draft: {
+      prescribedOn: '2026-01-01',
+      prescriber: 'Example OCR prescriber',
+      clinic: 'Example OCR clinic',
+      notes: 'Check against the original.',
+      medicines: [
+        {
+          name: 'Sample medicine',
+          strength: 'As printed',
+          instructions: 'Review against original',
+        },
+      ],
+    },
+  };
   beforeEach(async () => {
     store = new PatientPrescriptionsPreviewStore();
+    ocrProcessor = { extract: vi.fn().mockResolvedValue(sampleOcrDraft) };
     await TestBed.configureTestingModule({
       imports: [PatientPrescriptions],
-      providers: [provideRouter([]), { provide: PATIENT_PRESCRIPTIONS_STORE, useValue: store }],
+      providers: [
+        provideRouter([]),
+        { provide: PATIENT_PRESCRIPTIONS_STORE, useValue: store },
+        { provide: PATIENT_PRESCRIPTION_OCR_PROCESSOR, useValue: ocrProcessor },
+      ],
     })
       .overrideComponent(PatientPrescriptions, {
-        set: { providers: [{ provide: PATIENT_PRESCRIPTIONS_STORE, useValue: store }] },
+        set: {
+          providers: [
+            { provide: PATIENT_PRESCRIPTIONS_STORE, useValue: store },
+            { provide: PATIENT_PRESCRIPTION_OCR_PROCESSOR, useValue: ocrProcessor },
+          ],
+        },
       })
       .compileComponents();
   });
@@ -26,6 +55,7 @@ describe('Patient-added prescriptions', () => {
   }
   function fill(page: PatientPrescriptions) {
     page.add();
+    page.startManualEntry();
     page.form.patchValue({
       prescribedOn: '2026-01-01',
       prescriber: 'Dr Example',
@@ -55,10 +85,89 @@ describe('Patient-added prescriptions', () => {
     expect(fixture.nativeElement.textContent).toContain('No patient-added prescriptions');
     expect(fixture.nativeElement.textContent).toContain('Preview only');
   });
+  it('offers typed/printed English upload and a manual-entry path', () => {
+    const fixture = create();
+    const page = fixture.componentInstance;
+    page.add();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Handwriting is not supported');
+    page.chooseOcrUpload();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#prescription-ocr-file')).not.toBeNull();
+    page.useManualEntry();
+    fixture.detectChanges();
+    expect(page.view()).toBe('form');
+    expect(fixture.nativeElement.textContent).toContain('Enter prescription details');
+  });
+  it('validates OCR files and keeps the original selection when a replacement is invalid', () => {
+    const page = create().componentInstance;
+    page.add();
+    page.chooseOcrUpload();
+    const accepted = new File(['prescription'], 'original.pdf', { type: 'application/pdf' });
+    const input = { files: [accepted], value: 'original.pdf' } as unknown as HTMLInputElement;
+    page.onOcrFileSelected({ target: input } as unknown as Event);
+    expect(page.files()).toEqual([accepted]);
+    expect(input.value).toBe('');
+
+    const rejected = new File(['not a prescription'], 'replacement.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    page.onOcrFileSelected({
+      target: { files: [rejected], value: 'replacement.docx' },
+    } as unknown as Event);
+    expect(page.files()).toEqual([accepted]);
+    expect(page.ocrError()).toContain('PDF, JPEG or PNG');
+  });
+  it('shows processing, compares the original with editable OCR fields, and retains the evidence', async () => {
+    const fixture = create();
+    const page = fixture.componentInstance;
+    page.add();
+    page.chooseOcrUpload();
+    const original = new File(['printed prescription'], 'printed-prescription.pdf', {
+      type: 'application/pdf',
+    });
+    page.onOcrFileSelected({
+      target: { files: [original], value: 'printed-prescription.pdf' },
+    } as unknown as Event);
+    const processing = page.startOcr();
+    expect(page.view()).toBe('ocr-processing');
+    await processing;
+    fixture.detectChanges();
+    expect(page.view()).toBe('ocr-review');
+    expect(page.form.controls.prescriber.value).toBe('Example OCR prescriber');
+    expect(page.files()).toEqual([original]);
+    expect(fixture.nativeElement.textContent).toContain('Original prescription');
+    expect(fixture.nativeElement.textContent).toContain('Editable extracted draft');
+    expect(fixture.nativeElement.textContent).toContain(original.name);
+    expect(fixture.nativeElement.querySelector('#prescriber')).not.toBeNull();
+  });
+  it('shows extraction failure, retries, and keeps manual fallback attached to the original', async () => {
+    const page = create().componentInstance;
+    page.add();
+    page.chooseOcrUpload();
+    const original = new File(['printed prescription'], 'original.jpg', { type: 'image/jpeg' });
+    page.onOcrFileSelected({
+      target: { files: [original], value: 'original.jpg' },
+    } as unknown as Event);
+    ocrProcessor.extract = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'unreadable' })
+      .mockResolvedValueOnce(sampleOcrDraft);
+
+    await page.startOcr();
+    expect(page.view()).toBe('ocr-error');
+    expect(page.ocrError()).toContain('could not read');
+    expect(page.files()).toEqual([original]);
+    await page.retryOcr();
+    expect(page.view()).toBe('ocr-review');
+    expect(ocrProcessor.extract).toHaveBeenCalledTimes(2);
+    expect(page.files()).toEqual([original]);
+  });
   it('blocks incomplete, whitespace-only and future-dated submissions', () => {
     const fixture = create();
     const page = fixture.componentInstance;
     page.add();
+    page.startManualEntry();
     page.review();
     expect(page.view()).toBe('form');
     fill(page);
@@ -153,6 +262,8 @@ describe('Patient-added prescriptions', () => {
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
     (root.querySelector('.page-heading button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelectorAll('.choice')[1] as HTMLButtonElement).click();
     fixture.detectChanges();
     for (const [id, value] of Object.entries({
       'prescribed-on': '2026-01-01',
