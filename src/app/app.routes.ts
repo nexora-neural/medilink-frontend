@@ -237,18 +237,6 @@ const rolePages: Route[] = [
   },
   {
     path: 'lab-staff/reports',
-    pathMatch: 'full',
-    loadComponent: () =>
-      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
-    canActivate: [roleGuard],
-    title: 'Laboratory reports | MediLink',
-    data: {
-      reportAudience: 'lab',
-      allowedRoles: ['Lab Staff'],
-    },
-  },
-  {
-    path: 'lab-staff/reports',
     loadChildren: () =>
       import('./features/report-corrections/report-corrections.routes').then(
         (m) => m.REPORT_CORRECTION_ROUTES,

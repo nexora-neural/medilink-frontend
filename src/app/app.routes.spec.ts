@@ -1,3 +1,4 @@
+import { ReportCorrectionStore } from './features/report-corrections/services/report-correction.store';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -9,6 +10,80 @@ import { AuthService } from './core/auth.service';
 import { OrganizationsService } from './features/administration/organizations/organizations.service';
 
 describe('workspace routing', () => {
+  it.each([
+    ['', 'app-report-list-page'],
+    ['/LR-1', 'app-report-detail-page'],
+    ['/LR-1/correct', 'app-report-correction-page'],
+    ['/LR-1/withdraw', 'app-report-withdrawal-page'],
+  ])(
+    'opens ML-128 lab report screens through the application routes: %s',
+    async (suffix, selector) => {
+      const roles = TestBed.inject(ActiveRoleService);
+      roles.setAccountRoles('routing-lab-user', ['lab_staff']);
+
+      const store = TestBed.inject(ReportCorrectionStore);
+      store.setReports(
+        [
+          {
+            id: 'LR-1',
+            patient: 'Test Patient',
+            request: 'LAB-TEST-1',
+            type: 'Full blood count',
+            date: '2026-11-24',
+            reference: 'LAB-TEST-1',
+            notes: '',
+            file: 'test-report.pdf',
+            url: 'blob:test-report',
+            mime: 'application/pdf',
+            status: 'Published',
+            version: 1,
+          },
+        ],
+        { 'LR-1': { correct: true, withdraw: true } },
+      );
+
+      const harness = await RouterTestingHarness.create();
+      const path = '/workspace/lab-staff/reports' + suffix;
+      await harness.navigateByUrl(path);
+
+      expect(TestBed.inject(Router).url).toBe(path);
+      expect(harness.routeNativeElement?.querySelector(selector)).not.toBeNull();
+      expect(harness.routeNativeElement?.querySelector('app-reports-live')).toBeNull();
+      expect(store.base).toBe('/workspace/lab-staff/reports');
+
+      if (suffix) {
+        expect(store.selectedId).toBe('LR-1');
+        expect(store.canCorrect).toBe(true);
+        expect(store.canWithdraw).toBe(true);
+      }
+    },
+  );
+
+  it('opens the ML-128 empty lab list through the application routes', async () => {
+    TestBed.inject(ActiveRoleService).setAccountRoles('routing-lab-user', ['lab_staff']);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/workspace/lab-staff/reports');
+
+    expect(TestBed.inject(Router).url).toBe('/workspace/lab-staff/reports');
+    expect(harness.routeNativeElement?.querySelector('app-report-list-page')).not.toBeNull();
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'No reports have been published yet.',
+    );
+  });
+
+  it.each(['', '/LR-1', '/LR-1/correct', '/LR-1/withdraw'])(
+    'denies a Patient access to the lab report route: %s',
+    async (suffix) => {
+      TestBed.inject(ActiveRoleService).setAccountRoles('routing-patient', ['patient']);
+
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/workspace/lab-staff/reports' + suffix);
+
+      expect(TestBed.inject(Router).url).toBe('/access-denied');
+    },
+  );
+
   it('renders admin application review routes on the client', () => {
     for (const path of ['workspace/admin/applications', 'workspace/admin/applications/:id']) {
       expect(serverRoutes.find((route) => route.path === path)?.renderMode).toBe(RenderMode.Client);
