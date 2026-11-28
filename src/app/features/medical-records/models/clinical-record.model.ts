@@ -1,21 +1,19 @@
 export type ClinicalEntryKind = 'condition' | 'allergy' | 'diagnosis' | 'note';
-
-export type ClinicalEntryStatus = 'active' | 'resolved' | 'entered-in-error';
-
+export type ClinicalEntryStatus = 'active' | 'resolved' | 'entered_in_error' | 'superseded';
+export type ClinicalEntrySource =
+  'patient' | 'doctor' | 'pharmacist' | 'lab_staff' | 'approved_external_system' | 'admin';
 export type AllergyStatus = 'unknown' | 'no-known-allergies' | 'allergies-recorded';
-
-export type RecordPageState = 'ready' | 'loading' | 'empty' | 'error' | 'denied';
 
 export interface ClinicalEntry {
   id: string;
   kind: ClinicalEntryKind;
   title: string;
-  details: string;
+  details: string | null;
+  clinicalCode: string | null;
   recordedAt: string;
-  source: 'patient' | 'doctor';
+  source: ClinicalEntrySource;
   authorId: string;
-  authorName: string;
-  organization: string | null;
+  organizationId: string | null;
   status: ClinicalEntryStatus;
 }
 
@@ -25,6 +23,8 @@ export interface ClinicalEntryDraft {
   details: string;
   recordedAt: string;
 }
+
+export const NO_KNOWN_ALLERGIES = 'No known allergies';
 
 export const CLINICAL_ENTRY_LABELS: Record<ClinicalEntryKind, string> = {
   condition: 'Condition',
@@ -36,5 +36,15 @@ export const CLINICAL_ENTRY_LABELS: Record<ClinicalEntryKind, string> = {
 export const CLINICAL_STATUS_LABELS: Record<ClinicalEntryStatus, string> = {
   active: 'Active',
   resolved: 'Resolved',
-  'entered-in-error': 'Entered in error',
+  entered_in_error: 'Entered in error',
+  superseded: 'Superseded',
+};
+
+export const CLINICAL_SOURCE_LABELS: Record<ClinicalEntrySource, string> = {
+  patient: 'Patient-reported',
+  doctor: 'Doctor-entered',
+  pharmacist: 'Pharmacist-entered',
+  lab_staff: 'Lab staff',
+  approved_external_system: 'Approved external system',
+  admin: 'Admin-entered',
 };

@@ -24,7 +24,6 @@ import { PatientMeasurements } from './features/measurements/pages/patient-measu
 import { AdminDashboard } from './features/administration/admin-dashboard/admin-dashboard';
 import { DoctorMedicineSearch } from './features/doctors/pages/doctor-medicine-search/doctor-medicine-search';
 import { MedicineCatalogue } from './features/administration/medicine-catalogue/medicine-catalogue';
-import { ClinicalRecords } from './features/medical-records/pages/clinical-records/clinical-records';
 const rolePage = (
   path: string,
   allowedRoles: ActiveRole[],
@@ -110,7 +109,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'patient/history',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Medical history | MediLink',
     data: {
@@ -121,12 +123,11 @@ const rolePages: Route[] = [
   {
     path: 'patient/reports',
     loadComponent: () =>
-      import('./features/reports/pages/patient-reports/patient-reports').then(
-        (module) => module.PatientReports,
-      ),
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
     canActivate: [roleGuard],
     title: 'Patient reports | MediLink',
     data: {
+      reportAudience: 'patient',
       allowedRoles: ['Patient'],
     },
   },
@@ -167,7 +168,10 @@ const rolePages: Route[] = [
   },
   {
     path: 'doctor/records',
-    component: ClinicalRecords,
+    loadComponent: () =>
+      import('./features/medical-records/pages/clinical-records/clinical-records').then(
+        (module) => module.ClinicalRecords,
+      ),
     canActivate: [roleGuard],
     title: 'Patient clinical records | MediLink',
     data: {
@@ -198,12 +202,11 @@ const rolePages: Route[] = [
   {
     path: 'lab-staff/reports',
     loadComponent: () =>
-      import('./features/reports/pages/lab-staff-reports/lab-staff-reports').then(
-        (module) => module.LabStaffReports,
-      ),
+      import('./features/reports/pages/reports-live').then((module) => module.ReportsLive),
     canActivate: [roleGuard],
     title: 'Laboratory reports | MediLink',
     data: {
+      reportAudience: 'lab',
       allowedRoles: ['Lab Staff'],
     },
   },
@@ -309,11 +312,16 @@ export const routes: Routes = [
         },
       },
 
-      doctorPreview(
-        'doctor/patients/:id',
-        'Patient details',
-        'Patient-specific records will be available after integration.',
-      ),
+      {
+        path: 'doctor/patients/:id',
+        loadComponent: () =>
+          import('./features/medical-records/pages/clinical-records/clinical-records').then(
+            (module) => module.ClinicalRecords,
+          ),
+        canActivate: [roleGuard],
+        title: 'Patient clinical records | MediLink',
+        data: { allowedRoles: ['Doctor'], audience: 'doctor', livePatientRecords: true },
+      },
 
       {
         path: 'doctor/prescription-review',

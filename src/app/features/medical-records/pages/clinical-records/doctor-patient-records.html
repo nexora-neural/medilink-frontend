@@ -1,0 +1,131 @@
+@let view = state();
+<section class="records-page" aria-labelledby="doctor-records-title">
+  <header class="page-heading">
+    <div>
+      <h1 id="doctor-records-title">Patient clinical records</h1>
+      <p class="subtitle">Review conditions, allergies, diagnoses and clinical notes.</p>
+    </div>
+  </header>
+  @if (account() && view.kind !== 'denied' && view.kind !== 'expired') {
+    <nav class="correction-actions" aria-label="Clinical corrections">
+      <a routerLink="/workspace/doctor/correction-requests">Correction requests</a
+      ><a routerLink="/workspace/doctor/correction-history">Correction history</a>
+    </nav>
+  }
+  <p class="help-text">Read-only record. The server checks access on every request.</p>
+  @if (view.kind === 'loading') {
+    <app-ui-state
+      kind="loading"
+      title="Loading clinical records"
+      description="Getting current patient records and permissions."
+    />
+  } @else if (view.kind === 'denied') {
+    <app-ui-state
+      kind="error"
+      title="Access unavailable"
+      description="The patient has not granted access to these records, or this account cannot access them."
+    />
+  } @else if (view.kind === 'expired') {
+    <app-ui-state
+      kind="error"
+      title="Session expired"
+      description="Sign in again to view patient records."
+    /><a routerLink="/login">Sign in</a>
+  } @else if (view.kind === 'error') {
+    <app-ui-state
+      kind="error"
+      title="Clinical records unavailable"
+      description="Patient records are unavailable. Check the connection and retry."
+      actionLabel="Try again"
+      (action)="refresh()"
+    />
+  } @else if (view.kind === 'ready') {
+    <section class="panel">
+      <h2>Allergy status</h2>
+      @if (view.allergy === 'allergies-recorded') {
+        <p>Allergies recorded. Review the individual entries and their recorded sources.</p>
+      } @else if (view.allergy === 'no-known-allergies') {
+        <p>No known allergies reported.</p>
+      } @else {
+        <p>Unknown — allergy information has not been established.</p>
+      }
+    </section>
+    <section class="panel">
+      <div class="section-heading">
+        <h2>Recorded history</h2>
+        <span>{{ view.history.total }} entries</span>
+      </div>
+      @if (entries().length === 0) {
+        <app-ui-state
+          kind="empty"
+          title="No clinical entries yet"
+          description="No clinical entries are available for this patient."
+        />
+      } @else {
+        <ul class="entry-list">
+          @for (entry of entries(); track entry.kind + entry.id) {
+            <li>
+              <article class="entry-card">
+                <header class="entry-heading">
+                  <div>
+                    <span class="entry-kind">{{ labels[entry.kind] }}</span>
+                    <h3>{{ entry.title }}</h3>
+                  </div>
+                  <span class="status-badge">{{ statuses[entry.status] }}</span>
+                </header>
+                @if (entry.details) {
+                  <p class="entry-details">{{ entry.details }}</p>
+                }
+                <dl class="entry-metadata">
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{{ sources[entry.source] }}</dd>
+                  </div>
+                  <div>
+                    <dt>Author</dt>
+                    <dd>{{ entry.authorId || 'Not provided' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Organization</dt>
+                    <dd>{{ entry.organizationId || 'Not associated with an organization' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Recorded at</dt>
+                    <dd>
+                      <time [attr.datetime]="entry.recordedAt">{{
+                        entry.recordedAt | date: 'medium'
+                      }}</time>
+                    </dd>
+                  </div>
+                </dl>
+                @if (entry.clinicalCode) {
+                  <p class="help-text">Clinical code {{ entry.clinicalCode }}</p>
+                }
+              </article>
+            </li>
+          }
+        </ul>
+      }
+      @if (view.history.total > view.history.pageSize) {
+        <nav class="button-row" aria-label="Clinical history pages">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="view.history.page <= 1"
+            (click)="changePage(view.history.page - 1)"
+          >
+            Previous</button
+          ><span>Page {{ view.history.page }}</span
+          ><button
+            type="button"
+            class="secondary-button"
+            [disabled]="view.history.page * view.history.pageSize >= view.history.total"
+            (click)="changePage(view.history.page + 1)"
+          >
+            Next
+          </button>
+        </nav>
+      }
+    </section>
+  }
+</section>
